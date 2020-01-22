@@ -3,6 +3,8 @@
 import sys
 import math
 import time
+
+import infi.systray
 import serial
 
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
@@ -25,9 +27,13 @@ class Deej(object):
         self._slider_values = [0] * self._expected_num_sliders
 
         self._last_session_refresh = None
+        self._stopped = False
 
     def initialize(self):
         self._refresh_sessions()
+
+    def stop(self):
+        self._stopped = True
 
     def accept_commands(self):
         ser = serial.Serial()
@@ -38,7 +44,7 @@ class Deej(object):
         # ensure we start clean
         ser.readline()
 
-        while True:
+        while not self._stopped:
 
             # read a single line from the serial stream, has values between 0 and 1023 separated by "|"
             line = ser.readline()
@@ -161,6 +167,12 @@ class Deej(object):
         return math.floor(value * 100) / 100.0
 
 
+def setup_tray(stop_callback):
+    tray = infi.systray.SysTrayIcon('assets/logo.ico', 'deej', on_quit=lambda _: stop_callback())
+    tray.start()
+
+    return tray
+
 def main():
     deej = Deej({
         'slider_mapping': {
@@ -178,11 +190,16 @@ def main():
 
     try:
         deej.initialize()
+        tray = setup_tray(deej.stop)
+
         deej.accept_commands()
 
     except KeyboardInterrupt:
-        print 'Bye!'
+        print 'Interrupted.'
         sys.exit(130)
+    finally:
+        tray.shutdown()
+        print 'Bye!'
 
 
 if __name__ == '__main__':
