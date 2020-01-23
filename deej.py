@@ -3,6 +3,8 @@
 import sys
 import math
 import time
+import datetime
+import os
 
 import infi.systray
 import serial
@@ -38,7 +40,7 @@ class Deej(object):
     def accept_commands(self):
         ser = serial.Serial()
         ser.baudrate = 9600
-        ser.port = 'COM3'
+        ser.port = 'COM4'
         ser.open()
 
         # ensure we start clean
@@ -135,7 +137,12 @@ class Deej(object):
                     # set new one
                     if self._significantly_different_value(current_volume, slider_value):
                         self._set_session_volume(session, slider_value)
-                        print '{0}: {1} => {2}'.format(session_name, current_volume, slider_value)
+
+                        # if this fails while we're in the background - nobody cares!!!!!
+                        try:
+                            print '{0}: {1} => {2}'.format(session_name, current_volume, slider_value)
+                        except:
+                            pass
 
             # if we weren't able to find an audio session for this slider, maybe we aren't aware of that process yet
             if not target_found:
@@ -197,6 +204,15 @@ def main():
     except KeyboardInterrupt:
         print 'Interrupted.'
         sys.exit(130)
+    except Exception as error:
+        filename = 'deej-{0}.log'.format(datetime.datetime.now().strftime('%Y.%m.%d-%H.%M.%S'))
+
+        with open(filename, 'w') as f:
+            import traceback
+            f.write('Exception occurred: {0}\nTraceback: {1}'.format(error, traceback.format_exc()))
+
+        os.system('notepad.exe {0}'.format(filename))
+        sys.exit(1)
     finally:
         tray.shutdown()
         print 'Bye!'
