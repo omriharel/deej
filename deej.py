@@ -21,7 +21,7 @@ class Deej(object):
 
     def __init__(self,):
         self._config_filename = 'config.yaml'
-        self._config_directory = os.path.dirname(__file__)
+        self._config_directory = os.path.dirname(os.path.abspath(__file__))
 
         self._expected_num_sliders = None
         self._com_port = None
