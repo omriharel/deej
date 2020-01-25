@@ -23,24 +23,33 @@ Arduino project for controlling audio volume for separate Windows processes usin
 - The PC runs a Python script [`deej.py`](./deej.py) that listens to the board's Serial connection, detects changes in slider values and sets volume of equivalent audio sessions accordingly.
 - A VBScript-based run helper [`run.vbs`](./run.vbs) allows this Python script to run in the background (from the Windows tray).
 
-## Slider mapping
+## Slider mapping (configuration)
 
-A configuration is passed to the `Deej` object as follows:
+`deej` uses an external YAML-formatted configuration file named [`config.yaml`](./config.yaml).
 
-```python
-    deej = Deej({
-        'slider_mapping': {
-            0: 'master',
-            1: 'chrome.exe',
-            2: 'spotify.exe',
-            3: [
-                'pathofexile_x64.exe',
-                'rocketleague.exe',
-            ],
-            4: 'discord.exe',
-        },
-        'process_refresh_frequency': 5,
-    })
+The config file determines which applications are mapped to which sliders, and which COM port/baud rate to use for the connection to the Arduino board.
+
+**This file auto-reloads when its contents are changed, so you can change application mappings on-the-fly without restarting `deej`.**
+
+It looks like this:
+
+```yaml
+slider_mapping:
+  0: master
+  1: chrome.exe
+  2: spotify.exe
+  3:
+    - 'pathofexile_x64.exe'
+    - 'rocketleague.exe'
+  4: discord.exe
+
+# recommend to leave this setting at its default value
+process_refresh_frequency: 5
+
+# settings for connecting to the arduino board
+com_port: COM4
+baud_rate: 9600
+
 ```
 
 - Process names aren't case-sensitive
@@ -72,6 +81,5 @@ If you've actually gone ahead and built yourself this kind of box, here's how yo
 
 ## Missing stuff
 
-- Exterenal configuration and auto-reload when it changes
 - Better logging and error handling
 - Automatic COM port detection
