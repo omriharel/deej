@@ -8,39 +8,54 @@ import os
 
 import infi.systray
 import serial
+import yaml
 
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 from ctypes import POINTER, cast
 from comtypes import CLSCTX_ALL
+from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
 
 
 class Deej(object):
 
-    def __init__(self, settings):
-        self._settings = settings
+    def __init__(self,):
+        self._config_filename = 'config.yaml'
+        self._config_directory = os.path.dirname(__file__)
+
+        self._expected_num_sliders = None
+        self._com_port = None
+        self._baud_rate = None
+        self._slider_values = None
+
+        self._settings = None
+
+        self._load_settings()
 
         self._sessions = None
         self._master_session = None
 
         self._devices = None
 
-        self._expected_num_sliders = len(settings['slider_mapping'])
-
-        self._slider_values = [0] * self._expected_num_sliders
-
         self._last_session_refresh = None
+
+        self._config_observer = None
         self._stopped = False
 
     def initialize(self):
         self._refresh_sessions()
+        self._watch_config_file_changes()
 
     def stop(self):
         self._stopped = True
 
-    def accept_commands(self):
+        if self._config_observer:
+            self._config_observer.stop()
+
+    def start(self):
         ser = serial.Serial()
-        ser.baudrate = 9600
-        ser.port = 'COM4'
+        ser.baudrate = self._baud_rate
+        ser.port = self._com_port
         ser.open()
 
         # ensure we start clean
@@ -53,7 +68,11 @@ class Deej(object):
 
             # empty lines are a thing i guess
             if not line:
-                print 'Empty line'
+                try:
+                    print 'Empty line'
+                except:
+                    pass
+
                 continue
 
             # split on '|'
@@ -61,7 +80,12 @@ class Deej(object):
 
 
             if len(split_line) != self._expected_num_sliders:
-                print 'Uh oh - mismatch between number of sliders and config'
+                try:
+                    print 'Uh oh - mismatch between number of sliders and config'
+                except:
+                    pass
+
+                continue
 
             # now they're ints between 0 and 1023
             parsed_values = [int(n) for n in split_line]
@@ -75,6 +99,68 @@ class Deej(object):
             if self._significantly_different_values(clean_values):
                 self._slider_values = clean_values
                 self._apply_volume_changes()
+
+    def _load_settings(self, reload=False):
+        settings = None
+
+        try:
+            with open(self._config_filename, 'rb') as f:
+                raw_settings = f.read()
+                settings = yaml.load(raw_settings, Loader=yaml.SafeLoader)
+        except Exception as error:
+            try:
+                print 'Failed to {0}load config file {1}: {2}'.format('re' if reload else '',
+                                                                    self._config_filename,
+                                                                    error)
+            except:
+                pass
+
+            if reload:
+                return
+            else:
+                sys.exit(2)
+
+        try:
+            self._expected_num_sliders = len(settings['slider_mapping'])
+            self._com_port = settings['com_port']
+            self._baud_rate = settings['baud_rate']
+
+            self._slider_values = [0] * self._expected_num_sliders
+
+            self._settings = settings
+        except Exception as error:
+            try:
+                print 'Failed to {0}load configuration, please ensure it matches' \
+                    ' the required format. Error: {1}'.format('re' if reload else '', error)
+            except:
+                pass
+
+        if reload:
+            try:
+                print 'Reloaded configuration successfully'
+            except:
+                pass
+
+    def _watch_config_file_changes(self):
+
+        class LogfileModifiedHandler(FileSystemEventHandler):
+
+            @staticmethod
+            def on_modified(event):
+                if event.src_path.endswith(self._config_filename):
+                    try:
+                        print 'Detected config file changes, re-loading'
+                    except:
+                        pass
+
+                    self._load_settings(reload=True)
+
+        self._config_observer = Observer()
+        self._config_observer.schedule(LogfileModifiedHandler(),
+                                       self._config_directory,
+                                       recursive=False)
+
+        self._config_observer.start()
 
     def _refresh_sessions(self):
 
@@ -181,25 +267,13 @@ def setup_tray(stop_callback):
     return tray
 
 def main():
-    deej = Deej({
-        'slider_mapping': {
-            0: 'master',
-            1: 'chrome.exe',
-            2: 'spotify.exe',
-            3: [
-                'pathofexile_x64.exe',
-                'rocketleague.exe',
-            ],
-            4: 'discord.exe',
-        },
-        'process_refresh_frequency': 5,
-    })
+    deej = Deej()
 
     try:
         deej.initialize()
         tray = setup_tray(deej.stop)
 
-        deej.accept_commands()
+        deej.start()
 
     except KeyboardInterrupt:
         print 'Interrupted.'
