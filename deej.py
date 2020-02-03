@@ -172,7 +172,15 @@ class Deej(object):
 
         # take all active sessions and map out those that belong to processes to their process name
         session_list = filter(lambda s: s.Process, AudioUtilities.GetAllSessions())
-        self._sessions = {s.Process.name(): s for s in session_list}
+        self._sessions = {}
+
+        for session in session_list:
+            session_name = session.Process.name()
+
+            if session_name in self._sessions:
+                self._sessions[session_name].append(session)
+            else:
+                self._sessions[session_name] = [session]
 
         # take the master session
         active_device = AudioUtilities.GetSpeakers()
@@ -212,37 +220,49 @@ class Deej(object):
             # first determine if the target is a currently active session:
             for target in targets:
 
-                session_name, session = self._acquire_target_session(target)
+                sessions = self._acquire_target_sessions(target)
 
-                if session:
+                # mark target as resolved
+                if sessions:
                     target_found = True
 
-                    # get its current volume
-                    current_volume = self._get_session_volume(session)
+                    # each target may resolve to multiple sessions. for each such session:
+                    for session_name, session in sessions:
 
-                    # set new one
-                    if self._significantly_different_value(current_volume, slider_value):
-                        self._set_session_volume(session, slider_value)
+                        # get its current volume
+                        current_volume = self._get_session_volume(session)
 
-                        # if this fails while we're in the background - nobody cares!!!!!
-                        try:
-                            print '{0}: {1} => {2}'.format(session_name, current_volume, slider_value)
-                        except:
-                            pass
+                        # set new one
+                        if self._significantly_different_value(current_volume, slider_value):
+                            self._set_session_volume(session, slider_value)
 
-            # if we weren't able to find an audio session for this slider, maybe we aren't aware of that process yet
+                            # if this fails while we're in the background - nobody cares!!!!!
+                            try:
+                                print '{0}: {1} => {2}'.format(session_name, current_volume, slider_value)
+                            except:
+                                pass
+
+            # if we weren't able to find an audio session for this slider,
+            # maybe we aren't aware of that process yet. better check
             if not target_found:
                 self._refresh_sessions()
 
-    def _acquire_target_session(self, name):
+    def _acquire_target_sessions(self, name):
+
         if name == 'master':
-            return 'Master', self._master_session
+            return [('Master', self._master_session)]
 
-        for session_name, session in self._sessions.iteritems():
-            if session_name.lower() == name.lower():
-                return session_name, session
+        for process_name, process_sessions in self._sessions.iteritems():
+            if process_name.lower() == name.lower():
 
-        return None, None
+                # if we only have one session for that process return it
+                if len(process_sessions) == 1:
+                    return [(process_name, process_sessions[0])]
+
+                # if we have more, number them for logging and stuff
+                return [('{0} ({1})'.format(process_name, idx), session) for idx, session in enumerate(process_sessions)]
+
+        return []
 
     def _get_session_volume(self, session):
         if hasattr(session, 'SimpleAudioVolume'):
