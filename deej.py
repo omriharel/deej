@@ -5,6 +5,7 @@ import math
 import time
 import datetime
 import os
+import subprocess
 
 import infi.systray
 import serial
@@ -52,6 +53,10 @@ class Deej(object):
         if self._config_observer:
             self._config_observer.stop()
 
+    def edit_config(self):
+        attempt_print('Opening config file for editing')
+        spawn_detached_notepad(self._config_filename)
+
     def start(self):
         ser = serial.Serial()
         ser.baudrate = self._baud_rate
@@ -68,11 +73,7 @@ class Deej(object):
 
             # empty lines are a thing i guess
             if not line:
-                try:
-                    print 'Empty line'
-                except:
-                    pass
-
+                attempt_print('Empty line')
                 continue
 
             # split on '|'
@@ -80,11 +81,7 @@ class Deej(object):
 
 
             if len(split_line) != self._expected_num_sliders:
-                try:
-                    print 'Uh oh - mismatch between number of sliders and config'
-                except:
-                    pass
-
+                attempt_print('Uh oh - mismatch between number of sliders and config')
                 continue
 
             # now they're ints between 0 and 1023
@@ -108,12 +105,9 @@ class Deej(object):
                 raw_settings = f.read()
                 settings = yaml.load(raw_settings, Loader=yaml.SafeLoader)
         except Exception as error:
-            try:
-                print 'Failed to {0}load config file {1}: {2}'.format('re' if reload else '',
-                                                                    self._config_filename,
-                                                                    error)
-            except:
-                pass
+            attempt_print('Failed to {0}load config file {1}: {2}'.format('re' if reload else '',
+                                                                          self._config_filename,
+                                                                          error))
 
             if reload:
                 return
@@ -129,17 +123,11 @@ class Deej(object):
 
             self._settings = settings
         except Exception as error:
-            try:
-                print 'Failed to {0}load configuration, please ensure it matches' \
-                    ' the required format. Error: {1}'.format('re' if reload else '', error)
-            except:
-                pass
+            attempt_print('Failed to {0}load configuration, please ensure it matches' \
+                ' the required format. Error: {1}'.format('re' if reload else '', error))
 
         if reload:
-            try:
-                print 'Reloaded configuration successfully'
-            except:
-                pass
+            attempt_print('Reloaded configuration successfully')
 
     def _watch_config_file_changes(self):
 
@@ -148,11 +136,7 @@ class Deej(object):
             @staticmethod
             def on_modified(event):
                 if event.src_path.endswith(self._config_filename):
-                    try:
-                        print 'Detected config file changes, re-loading'
-                    except:
-                        pass
-
+                    attempt_print('Detected config file changes, re-loading')
                     self._load_settings(reload=True)
 
         self._config_observer = Observer()
@@ -237,10 +221,8 @@ class Deej(object):
                             self._set_session_volume(session, slider_value)
 
                             # if this fails while we're in the background - nobody cares!!!!!
-                            try:
-                                print '{0}: {1} => {2}'.format(session_name, current_volume, slider_value)
-                            except:
-                                pass
+                            attempt_print('{0}: {1} => {2}'.format(session_name, current_volume, slider_value))
+
 
             # if we weren't able to find an audio session for this slider,
             # maybe we aren't aware of that process yet. better check
@@ -280,36 +262,54 @@ class Deej(object):
         return math.floor(value * 100) / 100.0
 
 
-def setup_tray(stop_callback):
-    tray = infi.systray.SysTrayIcon('assets/logo.ico', 'deej', on_quit=lambda _: stop_callback())
+def setup_tray(edit_config_callback, stop_callback):
+    menu_options = (('Edit configuration', None, lambda _: edit_config_callback()),)
+
+    tray = infi.systray.SysTrayIcon('assets/logo.ico', 'deej', menu_options, on_quit=lambda _: stop_callback())
     tray.start()
 
     return tray
+
+
+def attempt_print(s):
+    try:
+        print s
+    except:
+        pass
+
+
+def spawn_detached_notepad(filename):
+    subprocess.Popen(['notepad.exe', filename],
+                     close_fds=True,
+                     creationflags=0x00000008)
+
 
 def main():
     deej = Deej()
 
     try:
         deej.initialize()
-        tray = setup_tray(deej.stop)
+        tray = setup_tray(deej.edit_config, deej.stop)
 
         deej.start()
 
     except KeyboardInterrupt:
-        print 'Interrupted.'
+        attempt_print('Interrupted.')
         sys.exit(130)
     except Exception as error:
         filename = 'deej-{0}.log'.format(datetime.datetime.now().strftime('%Y.%m.%d-%H.%M.%S'))
 
         with open(filename, 'w') as f:
             import traceback
+            f.write('Unfortunately, deej has crashed. This really shouldn\'t happen!\n')
+            f.write('If you\'ve just encountered this, please contact @omriharel and attach this error log.\n')
             f.write('Exception occurred: {0}\nTraceback: {1}'.format(error, traceback.format_exc()))
 
-        os.system('notepad.exe {0}'.format(filename))
+        spawn_detached_notepad(filename)
         sys.exit(1)
     finally:
         tray.shutdown()
-        print 'Bye!'
+        attempt_print('Bye!')
 
 
 if __name__ == '__main__':
