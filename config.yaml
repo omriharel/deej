@@ -5,8 +5,8 @@ slider_mapping:
   1: chrome.exe
   2: spotify.exe
   3:
-    - 'pathofexile_x64.exe'
-    - 'rocketleague.exe'
+    - pathofexile_x64.exe
+    - rocketleague.exe
   4: discord.exe
 
 # recommend to leave this setting at its default value

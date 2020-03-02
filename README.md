@@ -2,7 +2,9 @@
 
 Arduino project for controlling audio volume for separate Windows processes using physical sliders (like a DJ!)
 
-[**Video demonstration (click here)**](https://youtu.be/VoByJ4USMr8)
+[**Video demonstration on YouTube**](https://youtu.be/VoByJ4USMr8)
+
+[**_New:_ see some awesome versions built by people around the world!**](./community.md)
 
 ![Physical build](assets/build.jpg)
 
@@ -39,8 +41,8 @@ slider_mapping:
   1: chrome.exe
   2: spotify.exe
   3:
-    - 'pathofexile_x64.exe'
-    - 'rocketleague.exe'
+    - pathofexile_x64.exe
+    - rocketleague.exe
   4: discord.exe
 
 # recommend to leave this setting at its default value
@@ -49,7 +51,6 @@ process_refresh_frequency: 5
 # settings for connecting to the arduino board
 com_port: COM4
 baud_rate: 9600
-
 ```
 
 - Process names aren't case-sensitive
