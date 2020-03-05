@@ -12,7 +12,7 @@ Arduino project for controlling audio volume for separate Windows processes usin
 
 ### Hardware
 
-- The sliders are connected to 5 analog pins on an Arduino Uno board. They're powered from the board's 5V output (see schematic)
+- The sliders are connected to 5 analog pins on an Arduino Nano/Uno board. They're powered from the board's 5V output (see schematic)
 - The board connects via a USB cable to the PC
 
 #### Schematic
@@ -60,9 +60,22 @@ baud_rate: 9600
 - `master` is a special option for controlling master volume of the system.
 - The `process_refresh_frequency` option limits how often `deej` may look for new processes if their appropriate slider moves. This allows you to leave `deej` running in background and open/close processes normally - the sliders will #justwork
 
+## Build your own
+
+Building `deej` is very simple! You only need a few cheap parts - it's an excellent starter project (and my first Arduino project, personally).
+
+### Bill of Materials
+
+- An Arduino Nano or Uno board - I officially recommend using a Nano as it offers a smaller form-factor, a friendlier USB connector and more analog pins. Plus it's cheaper
+- As many slider potentiometers as you like, up to your number of analog pins (they're around 1-2 USD each, and come with a standard 10K Ohm variable resistor)
+  - **Important:** make sure to get linear sliders, not logarithmic ones!
+  - You can also use circular knobs if you like (but then you're not a DJ!)
+- Some wires and a way to connect them to your chosen board and sliders. This can be done with or without a breadboard, depending on how you're comfortable doing it
+- Any kind of box to hold everything together. It can be anything from a simple shoebox to a well-designed 3D-printed enclosure for a very professional look
+
 ## How to run
 
-If you've actually gone ahead and built yourself this kind of box, here's how you can run `deej`:
+If you've actually gone ahead and built it, here's how you can run `deej`:
 
 ### Requirements
 
@@ -84,3 +97,5 @@ If you've actually gone ahead and built yourself this kind of box, here's how yo
 
 - Better logging and error handling
 - Automatic COM port detection
+- Mic input support
+- Feel free to let me know if there's more demand for other features!
