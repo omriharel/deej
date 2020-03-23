@@ -12,7 +12,7 @@ Arduino project for controlling audio volume for separate Windows processes usin
 
 ### Hardware
 
-- The sliders are connected to 5 analog pins on an Arduino Nano/Uno board. They're powered from the board's 5V output (see schematic)
+- The sliders, or in this case potentiometers, are connected to 5 analog pins on an Arduino Nano/Uno board. They're powered from the board's 5V output (see schematic)
 - The board connects via a USB cable to the PC
 
 #### Schematic
