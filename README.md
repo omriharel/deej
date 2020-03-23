@@ -2,7 +2,7 @@
 
 Arduino project for controlling audio volume for separate Windows processes using physical sliders (like a DJ!)
 
-[**Video demonstration on YouTube**](https://youtu.be/ph0LRSD5JIg)
+[**Video demonstration on YouTube**](https://www.youtube.com/watch?v=ErRhlL0Zh6o)
 
 [**_New:_ see some awesome versions built by people around the world!**](./community.md)
 
