@@ -38,11 +38,9 @@ It looks like this:
 ```yaml
 slider_mapping:
   0: master
-  1: chrome.exe
+  1: current
   2: spotify.exe
-  3:
-    - pathofexile_x64.exe
-    - rocketleague.exe
+  3: chrome.exe
   4: discord.exe
 
 # recommend to leave this setting at its default value
