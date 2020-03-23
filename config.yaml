@@ -2,16 +2,12 @@
 # you can use 'master' to indicate the master channel, or a list of process names to create a group
 slider_mapping:
   0: master
-  1: chrome.exe
-  2: spotify.exe
-  3:
-    - pathofexile_x64.exe
-    - rocketleague.exe
-  4: discord.exe
-
+  1: current
+  2: word.exe
+  3: discord.exe
 # recommend to leave this setting at its default value
 process_refresh_frequency: 5
 
 # settings for connecting to the arduino board
-com_port: COM4
+com_port: COM3
 baud_rate: 9600

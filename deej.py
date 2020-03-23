@@ -6,21 +6,29 @@ import time
 import datetime
 import os
 import subprocess
+import psutil
+import ctypes
+from ctypes import wintypes
 
 import infi.systray
 import serial
 import yaml
 
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
-from ctypes import POINTER, pointer, cast
-from comtypes import CLSCTX_ALL, GUID
+from ctypes import POINTER, cast
+from comtypes import CLSCTX_ALL
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
+#buttonPressTime = [0,0,0,0,0]
+#buttonDelayTime = 125
 
 
 class Deej(object):
 
-    def __init__(self,):
+    def millis():
+        return int(round(time.time() * 1000))
+
+    def __init__(self):
         self._config_filename = 'config.yaml'
         self._config_directory = os.path.dirname(os.path.abspath(__file__))
 
@@ -42,8 +50,6 @@ class Deej(object):
 
         self._config_observer = None
         self._stopped = False
-
-        self._lpcguid = pointer(GUID.create_new())
 
     def initialize(self):
         self._refresh_sessions()
@@ -79,15 +85,17 @@ class Deej(object):
                 continue
 
             # split on '|'
-            split_line = line.split('|')
+           # input_split=line.split('$')
+            split_vol = line.split('|')
+            #split_but = input_split.split('|')
 
-
-            if len(split_line) != self._expected_num_sliders:
+            if len(split_vol) != self._expected_num_sliders:
                 attempt_print('Uh oh - mismatch between number of sliders and config')
                 continue
 
             # now they're ints between 0 and 1023
-            parsed_values = [int(n) for n in split_line]
+            parsed_values = [int(n) for n in split_vol]
+            #button_state = [int(n) for n in split_but]
 
             # now they're floats between 0 and 1 (but kinda dirty: 0.12334)
             normalized_values = [n / 1023.0 for n in parsed_values]
@@ -173,6 +181,29 @@ class Deej(object):
         active_device_interface = active_device.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
         self._master_session = cast(active_device_interface, POINTER(IAudioEndpointVolume))
 
+    #def button_status_changes(self):
+     #   for n in self:
+      #      if self[n]==1:
+       #         if buttonPressTime > (buttonDelayTime+millis()):
+        #            buttonTime=millis()
+         #           button_actions(n)
+                    
+                
+
+    #def button_actions(self):
+     #       switch(self){
+      #          case 0:
+       #             os.system("lineintoggle.bat")
+        #        case 1:
+#
+ #               case 2:
+#
+ #               case 3:
+#
+ #               case 4:
+  #              }
+                    
+
     def _significantly_different_values(self, new_values):
         for idx, current_value in enumerate(self._slider_values):
             new_value = new_values[idx]
@@ -236,6 +267,15 @@ class Deej(object):
         if name == 'master':
             return [('Master', self._master_session)]
 
+        if name == 'current':
+            user32 = ctypes.windll.user32
+            h_wnd = user32.GetForegroundWindow()
+            pid = wintypes.DWORD()
+            user32.GetWindowThreadProcessId(h_wnd, ctypes.byref(pid))
+            winpid = pid.value
+            process = psutil.Process(winpid)
+            name = process.name()
+
         for process_name, process_sessions in self._sessions.iteritems():
             if process_name.lower() == name.lower():
 
@@ -256,9 +296,9 @@ class Deej(object):
 
     def _set_session_volume(self, session, value):
         if hasattr(session, 'SimpleAudioVolume'):
-            session.SimpleAudioVolume.SetMasterVolume(value, self._lpcguid)
+            session.SimpleAudioVolume.SetMasterVolume(value, None)
         else:
-            session.SetMasterVolumeLevelScalar(value, self._lpcguid)
+            session.SetMasterVolumeLevelScalar(value, None)
 
     def _clean_session_volume(self, value):
         return math.floor(value * 100) / 100.0
