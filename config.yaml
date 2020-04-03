@@ -3,11 +3,12 @@
 slider_mapping:
   0: master
   1: current
-  2: word.exe
+  2: chrome.exe
   3: discord.exe
+  4: vlc.exe
 # recommend to leave this setting at its default value
 process_refresh_frequency: 5
 
 # settings for connecting to the arduino board
-com_port: COM3
+com_port: COM9
 baud_rate: 9600
