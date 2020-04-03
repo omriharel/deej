@@ -15,8 +15,8 @@ import serial
 import yaml
 
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
-from ctypes import POINTER, cast
-from comtypes import CLSCTX_ALL
+from ctypes import POINTER, pointer, cast
+from comtypes import CLSCTX_ALL, GUID
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 #buttonPressTime = [0,0,0,0,0]
@@ -50,6 +50,7 @@ class Deej(object):
 
         self._config_observer = None
         self._stopped = False
+        self._lpcguid = pointer(GUID.create_new())
 
     def initialize(self):
         self._refresh_sessions()
@@ -296,9 +297,9 @@ class Deej(object):
 
     def _set_session_volume(self, session, value):
         if hasattr(session, 'SimpleAudioVolume'):
-            session.SimpleAudioVolume.SetMasterVolume(value, None)
+            session.SimpleAudioVolume.SetMasterVolume(value, self._lpcguid)
         else:
-            session.SetMasterVolumeLevelScalar(value, None)
+            session.SetMasterVolumeLevelScalar(value, self._lpcguid)
 
     def _clean_session_volume(self, value):
         return math.floor(value * 100) / 100.0
@@ -347,7 +348,7 @@ def main():
             f.write('If you\'ve just encountered this, please contact @omriharel and attach this error log.\n')
             f.write('Exception occurred: {0}\nTraceback: {1}'.format(error, traceback.format_exc()))
 
-        spawn_detached_notepad(filename)
+        #spawn_detached_notepad(filename)
         sys.exit(1)
     finally:
         tray.shutdown()
