@@ -6,7 +6,7 @@ Arduino project for controlling audio volume for separate Windows processes usin
 
 [**_New:_ see some awesome versions built by people around the world!**](./community.md)
 
-![Physical build](assets/volumeDeck.jpg)
+![Physical build](assets/build.jpg)
 
 ## How it works
 
