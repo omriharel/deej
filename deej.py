@@ -19,16 +19,11 @@ from ctypes import POINTER, pointer, cast
 from comtypes import CLSCTX_ALL, GUID
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
-#buttonPressTime = [0,0,0,0,0]
-#buttonDelayTime = 125
 
 
 class Deej(object):
 
-    def millis():
-        return int(round(time.time() * 1000))
-
-    def __init__(self):
+    def __init__(self,):
         self._config_filename = 'config.yaml'
         self._config_directory = os.path.dirname(os.path.abspath(__file__))
 
@@ -50,6 +45,7 @@ class Deej(object):
 
         self._config_observer = None
         self._stopped = False
+
         self._lpcguid = pointer(GUID.create_new())
 
     def initialize(self):
@@ -86,17 +82,15 @@ class Deej(object):
                 continue
 
             # split on '|'
-           # input_split=line.split('$')
-            split_vol = line.split('|')
-            #split_but = input_split.split('|')
+            split_line = line.split('|')
 
-            if len(split_vol) != self._expected_num_sliders:
+
+            if len(split_line) != self._expected_num_sliders:
                 attempt_print('Uh oh - mismatch between number of sliders and config')
                 continue
 
             # now they're ints between 0 and 1023
-            parsed_values = [int(n) for n in split_vol]
-            #button_state = [int(n) for n in split_but]
+            parsed_values = [int(n) for n in split_line]
 
             # now they're floats between 0 and 1 (but kinda dirty: 0.12334)
             normalized_values = [n / 1023.0 for n in parsed_values]
@@ -181,29 +175,6 @@ class Deej(object):
         active_device = AudioUtilities.GetSpeakers()
         active_device_interface = active_device.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
         self._master_session = cast(active_device_interface, POINTER(IAudioEndpointVolume))
-
-    #def button_status_changes(self):
-     #   for n in self:
-      #      if self[n]==1:
-       #         if buttonPressTime > (buttonDelayTime+millis()):
-        #            buttonTime=millis()
-         #           button_actions(n)
-                    
-                
-
-    #def button_actions(self):
-     #       switch(self){
-      #          case 0:
-       #             os.system("lineintoggle.bat")
-        #        case 1:
-#
- #               case 2:
-#
- #               case 3:
-#
- #               case 4:
-  #              }
-                    
 
     def _significantly_different_values(self, new_values):
         for idx, current_value in enumerate(self._slider_values):
@@ -348,7 +319,7 @@ def main():
             f.write('If you\'ve just encountered this, please contact @omriharel and attach this error log.\n')
             f.write('Exception occurred: {0}\nTraceback: {1}'.format(error, traceback.format_exc()))
 
-        #spawn_detached_notepad(filename)
+        spawn_detached_notepad(filename)
         sys.exit(1)
     finally:
         tray.shutdown()

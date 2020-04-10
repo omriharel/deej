@@ -1,6 +1,7 @@
 //Required Libraties
 #include <TM1637.h>
-#include <Keyboard.h>
+//#include <Keyboard.h>
+#include <HID-Project.h>
 #include <EEPROM.h>
 #include <avr/wdt.h>
 //Setup Display
@@ -31,6 +32,8 @@ unsigned int analogSliderValues[NUM_SLIDERS];
 void setup() { 
   wdt_disable();
   wdt_reset();
+  Keyboard.begin();
+  Consumer.begin();
   for (int i = 0; i < NUM_SLIDERS; i++) {
     pinMode(analogInputs[i], INPUT);//Set analog pins to input    
     oldVolume[i] = knobRead(analogInputs[i]);//Get initial values
@@ -107,7 +110,7 @@ void buttonHoldActions(){
       buttonPressTime[0]=millis(); //stops button press from triggering twice back to back
    }
 
-   if(buttonHoldTime[4]>3000){
+   if(buttonHoldTime[4]>1000){
       for(int i = 3; i>=0; i--){
         tm1637.display(i,14); //changes display to EEEE
       }
@@ -126,16 +129,19 @@ void buttonPressActions(){
     buttonPressTime[0]=millis(); //sets button press time
   }
   if(buttonState[1]==0 && oldButtonState[1] == 1){
-    launchDeej(10); //launches deej
+    Keyboard.press(KEY_LEFT_GUI); //opens run dialog
+    Keyboard.press('r');
+    delay(100); //waits
+    Keyboard.releaseAll(); //releases keys
+    Keyboard.println("\"C:\\Zip Programs\\Sound Volume\\SoundVolumeView.exe\" /Switch \"{0.0.1.00000000}.{cd9e2e1b-682e-451f-aecb-1a784f2c3ed9}\""); //types path to deej run
+    delay(100);
     buttonPressTime[1]=millis(); //sets button press time
   }
   if(buttonState[2]==0 && oldButtonState[2] == 1){
-    //wdt_enable(WDTO_15MS);
-    //while(1);
     buttonPressTime[2]=millis(); //sets button press time
   }
   if(buttonState[3]==0 && oldButtonState[3] == 1){
-
+    Consumer.write(MEDIA_PLAY_PAUSE);
     buttonPressTime[3]=millis(); //sets button press time
   }
   if(buttonState[4]==0 && oldButtonState[4] == 1){
@@ -199,12 +205,14 @@ void blankDisplay(){
       j=0;
     }*/
     if(Serial.availableForWrite()<32){ //makes sure serial bus is connected
-      tm1637.display(j,14); //blanks display
+      tm1637.point(1);
+      tm1637.set(0);
     }
     else{
-      tm1637.display(j,34); //sets display to error if disconnected from bus
-      //tm1637.display(j,random(9)); //debug
+      tm1637.point(0);
+      tm1637.set(7);
     }
+    tm1637.display(j,34); //blanks display
   }
 }
 
