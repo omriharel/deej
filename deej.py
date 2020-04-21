@@ -38,6 +38,7 @@ class Deej(object):
 
         self._devices = None
 
+        self._should_refresh_sessions = False
         self._last_session_refresh = None
 
         self._config_observer = None
@@ -59,6 +60,9 @@ class Deej(object):
         attempt_print('Opening config file for editing')
         spawn_detached_notepad(self._config_filename)
 
+    def queue_session_refresh(self):
+        self._should_refresh_sessions = True
+
     def start(self):
         ser = serial.Serial()
         ser.baudrate = self._baud_rate
@@ -69,6 +73,10 @@ class Deej(object):
         ser.readline()
 
         while not self._stopped:
+
+            # check if the user requested to refresh sessions
+            if self._should_refresh_sessions:
+                self._refresh_sessions()
 
             # read a single line from the serial stream, has values between 0 and 1023 separated by "|"
             line = ser.readline()
@@ -264,8 +272,9 @@ class Deej(object):
         return math.floor(value * 100) / 100.0
 
 
-def setup_tray(edit_config_callback, stop_callback):
-    menu_options = (('Edit configuration', None, lambda _: edit_config_callback()),)
+def setup_tray(edit_config_callback, refresh_sessions_callback, stop_callback):
+    menu_options = (('Edit configuration', None, lambda _: edit_config_callback()),
+                    ('Re-scan audio sessions', None, lambda _: refresh_sessions_callback()))
 
     tray = infi.systray.SysTrayIcon('assets/logo.ico', 'deej', menu_options, on_quit=lambda _: stop_callback())
     tray.start()
@@ -291,7 +300,7 @@ def main():
 
     try:
         deej.initialize()
-        tray = setup_tray(deej.edit_config, deej.stop)
+        tray = setup_tray(deej.edit_config, deej.queue_session_refresh, deej.stop)
 
         deej.start()
 
