@@ -2,3 +2,6 @@ venv/
 *.pyc
 *.db
 .DS_Store
+*.log
+.vscode
+*.lnk
