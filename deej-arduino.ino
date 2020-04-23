@@ -1,20 +1,20 @@
 #include <SPI.h>
 #include <SD.h>
 
-
-
+//You must Hard Code in the number of Sliders in
 const int NUM_SLIDERS = 5;
 const int analogInputs[NUM_SLIDERS] = {A0, A1, A2, A3, A4};
-const int sd_CS = 8;
-
 
 int analogSliderValues[NUM_SLIDERS];
 bool pushSliderValuesToPC = false;
+
+const int sd_CS = 8;
 
 void setup() { 
   for (int i = 0; i < NUM_SLIDERS; i++) {
     pinMode(analogInputs[i], INPUT);
   }
+
   sd.begin(sd_CS);
   Serial.begin(9600);
 }
@@ -65,7 +65,7 @@ void printSliderValues() {
   }
 }
 
-void getImage() {
+void getFile() {
   Serial.println("Enter File Name");
 
   //Get start time of command
@@ -113,10 +113,9 @@ void checkForCommand() {
     int timeStop = millis();
 
     //If data takes to long
-    if(time2-time >= 1000) {
+    if(timeStart-timeStop >= 1000) {
       Serial.println("TIMEOUT");
     }
-
     // Check and match commands
     else {
 
@@ -130,6 +129,7 @@ void checkForCommand() {
         pushSliderValuesToPC = false
         
       }
+      
       // Send Single Slider Values
       else if ( input.equalsIgnoreCase("getSlider") == true ) {
         sendSliderValues();
@@ -139,9 +139,12 @@ void checkForCommand() {
       else if ( input.equalsIgnoreCase("getSliderHR") == true ) {
         printSliderValues();
       }
-      else if ( input.equalsIgnoreCase("sendImage") == true ) {
-        getImage();
+      
+      // Sends a file to the sd card 
+      else if ( input.equalsIgnoreCase("sendFile") == true ) {
+        getFile();
       }
+
       //Default Catch all
       else {
         Serial.println("INVALID COMMANDS");
