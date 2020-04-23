@@ -1,21 +1,6 @@
 #!/usr/bin/env python
 
-import sys
-import math
-import time
-import datetime
-import os
-import subprocess
 
-import infi.systray
-import serial
-import yaml
-
-from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
-from ctypes import POINTER, pointer, cast
-from comtypes import CLSCTX_ALL, GUID
-from watchdog.events import FileSystemEventHandler
-from watchdog.observers import Observer
 
 # Arduion Error Exceptions
 class ArduionoErrorException(Exception):
@@ -26,7 +11,25 @@ class CommandInvalid(ArduionoErrorException):
     pass
 
 class Deej(object):
+    import threading
+    import serial
+
+    from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
+    from ctypes import POINTER, pointer, cast
+    from comtypes import CLSCTX_ALL, GUID
+    from watchdog.events import FileSystemEventHandler
+    from watchdog.observers import Observer
+
+    class audioUpdateThread  (threading.Thread):
+        def __init__(self, threadID, name, updateFrequency):
+            threading.Thread.__init__(self)
+            self.threadID = threadID
+            self.name = name
+            self.updateFrequency
+        def run(self)
+    
     def __init__(self,):
+        import os
         self._config_filename = 'config.yaml'
         self._config_directory = os.path.dirname(os.path.abspath(__file__))
 
@@ -51,7 +54,7 @@ class Deej(object):
         self._stopped = False
 
         self._lpcguid = pointer(GUID.create_new())
-        self._ser = serial.serial()  
+        self._ser = serial.serial()
 
     def initialize(self):
         self._refresh_sessions()
@@ -94,6 +97,14 @@ class Deej(object):
                 self._apply_volume_changes()
 
         # ser.write("stopSlider\n")
+    def _updateVolume(self):
+        while(1):
+            sliderValues = self._getSliders()
+
+            if self._significantly_different_values(sliderValues):
+                self._slider_values = sliderValues
+                self._apply_volume_changes()
+
 
     def _getSliderValues(self):
         # Request Slider Values
@@ -130,6 +141,8 @@ class Deej(object):
         return clean_values
 
     def _load_settings(self, reload=False):
+        import yaml
+        import exit from sys
         settings = None
 
         try:
@@ -144,7 +157,7 @@ class Deej(object):
             if reload:
                 return
             else:
-                sys.exit(2)
+                exit(2)
 
         try:
             self._expected_num_sliders = len(settings['slider_mapping'])
@@ -179,12 +192,13 @@ class Deej(object):
         self._config_observer.start()
 
     def _refresh_sessions(self):
+        import time from time
 
         # only do this if enough time passed since we last scanned for processes
-        if self._last_session_refresh and time.time() - self._last_session_refresh < self._settings['process_refresh_frequency']:
+        if self._last_session_refresh and time() - self._last_session_refresh < self._settings['process_refresh_frequency']:
             return
 
-        self._last_session_refresh = time.time()
+        self._last_session_refresh = time()
 
         # take all active sessions and map out those that belong to processes to their process name
         session_list = filter(lambda s: s.Process, AudioUtilities.GetAllSessions())
@@ -291,9 +305,11 @@ class Deej(object):
             session.SetMasterVolumeLevelScalar(value, self._lpcguid)
 
     def _clean_session_volume(self, value):
-        return math.floor(value * 100) / 100.0
+        import floor from math 
+        return floor(value * 100) / 100.0
     
 def setup_tray(edit_config_callback, refresh_sessions_callback, stop_callback):
+    import infi.systray
     menu_options = (('Edit configuration', None, lambda _: edit_config_callback()),
                     ('Re-scan audio sessions', None, lambda _: refresh_sessions_callback()))
 
@@ -311,12 +327,14 @@ def attempt_print(s):
 
 
 def spawn_detached_notepad(filename):
+    import subprocess
     subprocess.Popen(['notepad.exe', filename],
                      close_fds=True,
                      creationflags=0x00000008)
 
 
 def main():
+    import exit from sys
     deej = Deej()
 
     try:
@@ -327,8 +345,9 @@ def main():
 
     except KeyboardInterrupt:
         attempt_print('Interrupted.')
-        sys.exit(130)
+        exit(130)
     except Exception as error:
+        import datetime
         filename = 'deej-{0}.log'.format(datetime.datetime.now().strftime('%Y.%m.%d-%H.%M.%S'))
 
         with open(filename, 'w') as f:
@@ -338,7 +357,7 @@ def main():
             f.write('Exception occurred: {0}\nTraceback: {1}'.format(error, traceback.format_exc()))
 
         spawn_detached_notepad(filename)
-        sys.exit(1)
+        exit(1)
     finally:
         tray.shutdown()
         attempt_print('Bye!')
