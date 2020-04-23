@@ -104,9 +104,9 @@ class Deej(object):
         # read a single line from the serial stream, has values between 0 and 1023 separated by "|"
         line = self._ser.readline()
         if(line == "TIMEOUT") :
-            raise CommandTimeout
+            raise self.CommandTimeout
         elif ( line == "INVALID COMMAND"):
-            raise CommandInvalid
+            raise self.CommandInvalid
 
         # empty lines are a thing i guess
         if not line:
