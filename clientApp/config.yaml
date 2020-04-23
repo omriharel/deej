@@ -12,6 +12,7 @@ slider_mapping:
 # recommend to leave this setting at its default value
 process_refresh_frequency: 5
 
+# Sets how often the arduino is polled and the audio is updated
 slider_refresh_rate: 10
 
 # settings for connecting to the arduino board

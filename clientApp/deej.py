@@ -1,22 +1,22 @@
 #!/usr/bin/env python
 # Arduion Error Exceptions
 
-class ArduionoErrorException(Exception):
-    pass
-class CommandTimeout(ArduionoErrorException):
-    pass
-class CommandInvalid(ArduionoErrorException):
-    pass
-
 class Deej(object):
     import serial
-
+ 
     from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
     from ctypes import POINTER, pointer, cast
     from comtypes import CLSCTX_ALL, GUID
     from watchdog.events import FileSystemEventHandler
     from watchdog.observers import Observer      
     
+    class ArduionoErrorException(Exception):
+        pass
+    class CommandTimeout(ArduionoErrorException):
+        pass
+    class CommandInvalid(ArduionoErrorException):
+        pass
+
     def __init__(self):
         import os
         self._config_filename = 'config.yaml'
@@ -70,14 +70,12 @@ class Deej(object):
 
     def start(self):
         from thread import start_new_thread
+        # Starts a new thread containing the audio update code
         start_new_thread(loopingUpdateVolume, (self._updateFrequency,))
     
     def loopingUpdateVolume(self, delay):
         # ensure we start clean
         ser.readline()
-        
-        # # tell the arduino to start sending data
-        # ser.write("startSlider\n")
 
         while not self._stopped:
 
@@ -85,18 +83,19 @@ class Deej(object):
             if self._should_refresh_sessions:
                 self._refresh_sessions()
 
+            # update the volume of the sliders
             self._updateVolume()
 
         ser.readline()
-        # ser.write("stopSlider\n")
 
     def _updateVolume(self):
-        while(1):
-            sliderValues = self._getSliders()
+        # Get the values of all the sliders
+        sliderValues = self._getSliders()
 
-            if self._significantly_different_values(sliderValues):
-                self._slider_values = sliderValues
-                self._apply_volume_changes()
+        # If the values are difrent enough update the audio
+        if self._significantly_different_values(sliderValues):
+            self._slider_values = sliderValues
+            self._apply_volume_changes()
 
     def _getSliderValues(self):
         # Request Slider Values
@@ -186,7 +185,7 @@ class Deej(object):
         self._config_observer.start()
 
     def _refresh_sessions(self):
-         from time import time
+        from time import time
 
         # only do this if enough time passed since we last scanned for processes
         if self._last_session_refresh and time() - self._last_session_refresh < self._settings['process_refresh_frequency']:
