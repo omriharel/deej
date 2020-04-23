@@ -17,10 +17,15 @@ from comtypes import CLSCTX_ALL, GUID
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
+# Arduion Error Exceptions
+class ArduionoErrorException(Exception):
+    pass
+class CommandTimeout(ArduionoErrorException):
+    pass
+class CommandInvalid(ArduionoErrorException):
+    pass
 
 class Deej(object):
-    ser = serial.Serial()  
-
     def __init__(self,):
         self._config_filename = 'config.yaml'
         self._config_directory = os.path.dirname(os.path.abspath(__file__))
@@ -46,13 +51,14 @@ class Deej(object):
         self._stopped = False
 
         self._lpcguid = pointer(GUID.create_new())
+        self._ser = serial.serial()  
 
     def initialize(self):
         self._refresh_sessions()
         self._watch_config_file_changes()
-        self.ser.baudrate = self._baud_rate
-        self.ser.port = self._com_port
-        self.ser.open()
+        self._ser.baudrate = self._baud_rate
+        self._ser.port = self._com_port
+        self._ser.open()
 
     def stop(self):
         self._stopped = True
@@ -69,11 +75,11 @@ class Deej(object):
 
     def start(self):
 
-        # ensure we start clean
-        ser.readline()
+        # # ensure we start clean
+        # ser.readline()
         
-        # tell the arduino to start sending data
-        ser.write("startSlider\n")
+        # # tell the arduino to start sending data
+        # ser.write("startSlider\n")
 
         while not self._stopped:
 
@@ -87,11 +93,19 @@ class Deej(object):
                 self._slider_values = sliderValues
                 self._apply_volume_changes()
 
-        ser.write("stopSlider\n")
+        # ser.write("stopSlider\n")
 
-    def _getSliders(self):
+    def _getSliderValues(self):
+        # Request Slider Values
+        self._ser.print("getSlider\n")
+
         # read a single line from the serial stream, has values between 0 and 1023 separated by "|"
-        line = ser.readline()
+        line = self._ser.readline()
+        if(line == "TIMEOUT") :
+            raise CommandTimeout
+        elif ( line == "INVALID COMMAND"):
+            raise CommandInvalid
+
         # empty lines are a thing i guess
         if not line:
             attempt_print('Empty line')
@@ -278,8 +292,7 @@ class Deej(object):
 
     def _clean_session_volume(self, value):
         return math.floor(value * 100) / 100.0
-
-
+    
 def setup_tray(edit_config_callback, refresh_sessions_callback, stop_callback):
     menu_options = (('Edit configuration', None, lambda _: edit_config_callback()),
                     ('Re-scan audio sessions', None, lambda _: refresh_sessions_callback()))
