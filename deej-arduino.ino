@@ -1,5 +1,12 @@
+#include <SPI.h>
+#include <SD.h>
+
+
+
 const int NUM_SLIDERS = 5;
 const int analogInputs[NUM_SLIDERS] = {A0, A1, A2, A3, A4};
+const int sd_CS = 8;
+
 
 int analogSliderValues[NUM_SLIDERS];
 bool pushSliderValuesToPC = false;
@@ -8,7 +15,7 @@ void setup() {
   for (int i = 0; i < NUM_SLIDERS; i++) {
     pinMode(analogInputs[i], INPUT);
   }
-
+  sd.begin(sd_CS);
   Serial.begin(9600);
 }
 
@@ -57,6 +64,42 @@ void printSliderValues() {
     }
   }
 }
+
+void getImage() {
+  Serial.println("Enter File Name");
+
+  //Get start time of command
+  int timeStart = millis();
+
+  //Get data from Serial
+  String filename = Serial.readStringUntil('\n');  // Read chars from serial monitor
+  
+  //Get Stop Time
+  int timeStop = millis();
+
+  //If data takes to long
+  if(time2-time >= 1000) {
+    Serial.println("TIMEOUT: No Filename recived");
+    break;
+  }
+
+  Serial.println("Starting File Write");
+  Serial.println("Waiting for EOF");
+  File imgFile = SD.open(filename, FILE_ WRITE);
+  int[] last3 = {-1,-1,-1};
+  while ( last3 != {'E','O','F'} ) {
+    if ( last3[0] != -1 ) {
+      imgFile.write(last3[0]);
+    }
+    last3[0] = last[1];
+    last3[1] = last[2];
+    int nextByte = Serial.read();
+    if (nextByte != -1) {
+      last3[2] = Serial.Read();
+    }
+  }
+}
+
 void checkForCommand() {
   //Check if data is waiting
   if (Serial.available() > 0) {
@@ -91,12 +134,14 @@ void checkForCommand() {
       else if ( input.equalsIgnoreCase("getSlider") == true ) {
         sendSliderValues();
       }
-      
+
       // Send Human Readable Slider Values 
       else if ( input.equalsIgnoreCase("getSliderHR") == true ) {
         printSliderValues();
       }
-
+      else if ( input.equalsIgnoreCase("sendImage") == true ) {
+        getImage();
+      }
       //Default Catch all
       else {
         Serial.println("INVALID COMMANDS");
