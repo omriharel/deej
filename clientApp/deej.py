@@ -19,6 +19,7 @@ from watchdog.observers import Observer
 
 
 class Deej(object):
+    ser = serial.Serial()  
 
     def __init__(self,):
         self._config_filename = 'config.yaml'
@@ -49,6 +50,9 @@ class Deej(object):
     def initialize(self):
         self._refresh_sessions()
         self._watch_config_file_changes()
+        self.ser.baudrate = self._baud_rate
+        self.ser.port = self._com_port
+        self.ser.open()
 
     def stop(self):
         self._stopped = True
@@ -64,10 +68,6 @@ class Deej(object):
         self._should_refresh_sessions = True
 
     def start(self):
-        ser = serial.Serial()
-        ser.baudrate = self._baud_rate
-        ser.port = self._com_port
-        ser.open()
 
         # ensure we start clean
         ser.readline()
@@ -81,36 +81,39 @@ class Deej(object):
             if self._should_refresh_sessions:
                 self._refresh_sessions()
 
-            # read a single line from the serial stream, has values between 0 and 1023 separated by "|"
-            line = ser.readline()
+            sliderValues = self._getSliders()
 
-            # empty lines are a thing i guess
-            if not line:
-                attempt_print('Empty line')
-                continue
-
-            # split on '|'
-            split_line = line.split('|')
-
-
-            if len(split_line) != self._expected_num_sliders:
-                attempt_print('Uh oh - mismatch between number of sliders and config')
-                continue
-
-            # now they're ints between 0 and 1023
-            parsed_values = [int(n) for n in split_line]
-
-            # now they're floats between 0 and 1 (but kinda dirty: 0.12334)
-            normalized_values = [n / 1023.0 for n in parsed_values]
-
-            # now they're cleaned up to 2 points of precision
-            clean_values = [self._clean_session_volume(n) for n in normalized_values]
-
-            if self._significantly_different_values(clean_values):
-                self._slider_values = clean_values
+            if self._significantly_different_values(sliderValues):
+                self._slider_values = sliderValues
                 self._apply_volume_changes()
 
         ser.write("stopSlider\n")
+
+    def _getSliders(self):
+        # read a single line from the serial stream, has values between 0 and 1023 separated by "|"
+        line = ser.readline()
+        # empty lines are a thing i guess
+        if not line:
+            attempt_print('Empty line')
+            continue
+        # split on '|'
+        split_line = line.split('|')
+
+        # check for slider mismatch
+        if len(split_line) != self._expected_num_sliders:
+            attempt_print('Uh oh - mismatch between number of sliders and config')
+            continue
+
+        # now they're ints between 0 and 1023
+        parsed_values = [int(n) for n in split_line]
+
+        # now they're floats between 0 and 1 (but kinda dirty: 0.12334)
+        normalized_values = [n / 1023.0 for n in parsed_values]
+
+        # now they're cleaned up to 2 points of precision
+        clean_values = [self._clean_session_volume(n) for n in normalized_values]
+        
+        return clean_values
 
     def _load_settings(self, reload=False):
         settings = None
