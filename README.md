@@ -2,9 +2,13 @@
 
 Arduino project for controlling audio volume for separate Windows processes using physical sliders (like a DJ!)
 
+**_New:_ join the [deej Discord server](https://discord.gg/nf88NJu) if you need help or have any questions!**
+
+[![Discord](https://img.shields.io/discord/702940502038937667?logo=discord)](https://discord.gg/nf88NJu)
+
 [**Video demonstration on YouTube**](https://youtu.be/VoByJ4USMr8)
 
-[**_New:_ see some awesome versions built by people around the world!**](./community.md)
+[**See some awesome versions built by people around the world!**](./community.md)
 
 ![Physical build](assets/build.jpg)
 
@@ -62,7 +66,7 @@ baud_rate: 9600
 
 ## Build your own
 
-Building `deej` is very simple! You only need a few cheap parts - it's an excellent starter project (and my first Arduino project, personally).
+Building `deej` is very simple! You only need a few cheap parts - it's an excellent starter project (and my first Arduino project, personally). Remember that if you need any help or have a question that's not answered here, you can always [join the deej Discord server](https://discord.gg/nf88NJu).
 
 ### Bill of Materials
 

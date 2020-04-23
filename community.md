@@ -1,6 +1,6 @@
 # Community showcase
 
-This is a showcase of `deej` versions built by people around the world. If you built yourself one of these things, I'd love to [add yours](mailto:omri.harel.en@gmail.com)! Either open a PR or contact me.
+This is a showcase of `deej` versions built by people around the world. If you built yourself one of these things, I'd love to [add yours](https://discord.gg/nf88NJu)! Either open a PR or contact me on Discord.
 
 ## [/u/Aithorn](https://reddit.com/user/Aithorn)
 

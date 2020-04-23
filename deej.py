@@ -314,6 +314,7 @@ def main():
             import traceback
             f.write('Unfortunately, deej has crashed. This really shouldn\'t happen!\n')
             f.write('If you\'ve just encountered this, please contact @omriharel and attach this error log.\n')
+            f.write('You can also join the deej Discord server at https://discord.gg/nf88NJu.\n')
             f.write('Exception occurred: {0}\nTraceback: {1}'.format(error, traceback.format_exc()))
 
         spawn_detached_notepad(filename)
