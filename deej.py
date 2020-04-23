@@ -71,6 +71,9 @@ class Deej(object):
 
         # ensure we start clean
         ser.readline()
+        
+        # tell the arduino to start sending data
+        ser.write("startSlider\n")
 
         while not self._stopped:
 
@@ -106,6 +109,8 @@ class Deej(object):
             if self._significantly_different_values(clean_values):
                 self._slider_values = clean_values
                 self._apply_volume_changes()
+
+        ser.write("stopSlider\n")
 
     def _load_settings(self, reload=False):
         settings = None
