@@ -79,7 +79,7 @@ If you've actually gone ahead and built it, here's how you can run `deej`:
 
 ### Requirements
 
-- Python 2.7.x (Sorry!) and `pip`
+- Python 3.8.x and `pip`
 - `virtualenv`
 
 ### Installation
@@ -99,3 +99,13 @@ If you've actually gone ahead and built it, here's how you can run `deej`:
 - Automatic COM port detection
 - Mic input support
 - Feel free to let me know if there's more demand for other features!
+
+## Hello Jax-B here
+  This repo is my (currently in development) Version of deej. My goal with this is to have something like the goxlr system
+
+#### Here is what has been implemented
+- request based communitcation (AKA the arduio will only send data on request)
+- threading for the update system
+
+  way down the line i will add oled support to the system and maby a gui.
+  thanks for reading!
