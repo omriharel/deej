@@ -314,7 +314,7 @@ def setup_tray(edit_config_callback, refresh_sessions_callback, stop_callback):
 
 def attempt_print(s):
     try:
-        print s
+        print(s)
     except:
         pass
 

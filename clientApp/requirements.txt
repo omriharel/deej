@@ -1,5 +1,5 @@
 argh==0.26.2
-comtypes==1.1.7
+comtypes==1.1.4
 enum34==1.1.6
 future==0.18.2
 infi.systray==0.1.12
