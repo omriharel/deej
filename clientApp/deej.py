@@ -9,29 +9,15 @@ class CommandInvalid(ArduionoErrorException):
     pass
 
 class Deej(object):
-    import threading
     import serial
 
     from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
     from ctypes import POINTER, pointer, cast
     from comtypes import CLSCTX_ALL, GUID
     from watchdog.events import FileSystemEventHandler
-    from watchdog.observers import Observer
-
-    class audioUpdateThread  (threading.Thread):
-        from time import sleep
-        def __init__(self, updateFrequency):
-            threading.Thread.__init__(self)
-
-            self.updateFrequency = updateFrequency
-            self._threadRunning = True
-
-        def run(self):
-            while self._threadRunning:
-
-                
+    from watchdog.observers import Observer      
     
-    def __init__(self,):
+    def __init__(self):
         import os
         self._config_filename = 'config.yaml'
         self._config_directory = os.path.dirname(os.path.abspath(__file__))
@@ -40,6 +26,7 @@ class Deej(object):
         self._com_port = None
         self._baud_rate = None
         self._slider_values = None
+        self._updateFrequency = None
 
         self._settings = None
 
@@ -55,6 +42,8 @@ class Deej(object):
 
         self._config_observer = None
         self._stopped = False
+        
+        
 
         self._lpcguid = pointer(GUID.create_new())
         self._ser = serial.serial()
@@ -80,9 +69,12 @@ class Deej(object):
         self._should_refresh_sessions = True
 
     def start(self):
-
-        # # ensure we start clean
-        # ser.readline()
+        from thread import start_new_thread
+        start_new_thread(loopingUpdateVolume, (self._updateFrequency,))
+    
+    def loopingUpdateVolume(self, delay):
+        # ensure we start clean
+        ser.readline()
         
         # # tell the arduino to start sending data
         # ser.write("startSlider\n")
@@ -93,13 +85,11 @@ class Deej(object):
             if self._should_refresh_sessions:
                 self._refresh_sessions()
 
-            sliderValues = self._getSliders()
+            self._updateVolume()
 
-            if self._significantly_different_values(sliderValues):
-                self._slider_values = sliderValues
-                self._apply_volume_changes()
-
+        ser.readline()
         # ser.write("stopSlider\n")
+
     def _updateVolume(self):
         while(1):
             sliderValues = self._getSliders()
@@ -107,7 +97,6 @@ class Deej(object):
             if self._significantly_different_values(sliderValues):
                 self._slider_values = sliderValues
                 self._apply_volume_changes()
-
 
     def _getSliderValues(self):
         # Request Slider Values
@@ -168,6 +157,8 @@ class Deej(object):
             self._baud_rate = settings['baud_rate']
 
             self._slider_values = [0] * self._expected_num_sliders
+
+            self._updateFrequency = settings['slider_refresh_rate']
 
             self._settings = settings
         except Exception as error:
