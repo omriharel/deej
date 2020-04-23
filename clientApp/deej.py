@@ -1,8 +1,6 @@
 #!/usr/bin/env python
-
-
-
 # Arduion Error Exceptions
+
 class ArduionoErrorException(Exception):
     pass
 class CommandTimeout(ArduionoErrorException):
@@ -21,12 +19,17 @@ class Deej(object):
     from watchdog.observers import Observer
 
     class audioUpdateThread  (threading.Thread):
-        def __init__(self, threadID, name, updateFrequency):
+        from time import sleep
+        def __init__(self, updateFrequency):
             threading.Thread.__init__(self)
-            self.threadID = threadID
-            self.name = name
-            self.updateFrequency
-        def run(self)
+
+            self.updateFrequency = updateFrequency
+            self._threadRunning = True
+
+        def run(self):
+            while self._threadRunning:
+
+                
     
     def __init__(self,):
         import os
@@ -142,7 +145,7 @@ class Deej(object):
 
     def _load_settings(self, reload=False):
         import yaml
-        import exit from sys
+        from sys import exit
         settings = None
 
         try:
@@ -192,7 +195,7 @@ class Deej(object):
         self._config_observer.start()
 
     def _refresh_sessions(self):
-        import time from time
+         from time import time
 
         # only do this if enough time passed since we last scanned for processes
         if self._last_session_refresh and time() - self._last_session_refresh < self._settings['process_refresh_frequency']:
@@ -305,7 +308,7 @@ class Deej(object):
             session.SetMasterVolumeLevelScalar(value, self._lpcguid)
 
     def _clean_session_volume(self, value):
-        import floor from math 
+        from math import floor  
         return floor(value * 100) / 100.0
     
 def setup_tray(edit_config_callback, refresh_sessions_callback, stop_callback):
@@ -334,7 +337,7 @@ def spawn_detached_notepad(filename):
 
 
 def main():
-    import exit from sys
+    from sys import exit 
     deej = Deej()
 
     try:
