@@ -107,5 +107,5 @@ If you've actually gone ahead and built it, here's how you can run `deej`:
 - request based communitcation (AKA the arduio will only send data on request)
 - threading for the update system
 
-  way down the line i will add oled support to the system and maby a gui.
+  way down the line i will add oled support to the system and mabey a gui.
   thanks for reading!
