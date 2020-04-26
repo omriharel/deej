@@ -311,20 +311,17 @@ def setup_tray(edit_config_callback, refresh_sessions_callback, stop_callback):
 
     return tray
 
-
 def attempt_print(s):
     try:
         print(s)
     except:
         pass
 
-
 def spawn_detached_notepad(filename):
     import subprocess
     subprocess.Popen(['notepad.exe', filename],
                      close_fds=True,
                      creationflags=0x00000008)
-
 
 def main():
     from sys import exit 
@@ -354,7 +351,6 @@ def main():
     finally:
         tray.shutdown()
         attempt_print('Bye!')
-
 
 if __name__ == '__main__':
     main()
