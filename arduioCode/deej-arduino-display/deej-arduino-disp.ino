@@ -1,8 +1,17 @@
+#include <SPI.h>
+#include <Wire.h>
+#include <SD.h>
+#include <ArduinoJson.h>
+#include adafruit
+
 //You must Hard Code in the number of Sliders in
 const int NUM_SLIDERS = 5;
 const int analogInputs[NUM_SLIDERS] = {A0, A1, A2, A3, A4};
 
 int analogSliderValues[NUM_SLIDERS];
+
+// image config location
+String configFile = "config.conf";
 
 // Constend Send
 bool pushSliderValuesToPC = false;
@@ -10,10 +19,30 @@ bool pushSliderValuesToPC = false;
 // Sd Card CS
 const int sdChipSelect = 10;
 
+// I2C Addresses
+const byte i2cMultiplexerAddress = 0x70;
+const byte i2cDisplayAddress = 0x78;
+
+// GFX Settings
+const int SCREEN_WIDTH 128; // OLED display width, in pixels
+const int SCREEN_HEIGHT 64; // OLED display height, in pixels
+const int OLED_RESET -1;
+struct images {
+  // because my displays can only have two address's i have to use a multiplexer
+  int breakoutPort;
+  String imageFile;
+};
+
+images imgAssignments[NUM_SLIDERS];
+
 void setup() { 
   for (int i = 0; i < NUM_SLIDERS; i++) {
     pinMode(analogInputs[i], INPUT);
   }
+  if (!SD.begin(sdChipSelect)){
+    Serial.println("SD ERROR");
+  }
+  Serial.begin(9600);
 }
 
 void loop() {
@@ -107,4 +136,43 @@ void checkForCommand() {
       }
     }
   }
+}
+
+void loadConfig() {
+  // Open file for reading
+  File file = SD.open(configFile);
+
+  // Allocate a temporary JsonDocument
+  StaticJsonDocument<620> doc;
+
+  // Deserialize the JSON document
+  DeserializationError error = deserializeJson(doc, file);
+  if (error)
+    Serial.println(F("Failed to read file, using default configuration"));
+
+  // for each slider read the config
+  for (int i = 0; i < NUM_SLIDERS; i++){
+    // set the breakout port
+    imgAssignments[i].breakoutPort = int(doc["sliders"][i]["breakoutPort"]);
+    // set the image name 
+    char imgNameBuff[10];
+    strlcpy(imgNameBuff,doc["conf"][i]["imageFile"],sizeof(imgNameBuff));
+    for (int j = 0; j < 10; j++){
+      imgAssignments[i].imageFile =+ imgNameBuff[j];
+    }
+  }
+}
+
+void setImage(int port, string imagefilename) {
+  tcaselect(port);
+
+}
+
+//breakout port select 
+void tcaselect(uint8_t i) {
+  if (i > 7) return;
+ 
+  Wire.beginTransmission(i2cMultiplexerAddress);
+  Wire.write(1 << i);
+  Wire.endTransmission();  
 }
