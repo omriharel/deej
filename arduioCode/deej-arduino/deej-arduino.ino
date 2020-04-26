@@ -2,6 +2,7 @@
 #include <Wire.h>
 #include <SD.h>
 #include <ArduinoJson.h>
+#include adafruit
 
 //You must Hard Code in the number of Sliders in
 const int NUM_SLIDERS = 5;
@@ -9,18 +10,23 @@ const int analogInputs[NUM_SLIDERS] = {A0, A1, A2, A3, A4};
 
 int analogSliderValues[NUM_SLIDERS];
 
-
-
+// image config location
 String configFile = "config.conf";
 
-
+// Constend Send
 bool pushSliderValuesToPC = false;
 
+// Sd Card CS
 const int sdChipSelect = 10;
 
+// I2C Addresses
 const byte i2cMultiplexerAddress = 0x70;
 const byte i2cDisplayAddress = 0x78;
 
+// GFX Settings
+const int SCREEN_WIDTH 128; // OLED display width, in pixels
+const int SCREEN_HEIGHT 64; // OLED display height, in pixels
+const int OLED_RESET -1;
 struct images {
   // because my displays can only have two address's i have to use a multiplexer
   int breakoutPort;
@@ -155,6 +161,11 @@ void loadConfig() {
       imgAssignments[i].imageFile =+ imgNameBuff[j];
     }
   }
+}
+
+void setImage(int port, string imagefilename) {
+  tcaselect(port);
+
 }
 
 //breakout port select 
