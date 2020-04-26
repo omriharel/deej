@@ -19,16 +19,15 @@ bool pushSliderValuesToPC = false;
 const int sdChipSelect = 10;
 
 const byte i2cMultiplexerAddress = 0x70;
+const byte i2cDisplayAddress = 0x78;
 
-struct slider {
+struct images {
   // because my displays can only have two address's i have to use a multiplexer
   int breakoutPort;
-  //the displays i am using have a default address of 0x78
-  byte i2cAddress = 0x78;
   String imageFile;
 };
 
-slider sliders[NUM_SLIDERS];
+images imgAssignments[NUM_SLIDERS];
 
 void setup() { 
   for (int i = 0; i < NUM_SLIDERS; i++) {
@@ -145,13 +144,15 @@ void loadConfig() {
   if (error)
     Serial.println(F("Failed to read file, using default configuration"));
 
+  // for each slider read the config
   for (int i = 0; i < NUM_SLIDERS; i++){
-    sliders[i].breakoutPort = int(doc["sliders"][i]["breakoutPort"]);
-    sliders[i].i2cAddress = byte(doc["sliders"][i]["i2cAddress"]);
+    // set the breakout port
+    imgAssignments[i].breakoutPort = int(doc["sliders"][i]["breakoutPort"]);
+    // set the image name 
     char imgNameBuff[10];
-    strlcpy(imgNameBuff,doc["sliders"][i]["imageFile"],sizeof(imgNameBuff));
+    strlcpy(imgNameBuff,doc["conf"][i]["imageFile"],sizeof(imgNameBuff));
     for (int j = 0; j < 10; j++){
-      sliders[i].imageFile =+ imgNameBuff[j];
+      imgAssignments[i].imageFile =+ imgNameBuff[j];
     }
   }
 }
