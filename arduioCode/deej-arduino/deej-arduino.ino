@@ -1,21 +1,42 @@
 #include <SPI.h>
+#include <Wire.h>
 #include <SD.h>
+#include <ArduinoJson.h>
 
 //You must Hard Code in the number of Sliders in
 const int NUM_SLIDERS = 5;
 const int analogInputs[NUM_SLIDERS] = {A0, A1, A2, A3, A4};
 
 int analogSliderValues[NUM_SLIDERS];
+
+
+
+String configFile = "config.conf";
+
+
 bool pushSliderValuesToPC = false;
 
-const int sd_CS = 8;
+const int sdChipSelect = 10;
+
+const byte i2cMultiplexerAddress = 0x70;
+
+struct slider {
+  // because my displays can only have two address's i have to use a multiplexer
+  int breakoutPort;
+  //the displays i am using have a default address of 0x78
+  byte i2cAddress = 0x78;
+  String imageFile;
+};
+
+slider sliders[NUM_SLIDERS];
 
 void setup() { 
   for (int i = 0; i < NUM_SLIDERS; i++) {
     pinMode(analogInputs[i], INPUT);
   }
-
-  sd.begin(sd_CS);
+  if (!SD.begin(sdChipSelect)){
+    Serial.println("SD ERROR");
+  }
   Serial.begin(9600);
 }
 
@@ -91,8 +112,7 @@ void checkForCommand() {
 
       // Stop Sending Slider Values
       else if ( input.equalsIgnoreCase("stopSlider") == true ) {
-        pushSliderValuesToPC = false
-        
+        pushSliderValuesToPC = false;
       }
       
       // Send Single Slider Values
@@ -111,4 +131,36 @@ void checkForCommand() {
       }
     }
   }
+}
+
+void loadConfig() {
+  // Open file for reading
+  File file = SD.open(configFile);
+
+  // Allocate a temporary JsonDocument
+  StaticJsonDocument<620> doc;
+
+  // Deserialize the JSON document
+  DeserializationError error = deserializeJson(doc, file);
+  if (error)
+    Serial.println(F("Failed to read file, using default configuration"));
+
+  for (int i = 0; i < NUM_SLIDERS; i++){
+    sliders[i].breakoutPort = int(doc["sliders"][i]["breakoutPort"]);
+    sliders[i].i2cAddress = byte(doc["sliders"][i]["i2cAddress"]);
+    char imgNameBuff[10];
+    strlcpy(imgNameBuff,doc["sliders"][i]["imageFile"],sizeof(imgNameBuff));
+    for (int j = 0; j < 10; j++){
+      sliders[i].imageFile =+ imgNameBuff[j];
+    }
+  }
+}
+
+//breakout port select 
+void tcaselect(uint8_t i) {
+  if (i > 7) return;
+ 
+  Wire.beginTransmission(i2cMultiplexerAddress);
+  Wire.write(1 << i);
+  Wire.endTransmission();  
 }
