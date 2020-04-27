@@ -28,9 +28,9 @@ void setup() {
   // Set up Wire for multiplexer
   Wire.begin();
   Serial.begin(115200);
-  Serial.print("INIT ");
+  Serial.print("INITSTART ");
   for (int i = 0; i < numDisplays; i++) {
-    Serial.print("DSP" + i + "INIT ")
+    Serial.print("DSP" + String(i) + "INIT ");
     tcaselect(i);
     dspInit();
     dspClear();
@@ -40,12 +40,12 @@ void setup() {
   for (int i = 0; i < NUM_SLIDERS; i++) {
     pinMode(analogInputs[i], INPUT);
   }
-  Serial.print("SDINIT ")
+  Serial.print("SDINIT ");
   if (!SD.begin(sdChipSelect)){
     Serial.println("SDERROR ");
     while(1);
   }
-  Serial.println("\nINITDONE")
+  Serial.println("INITDONE");
 }
 
 void loop() {
