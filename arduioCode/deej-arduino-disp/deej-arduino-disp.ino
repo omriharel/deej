@@ -27,21 +27,25 @@ const int SCREEN_HEIGHT = 64; // OLED display height, in pixels
 void setup() { 
   // Set up Wire for multiplexer
   Wire.begin();
+  Serial.begin(115200);
+  Serial.print("INIT ");
   for (int i = 0; i < numDisplays; i++) {
+    Serial.print("DSP" + i + "INIT ")
     tcaselect(i);
     dspInit();
     dspClear();
     dspSendData(i);
   }
-
-
+  
   for (int i = 0; i < NUM_SLIDERS; i++) {
     pinMode(analogInputs[i], INPUT);
   }
+  Serial.print("SDINIT ")
   if (!SD.begin(sdChipSelect)){
-    Serial.println("SD ERROR");
+    Serial.println("SDERROR ");
+    while(1);
   }
-  Serial.begin(9600);
+  Serial.println("\nINITDONE")
 }
 
 void loop() {
