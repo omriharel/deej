@@ -63,6 +63,7 @@ void updateSliderValues() {
      analogSliderValues[i] = analogRead(analogInputs[i]);
   }
 }
+
 // sends the machine readable values of the sliders
 void sendSliderValues() {
   String builtString = String("");
@@ -77,6 +78,7 @@ void sendSliderValues() {
   
   Serial.println(builtString);
 }
+
 // sends the human readable values of the sliders
 void printSliderValues() {
   for (int i = 0; i < NUM_SLIDERS; i++) {
@@ -128,6 +130,37 @@ void checkForCommand() {
       // Send Human Readable Slider Values 
       else if ( input.equalsIgnoreCase("getSliderHR") == true ) {
         printSliderValues();
+      }
+
+      // Sets the image on a display
+      else if ( input.equalsIgnoreCase("setDisplayImage") == true){
+        Serial.println("What Dispaly:");
+        int timeStart = millis();
+
+        //Get data from Serial
+        String port = Serial.readStringUntil('\n');  // Read chars from serial monitor
+        
+        //Get Stop Time
+        int timeStop = millis();
+        
+        //If data takes to long
+        if(timeStart-timeStop >= 1000) {
+          Serial.println("TIMEOUT");
+        }
+        Serial.println("What ImageFile:");
+        int timeStart = millis();
+
+        //Get data from Serial
+        String filename = Serial.readStringUntil('\n');  // Read chars from serial monitor
+        
+        //Get Stop Time
+        int timeStop = millis();
+        
+        //If data takes to long
+        if(timeStart-timeStop >= 1000) {
+          Serial.println("TIMEOUT");
+        }
+        setImage(int(port),filename);
       }
 
       //Default Catch all
