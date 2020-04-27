@@ -4,7 +4,8 @@
 #include "ssd1306CMD.h"
 //You must Hard Code in the number of Sliders in
 const int NUM_SLIDERS = 5;
-const int analogInputs[NUM_SLIDERS] = {A0, A1, A2, A3, A4};
+// ATMEL Mega 328P (Arduino Nano) uses A4 and A5 for i2c
+const int analogInputs[NUM_SLIDERS] = {A0, A1, A2, A3, A6};
 
 int analogSliderValues[NUM_SLIDERS];
 
