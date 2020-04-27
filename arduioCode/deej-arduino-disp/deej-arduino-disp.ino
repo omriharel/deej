@@ -140,32 +140,32 @@ void checkForCommand() {
       // Sets the image on a display
       else if ( input.equalsIgnoreCase("setDisplayImage") == true){
         Serial.println("What Dispaly:");
-        int timeStart = millis();
+        timeStart = millis();
 
         //Get data from Serial
         String port = Serial.readStringUntil('\n');  // Read chars from serial monitor
         
         //Get Stop Time
-        int timeStop = millis();
+        timeStop = millis();
         
         //If data takes to long
         if(timeStart-timeStop >= 1000) {
           Serial.println("TIMEOUT");
         }
         Serial.println("What ImageFile:");
-        int timeStart = millis();
+        timeStart = millis();
 
         //Get data from Serial
         String filename = Serial.readStringUntil('\n');  // Read chars from serial monitor
         
         //Get Stop Time
-        int timeStop = millis();
+        timeStop = millis();
         
         //If data takes to long
         if(timeStart-timeStop >= 1000) {
           Serial.println("TIMEOUT");
         }
-        setImage(int(port),filename);
+        setImage(port.toInt(),filename);
       }
 
       //Default Catch all
@@ -189,24 +189,24 @@ void getFile() {
   int timeStop = millis();
 
   //If data takes to long
-  if(time2-time >= 1000) {
+  if(timeStart-timeStop >= 1000) {
     Serial.println("TIMEOUT: No Filename recived");
-    break;
+    return;
   }
 
   Serial.println("Starting File Write");
   Serial.println("Waiting for EOF");
-  File imgFile = SD.open(filename, FILE_ WRITE);
-  int[] last3 = {-1,-1,-1};
-  while ( last3 != {'E','O','F'} ) {
+  File imgFile = SD.open(filename, FILE_WRITE);
+  int last3[3];
+  while ( last3[0] != 'E' && last3[1] != 'O' && last3[2] != 'F' ) {
     if ( last3[0] != -1 ) {
       imgFile.write(last3[0]);
     }
-    last3[0] = last[1];
-    last3[1] = last[2];
+    last3[0] = last3[1];
+    last3[1] = last3[2];
     int nextByte = Serial.read();
     if (nextByte != -1) {
-      last3[2] = Serial.Read();
+      last3[2] = Serial.read();
     }
   }
 }
@@ -341,6 +341,6 @@ void dspClear(){
   dspSetPage(0x00,0x7);
   // fill the GFX Ram on the ssd1306 with zeros blanking the display
   for(int i = 0;i < (SCREEN_WIDTH * SCREEN_HEIGHT); i++){
-    sendData(0b00000000);
+    dspSendData(0b00000000);
   }
 }
