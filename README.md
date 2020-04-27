@@ -1,3 +1,6 @@
+# Do not use yet
+I currently dont have a stable/complete version yet and i am still working on this
+
 # deej
 
 Arduino project for controlling audio volume for separate Windows processes using physical sliders (like a DJ!)
