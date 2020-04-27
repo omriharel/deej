@@ -104,7 +104,7 @@ void checkForCommand() {
     int timeStart = millis();
 
     //Get data from Serial
-    String input = Serial.readStringUntil('\n');  // Read chars from serial monitor
+    String input = Serial.readStringUntil('\n');  // Read chars from Serial monitor
     
     //Get Stop Time
     int timeStop = millis();
@@ -138,16 +138,34 @@ void checkForCommand() {
       
       // Sends a file to the sd card 
       else if ( input.equalsIgnoreCase("sendFile") == true ) {
-        getFile();
+        Serial.println("Enter File Name:");
+        while(Serial.available() == 0);
+        //Get start time of command
+        int timeStart = millis();
+
+        //Get data from Serial
+        String filename = Serial.readStringUntil('\n');  // Read chars from Serial monitor
+
+        //Get Stop Time
+        int timeStop = millis();
+
+        //If data takes to long
+        if(timeStart-timeStop >= 1000) {
+          Serial.println("TIMEOUT: No Filename recived");
+          return;
+        }
+
+        getFile(filename);
       }
 
       // Sets the image on a display
       else if ( input.equalsIgnoreCase("setDisplayImage") == true){
         Serial.println("What Dispaly:");
+        while(Serial.available() == 0);
         timeStart = millis();
 
         //Get data from Serial
-        String port = Serial.readStringUntil('\n');  // Read chars from serial monitor
+        String port = Serial.readStringUntil('\n');  // Read chars from Serial monitor
         
         //Get Stop Time
         timeStop = millis();
@@ -157,10 +175,11 @@ void checkForCommand() {
           Serial.println("TIMEOUT");
         }
         Serial.println("What ImageFile:");
+        while(Serial.available() == 0);
         timeStart = millis();
 
         //Get data from Serial
-        String filename = Serial.readStringUntil('\n');  // Read chars from serial monitor
+        String filename = Serial.readStringUntil('\n');  // Read chars from Serial monitor
         
         //Get Stop Time
         timeStop = millis();
@@ -180,28 +199,11 @@ void checkForCommand() {
   }
 }
 
-void getFile() {
-  Serial.println("Enter File Name");
-
-  //Get start time of command
-  int timeStart = millis();
-
-  //Get data from Serial
-  String filename = Serial.readStringUntil('\n');  // Read chars from serial monitor
-
-  //Get Stop Time
-  int timeStop = millis();
-
-  //If data takes to long
-  if(timeStart-timeStop >= 1000) {
-    Serial.println("TIMEOUT: No Filename recived");
-    return;
-  }
-
+void getFile(const String filename) {
   Serial.println("Starting File Write");
   Serial.println("Waiting for EOF");
   File imgFile = SD.open(filename, FILE_WRITE);
-  int last3[3];
+  int last3[3] = {-1,-1,-1};
   while ( last3[0] != 'E' && last3[1] != 'O' && last3[2] != 'F' ) {
     if ( last3[0] != -1 ) {
       imgFile.write(last3[0]);
@@ -210,9 +212,14 @@ void getFile() {
     last3[1] = last3[2];
     int nextByte = Serial.read();
     if (nextByte != -1) {
-      last3[2] = Serial.read();
+      last3[2] = nextByte;
     }
   }
+  while(Serial.available() > 0) {
+    Serial.read();
+  }
+  imgFile.close();
+  Serial.print("EOFDETECT");
 }
 
 // Writes a image to the ssd1306 display
@@ -249,6 +256,7 @@ void setImage(uint8_t port, String imagefilename) {
     maxPages--;
   }
   imgFile.close();
+  Serial.println("\nDSPWRITEDONE");
 }
 
 // breakout port select 
