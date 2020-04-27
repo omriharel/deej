@@ -156,21 +156,29 @@ void checkForCommand() {
 }
 
 void setImage(uint8_t port, String imagefilename) {
+  // select the display port
   tcaselect(port);
+  // open the image file
+  // also this file should almost allways contain 8192 bytes
   File imgFile = SD.open(imagefilename);
+  // clear the display
   dspClear();
+  // initialize some temp vars
   int inputChar;
   int maxPages = 8;
+
+  // loop through each page 
+  // each padge is 8 Vertical bytes per column
+  // we write to 128 columns each column is 8 bytes tall or 8 pixel.
+  // there are 8 pages [0-7] to make up the 64 pixel tall display
+  // we also process all posable ascii char including newline and carrage return
+  // since a char is one byte it makes it easy to read data from the file and into the buffer
   while (maxPages != 0 && inputChar != -1){
     int CharsLeftInLine = 128;
     while  (CharsLeftInLine > 0 && inputChar != -1){
       inputChar = imgFile.read();
       Serial.print(char(inputChar));
-      if(inputChar == '\n' || inputChar == -1){
-        while(CharsLeftInLine > 0){
-          sendData(0b00000000);
-          CharsLeftInLine--;
-        }
+      if(inputChar == -1){
         break;
       }
       sendData(inputChar);
