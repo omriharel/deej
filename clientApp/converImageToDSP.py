@@ -12,8 +12,8 @@ px = r.load()
 
 file = open("picture.b", 'w')
 
-for i in [0, 7]:
-    for j in [0, 127]:
+for i in range(0, 7):
+    for j in range(0, 127):
         # construct virtical byte
         vpic = 0;
         # bit 1
@@ -41,6 +41,8 @@ for i in [0, 7]:
         if (px[j, 7*i] == 255):
             vpic += 1;
         file.write(hex(vpic))
+        print(hex(vpic))
+    print("\nPage\n")
 
 file.close()
 
