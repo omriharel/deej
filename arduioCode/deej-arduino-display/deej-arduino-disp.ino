@@ -8,6 +8,7 @@ const int analogInputs[NUM_SLIDERS] = {A0, A1, A2, A3, A4};
 
 int analogSliderValues[NUM_SLIDERS];
 
+const int numDisplays = 5;
 
 // Constent Send
 bool pushSliderValuesToPC = false;
@@ -23,33 +24,14 @@ const byte i2cDisplayAddress = 0x3C;
 const int SCREEN_WIDTH = 128; // OLED display width, in pixels
 const int SCREEN_HEIGHT = 64; // OLED display height, in pixels
 
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
-
-
-struct images {
-  // because my displays can only have two address's i have to use a multiplexer
-  int breakoutPort;
-  String imageFile;
-};
-
-images imgAssignments[NUM_SLIDERS];
-
 void setup() { 
   // Set up Wire for multiplexer
   Wire.begin();
-  display.clearDisplay();
-
-  //set up text size
-  display.setTextSize(3);      // Normal 1:1 pixel scale
-  display.setTextColor(SSD1306_WHITE); // Draw white text
-  display.setCursor(0, 0);
-  // Configure each display
-  for(int i = 0; i < Num_Display){
+  for (int i = 0; i < numDisplays; i++) {
     tcaselect(i);
-    display.begin(SSD1306_SWITCHCAPVCC, i2cDisplayAddress);
-    display.clearDisplay();
-    display.write(i);
-    display.display();
+    dspInit();
+    dspClear();
+    dspSendData(i);
   }
 
 
@@ -75,12 +57,13 @@ void loop() {
   delay(10);
 }
 
+// upates the array of slider values
 void updateSliderValues() {
   for (int i = 0; i < NUM_SLIDERS; i++) {
      analogSliderValues[i] = analogRead(analogInputs[i]);
   }
 }
-
+// sends the machine readable values of the sliders
 void sendSliderValues() {
   String builtString = String("");
 
@@ -94,7 +77,7 @@ void sendSliderValues() {
   
   Serial.println(builtString);
 }
-
+// sends the human readable values of the sliders
 void printSliderValues() {
   for (int i = 0; i < NUM_SLIDERS; i++) {
     String printedString = String("Slider #") + String(i + 1) + String(": ") + String(analogSliderValues[i]) + String(" mV");
@@ -155,6 +138,7 @@ void checkForCommand() {
   }
 }
 
+// Writes a image to the ssd1306 display
 void setImage(uint8_t port, String imagefilename) {
   // select the display port
   tcaselect(port);
@@ -181,7 +165,7 @@ void setImage(uint8_t port, String imagefilename) {
       if(inputChar == -1){
         break;
       }
-      sendData(inputChar);
+      dspSendData(inputChar);
       CharsLeftInLine--;
     }
     Serial.println();
@@ -198,6 +182,7 @@ void tcaselect(uint8_t i) {
   Wire.write(1 << i);
   Wire.endTransmission();  
 }
+
 // Send a Command to the ssd1306 
 void dspSendCommand(uint8_t c){
   Wire.beginTransmission(i2cDisplayAddress);
@@ -205,6 +190,7 @@ void dspSendCommand(uint8_t c){
   Wire.write(c);
   Wire.endTransmission();
 }
+
 // Send Display Data to ssd1306
 void dspSendData(uint8_t c){
   Wire.beginTransmission(i2cDisplayAddress);
@@ -212,7 +198,8 @@ void dspSendData(uint8_t c){
   Wire.write(c);
   Wire.endTransmission();
 }
-// ssd1306 Display initialize sequence
+
+// ssd1306 Display initialization sequence
 // see this page for the sequence for the sequence i used:
 // https://iotexpert.com/2019/08/07/debugging-ssd1306-display-problems/
 const char initializeCmds[]={
@@ -253,23 +240,26 @@ const char initializeCmds[]={
 // initialize displays using the sequence
 void dspInit(){
   for(int i=0;i<25;i++){
-    sendCommand(initializeCmds[i]);
+    dspSendCommand(initializeCmds[i]);
   }
 }
+
 // set the column 
 // ref the ssd 1306 datasheet if you want to find out how it works
 void dspSetColumn(uint8_t cstart, uint8_t cend) {
-  sendCommand(0x21);
-  sendCommand(cstart);
-  sendCommand(cend);
+  dspSendCommand(0x21);
+  dspSendCommand(cstart);
+  dspSendCommand(cend);
 }
+
 // set the page
 // ref the ssd 1306 datasheet if you want to find out how it works
 void dspSetPage(uint8_t cstart, uint8_t cend) {
-  sendCommand(0x22);
-  sendCommand(cstart);
-  sendCommand(cend);
+  dspSendCommand(0x22);
+  dspSendCommand(cstart);
+  dspSendCommand(cend);
 }
+
 // clear the display
 void dspClear(){
   // go to zero and set end to full end
