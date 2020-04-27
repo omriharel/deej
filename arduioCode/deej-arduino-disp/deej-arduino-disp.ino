@@ -351,9 +351,9 @@ void dspClear(){
   // go to zero and set end to full end
   dspSetColumn(0x00,0x7F);
   // go to zero and set end to full end
-  dspSetPage(0x00,0x7);
+  dspSetPage(0xB0,0xB7);
   // fill the GFX Ram on the ssd1306 with zeros blanking the display
-  for(int i = 0;i < (SCREEN_WIDTH * SCREEN_HEIGHT); i++){
+  for(int i = 0;i < (SCREEN_WIDTH * (SCREEN_HEIGHT/8)); i++){
     dspSendData(0b00000000);
   }
 }
