@@ -160,7 +160,7 @@ void checkForCommand() {
       }
 
       // Sets the image on a display
-      else if ( input.equalsIgnoreCase("setDisplayImage") == true){
+      else if ( input.equalsIgnoreCase("setDspImage") == true){
         Serial.println("What Dispaly:");
         while(Serial.available() == 0);
         timeStart = millis();
