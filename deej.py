@@ -9,6 +9,7 @@ import subprocess
 import psutil
 import ctypes
 from ctypes import wintypes
+import win32gui
 
 import infi.systray
 import serial
@@ -19,6 +20,8 @@ from ctypes import POINTER, pointer, cast
 from comtypes import CLSCTX_ALL, GUID
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
+
+tempname = ''
 
 
 class Deej(object):
@@ -234,6 +237,18 @@ class Deej(object):
             if not target_found:
                 self._refresh_sessions()
 
+    def winfun(self, hwnd, lparam):
+        s = win32gui.GetWindowText(hwnd)
+        if len(s) > 3:
+            user32 = ctypes.windll.user32
+            pid = wintypes.DWORD()
+            user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+            winpid = pid.value
+            process = psutil.Process(winpid)
+            global tempname
+            tempname = process.name()
+        return 1
+
     def _acquire_target_sessions(self, name):
 
         if name == 'master':
@@ -247,6 +262,9 @@ class Deej(object):
             winpid = pid.value
             process = psutil.Process(winpid)
             name = process.name()
+            if name == 'ApplicationFrameHost.exe':
+                win32gui.EnumChildWindows(h_wnd, self.winfun, None)
+                name = tempname
 
         for process_name, process_sessions in self._sessions.iteritems():
             if process_name.lower() == name.lower():
