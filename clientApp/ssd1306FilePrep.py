@@ -16,8 +16,8 @@ class ssd1306FilePrep(object):
             monochromePixleObject = self.pixleStorage
 
         bytestorage = []
-        for i in range(0,self.sizey/8):
-            for j in range(0, self.sizex):
+        for i in range(0,int(self.sizey/8)):
+            for j in range(0, int(self.sizex)):
                 # construct virtical byte
                 vpic = 0
                 # bit 8
@@ -60,10 +60,10 @@ class ssd1306FilePrep(object):
         return px
 
     def loadImage(self, filename):
-        from io import BytesIO
+        from pathlib import Path
         from PIL import Image
-        
-        img = Image.open(BytesIO(filename), 'r')
+
+        img = Image.open(Path(filename))
 
         if(img.size[0] != 128 or img.size[1] != 64 ):
             raise self.imageWrongSize
@@ -94,13 +94,13 @@ def printHelp():
 def main(argv):
     import getopt
     from sys import exit
-    inputfile = ''
-    outputfile = ''
+    inputfile = '.'
+    outputfile = '.'
     displaySizeX = 128
     displaySizeY = 64
     threshold = 200
     try:
-        opts, args = getopt.getopt(argv, "hi:o:xyt", ["inputFile=", "outputFile=", "displaySizeX", "displaySizeY", "threshold", "help"])
+        opts, args = getopt.getopt(argv, "xythi:o:", ["inputFile=", "outputFile=", "displaySizeX", "displaySizeY", "threshold", "help"])
     except getopt.GetoptError:
         printHelp()
         exit(2)
