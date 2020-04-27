@@ -12,34 +12,34 @@ px = r.load()
 
 file = open("picture.b", 'wb')
 
-for i in range(0,7):
+for i in range(0,8):
     for j in range(0, 128):
         # construct virtical byte
         vpic = 0
         # bit 1
         if (px[j, 0 + (8*i)] == 255):
-            vpic += 128
+            vpic += 1
         # bit 2
         if (px[j, 1 + (8*i)] == 255):
-            vpic += 64
+            vpic += 2
         # bit 3
         if (px[j, 2 + (8*i)] == 255):
-            vpic += 32
+            vpic += 4
         # bit 4
         if (px[j, 3 + (8*i)] == 255):
-            vpic += 16
+            vpic += 8
         # bit 5
         if (px[j, 4 + (8*i)] == 255):
-            vpic += 8
+            vpic += 16
         # bit 6
         if (px[j, 5 + (8*i)] == 255):
-            vpic += 4
+            vpic += 32
         # bit 7
         if (px[j, 6 + (8*i)] == 255):
-            vpic += 2
+            vpic += 64
         # bit 8
         if (px[j, 7 + (8*i)] == 255):
-            vpic += 1
+            vpic += 128
         file.write(bytes((vpic,)))
 
 file.close()
