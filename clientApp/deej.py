@@ -2,11 +2,9 @@
 # Arduion Error Exceptions
 
 class Deej(object):
-    import serial
+    
  
     from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
-    from ctypes import POINTER, pointer, cast
-    from comtypes import CLSCTX_ALL, GUID
     from watchdog.events import FileSystemEventHandler
     from watchdog.observers import Observer      
     
@@ -17,9 +15,12 @@ class Deej(object):
     class CommandInvalid(ArduionoErrorException):
         pass
 
-    def __init__(self):
+    def __init__(self, configfile='config.yaml'):
         import os
-        self._config_filename = 'config.yaml'
+        from ctypes import POINTER, pointer, cast
+        from comtypes import CLSCTX_ALL, GUID
+        import serial
+        self._config_filename = configfile
         self._config_directory = os.path.dirname(os.path.abspath(__file__))
 
         self._expected_num_sliders = None
@@ -27,10 +28,9 @@ class Deej(object):
         self._baud_rate = None
         self._slider_values = None
         self._updateFrequency = None
+        self._display_config = None
 
         self._settings = None
-
-        self._load_settings()
 
         self._sessions = None
         self._master_session = None
@@ -46,14 +46,35 @@ class Deej(object):
         
 
         self._lpcguid = pointer(GUID.create_new())
-        self._ser = serial.serial()
+        self._ser = serial.Serial()
 
+    def spawn_detached_notepad(self, filename):
+        import subprocess
+        subprocess.Popen(['notepad.exe', filename],
+                        close_fds=True,
+                        creationflags=0x00000008)
+                        
+    def attempt_print(self, s):
+        try:
+            print(s)
+        except:
+            pass
+        
     def initialize(self):
+        self._load_settings()
         self._refresh_sessions()
         self._watch_config_file_changes()
         self._ser.baudrate = self._baud_rate
         self._ser.port = self._com_port
         self._ser.open()
+        
+        for i,j in self._display_config:
+            updateDispaly(i,j)
+
+    def updateDispaly(self, displayNumber, filename):
+        self._ser.print("setDspImage")
+        self._ser.print(displayNumber)
+        self.print(filename)
 
     def stop(self):
         self._stopped = True
@@ -71,6 +92,7 @@ class Deej(object):
     def start(self):
         from thread import start_new_thread
         # Starts a new thread containing the audio update code
+        _watch_config_file_changes(self)
         start_new_thread(loopingUpdateVolume, (self._updateFrequency,))
     
     def loopingUpdateVolume(self, delay):
@@ -111,14 +133,14 @@ class Deej(object):
         # empty lines are a thing i guess
         if not line:
             attempt_print('Empty line')
-            continue
+            return
         # split on '|'
         split_line = line.split('|')
 
         # check for slider mismatch
         if len(split_line) != self._expected_num_sliders:
             attempt_print('Uh oh - mismatch between number of sliders and config')
-            continue
+            return
 
         # now they're ints between 0 and 1023
         parsed_values = [int(n) for n in split_line]
@@ -165,6 +187,9 @@ class Deej(object):
                 ' the required format. Error: {1}'.format('re' if reload else '', error))
 
         if reload:
+            self.stop()
+            _ser.close()
+            self.initialize()
             attempt_print('Reloaded configuration successfully')
 
     def _watch_config_file_changes(self):
@@ -176,6 +201,7 @@ class Deej(object):
                 if event.src_path.endswith(self._config_filename):
                     attempt_print('Detected config file changes, re-loading')
                     self._load_settings(reload=True)
+                    
 
         self._config_observer = Observer()
         self._config_observer.schedule(LogfileModifiedHandler(),
@@ -300,6 +326,8 @@ class Deej(object):
     def _clean_session_volume(self, value):
         from math import floor  
         return floor(value * 100) / 100.0
+
+
     
 def setup_tray(edit_config_callback, refresh_sessions_callback, stop_callback):
     import infi.systray
@@ -316,12 +344,6 @@ def attempt_print(s):
         print(s)
     except:
         pass
-
-def spawn_detached_notepad(filename):
-    import subprocess
-    subprocess.Popen(['notepad.exe', filename],
-                     close_fds=True,
-                     creationflags=0x00000008)
 
 def main():
     from sys import exit 
@@ -346,7 +368,10 @@ def main():
             f.write('If you\'ve just encountered this, please contact @omriharel and attach this error log.\n')
             f.write('Exception occurred: {0}\nTraceback: {1}'.format(error, traceback.format_exc()))
 
-        spawn_detached_notepad(filename)
+        import subprocess
+        subprocess.Popen(['notepad.exe', filename],
+                     close_fds=True,
+                     creationflags=0x00000008)
         exit(1)
     finally:
         tray.shutdown()
