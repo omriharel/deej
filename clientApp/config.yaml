@@ -17,4 +17,4 @@ slider_refresh_rate: 10
 
 # settings for connecting to the arduino board
 com_port: COM4
-baud_rate: 9600
+baud_rate: 115200

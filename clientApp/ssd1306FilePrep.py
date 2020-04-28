@@ -1,5 +1,6 @@
 class ssd1306FilePrep(object):
-
+    # the file input file can be any image file
+    # the output file should be a file ending in .b
     class imageWrongSize(Exception):
         pass
 
@@ -83,8 +84,8 @@ class ssd1306FilePrep(object):
 def printHelp():
     print("usage -i <inputfile> -o <outputfile>")
     print(" Required Arguments:")
-    print(" -i, --inputFile     : specifys the input file")
-    print(" -o, --outputFile    : specifys the output file")
+    print(" -i, --inputFile     : specifys the input image file")
+    print(" -o, --outputFile    : specifys the output .b file")
     print(" Optional Arguments:")
     print(" -x, --displaySizeX  : sets the with of the screen (defaults to 128)")
     print(" -y, --displaySizeY  : sets the Height of the screen (defaults to 64)")
