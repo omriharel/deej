@@ -9,5 +9,5 @@ pycaw==20181226
 pyserial==3.4
 PyYAML==5.3
 watchdog==0.9.0
-ctypes_callable
+ctypes
 pywin32
