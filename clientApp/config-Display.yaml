@@ -1,0 +1,27 @@
+# process names are case-insensitive
+# you can use 'master' to indicate the master channel, or a list of process names to create a group
+slider_mapping:
+  0: master
+  1: firefox.exe
+  2: spotify.exe
+  3:
+    - pathofexile_x64.exe
+    - rocketleague.exe
+  4: discord.exe
+# the displays can use any file extention but for simplicitys sace i recommend .b
+# the display files are creted by the ssd1306FilePrep script
+display_mapping:
+  0: picture.b
+  1:
+  2:
+  3:
+  4:
+# recommend to leave this setting at its default value
+process_refresh_frequency: 5
+
+# Sets how often the arduino is polled and the audio is updated
+slider_refresh_rate: 10
+
+# settings for connecting to the arduino board
+com_port: COM4
+baud_rate: 115200
