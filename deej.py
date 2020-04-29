@@ -6,6 +6,7 @@ import time
 import datetime
 import os
 import subprocess
+import psutil
 
 import infi.systray
 import serial
@@ -169,7 +170,10 @@ class Deej(object):
         self._sessions = {}
 
         for session in session_list:
-            session_name = session.Process.name()
+            try:
+                session_name = session.Process.name()
+            except psutil.NoSuchProcess:
+                continue
 
             if session_name in self._sessions:
                 self._sessions[session_name].append(session)
