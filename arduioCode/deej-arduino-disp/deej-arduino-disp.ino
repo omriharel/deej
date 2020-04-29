@@ -192,6 +192,42 @@ void checkForCommand() {
         setImage(port.toInt(),filename);
       }
 
+      else if ( input.equalsIgnoreCase("setDspOn") == true){
+        Serial.println("What Dispaly:");
+        while(Serial.available() == 0);
+        timeStart = millis();
+
+        //Get data from Serial
+        String port = Serial.readStringUntil('\n');  // Read chars from Serial monitor
+        
+        //Get Stop Time
+        timeStop = millis();
+        
+        //If data takes to long
+        if(timeStart-timeStop >= 1000) {
+          Serial.println("TIMEOUT");
+        }
+        dspOn(port.toInt());
+      }
+
+      else if ( input.equalsIgnoreCase("setDspOff") == true){
+        Serial.println("What Dispaly:");
+        while(Serial.available() == 0);
+        timeStart = millis();
+
+        //Get data from Serial
+        String port = Serial.readStringUntil('\n');  // Read chars from Serial monitor
+        
+        //Get Stop Time
+        timeStop = millis();
+        
+        //If data takes to long
+        if(timeStart-timeStop >= 1000) {
+          Serial.println("TIMEOUT");
+        }
+        dspOff(port.toInt());
+      }
+
       //Default Catch all
       else {
         Serial.println("INVALID COMMANDS");
@@ -356,4 +392,16 @@ void dspClear(){
   for(int i = 0;i < (SCREEN_WIDTH * (SCREEN_HEIGHT/8)); i++){
     dspSendData(0b00000000);
   }
+}
+
+// turns the specified display off
+void dspOff(int port){
+  tcaselect(port);
+  dspSendCommand(OLED_DISPLAYOFF);
+}
+
+// turns the specified display on
+void dspOn(int port){
+  tcaselect(port);
+  dspSendCommand(OLED_DISPLAYON);
 }
