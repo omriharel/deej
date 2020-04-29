@@ -6,3 +6,4 @@ venv/
 .vscode
 *.lnk
 *.code-workspace
+jax-b/
