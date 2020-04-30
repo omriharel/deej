@@ -18,6 +18,7 @@ class Deej(object):
         self._com_port = None
         self._baud_rate = None
         self._slider_values = None
+        self._displayImages = None
 
         self._settings = None
 
@@ -63,6 +64,11 @@ class Deej(object):
                     initdone = True
                     break
 
+        if self._displayImages is not None:
+            for i in range(len(self._displayImages)):
+                self._setDisplay(i,self._displayImages[i])
+
+
     def stop(self):
         self._stopped = True
 
@@ -70,9 +76,9 @@ class Deej(object):
             self._config_observer.stop()
 
     def edit_config(self):
-        attempt_print('Opening config file for editing')
-        spawn_detached_notepad(self._config_filename)
-
+        self._attempt_print('Opening config file for editing')
+        self._spawn_detached_notepad(self._config_filename)
+    
     def queue_session_refresh(self):
         self._should_refresh_sessions = True
 
@@ -95,7 +101,7 @@ class Deej(object):
 
             # empty lines are a thing i guess
             if not line:
-                attempt_print('Empty line')
+                self._attempt_print('Empty line')
                 continue
 
             # split on '|'
@@ -103,7 +109,7 @@ class Deej(object):
 
 
             if len(split_line) != self._expected_num_sliders:
-                attempt_print('Uh oh - mismatch between number of sliders and config')
+                self._attempt_print('Uh oh - mismatch between number of sliders and config')
                 continue
 
             # now they're ints between 0 and 1023
@@ -118,7 +124,16 @@ class Deej(object):
             if self._significantly_different_values(clean_values):
                 self._slider_values = clean_values
                 self._apply_volume_changes()
+    
+    def _setDisplay(self, displayNumber, filename):
+        self._ser.write(('setDspOff\n'+displayNumber+'\n'+filename+'\n').encode)
 
+    def _displayOff(self, displayNumber):
+        self._ser.write(('setDspOff\n'+displayNumber+'\n').encode)
+
+    def _displayOn(self, displayNumber):
+        self._ser.write(('setDspOn\n'+displayNumber+'\n').encode)
+    
     def _load_settings(self, reload=False):
         import yaml
         from sys import exit
@@ -130,7 +145,7 @@ class Deej(object):
                 raw_settings = f.read()
                 settings = yaml.load(raw_settings, Loader=yaml.SafeLoader)
         except Exception as error:
-            attempt_print('Failed to {0}load config file {1}: {2}'.format('re' if reload else '',
+            self._attempt_print('Failed to {0}load config file {1}: {2}'.format('re' if reload else '',
                                                                           self._config_filename,
                                                                           error))
 
@@ -147,13 +162,19 @@ class Deej(object):
 
             self._slider_values = [0] * self._expected_num_sliders
 
+            if settings['display_mapping'] is not None:
+                self._displayImages = settings['display_mappings']
+
             self._settings = settings
         except Exception as error:
-            attempt_print('Failed to {0}load configuration, please ensure it matches' \
+            self._attempt_print('Failed to {0}load configuration, please ensure it matches' \
                 ' the required format. Error: {1}'.format('re' if reload else '', error))
 
         if reload:
-            attempt_print('Reloaded configuration successfully')
+            if self._displayImages is not None:
+                for i in range(len(self._displayImages)):
+                    self._setDisplay(i,self._displayImages[i])
+            self._attempt_print('Reloaded configuration successfully')
 
     def _watch_config_file_changes(self):
         from watchdog.observers import Observer
@@ -163,7 +184,7 @@ class Deej(object):
             @staticmethod
             def on_modified(event):
                 if event.src_path.endswith(self._config_filename):
-                    attempt_print('Detected config file changes, re-loading')
+                    self._attempt_print('Detected config file changes, re-loading')
                     self._load_settings(reload=True)
 
         self._config_observer = Observer()
@@ -251,7 +272,7 @@ class Deej(object):
                             self._set_session_volume(session, slider_value)
 
                             # if this fails while we're in the background - nobody cares!!!!!
-                            attempt_print('{0}: {1} => {2}'.format(session_name, current_volume, slider_value))
+                            self._attempt_print('{0}: {1} => {2}'.format(session_name, current_volume, slider_value))
 
 
             # if we weren't able to find an audio session for this slider,
@@ -291,6 +312,18 @@ class Deej(object):
     def _clean_session_volume(self, value):
         from math import floor
         return floor(value * 100) / 100.0
+    
+    def _attempt_print(self, s):
+        try:
+            print(s)
+        except:
+            pass
+
+    def _spawn_detached_notepad(self, filename):
+        import subprocess
+        subprocess.Popen(['notepad.exe', filename],
+                        close_fds=True,
+                        creationflags=0x00000008)
 
 
 def setup_tray(edit_config_callback, refresh_sessions_callback, stop_callback):
