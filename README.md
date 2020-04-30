@@ -1,5 +1,7 @@
 # deej
 
+> **This is the WIP Go-based branch!**
+
 Arduino project for controlling audio volume for separate Windows processes using physical sliders (like a DJ!)
 
 **_New:_ join the [deej Discord server](https://discord.gg/nf88NJu) if you need help or have any questions!**
