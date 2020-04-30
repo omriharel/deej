@@ -1,12 +1,18 @@
 package main
 
 import (
+	"log"
+
 	"github.com/omriharel/deej"
 )
 
 func main() {
-	d := deej.Deej{}
+	d, err := deej.NewDeej()
+	if err != nil {
+		log.Fatalf("create deej object: %v", err)
+	}
 
-	d.Initialize()
-	go d.Run()
+	if err = d.Initialize(); err != nil {
+		log.Fatalf("initialize deej: %v", err)
+	}
 }
