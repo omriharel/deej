@@ -1,18 +1,30 @@
 package main
 
 import (
-	"log"
+	"fmt"
 
 	"github.com/omriharel/deej"
 )
 
 func main() {
-	d, err := deej.NewDeej()
+
+	// first we need a logger
+	logger, err := deej.NewLogger()
 	if err != nil {
-		log.Fatalf("create deej object: %v", err)
+		panic(fmt.Sprintf("Failed to create logger: %v", err))
 	}
 
+	named := logger.Named("main")
+	named.Debug("Created logger")
+
+	// create the deej instance
+	d, err := deej.NewDeej(logger)
+	if err != nil {
+		named.Fatalw("Failed to create deej object", "error", err)
+	}
+
+	// onwards, to glory
 	if err = d.Initialize(); err != nil {
-		log.Fatalf("initialize deej: %v", err)
+		named.Fatalw("Failed to initialize deej", "error", err)
 	}
 }

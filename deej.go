@@ -4,8 +4,9 @@ package deej
 
 import (
 	"fmt"
-	"log"
 	"os"
+
+	"go.uber.org/zap"
 
 	"github.com/omriharel/deej/util"
 )
@@ -18,35 +19,47 @@ const (
 
 // Deej is the main entity managing access to all sub-components
 type Deej struct {
+	logger   *zap.SugaredLogger
 	notifier Notifier
 
 	stopChannel chan bool
 }
 
 // NewDeej creates a Deej instance
-func NewDeej() (*Deej, error) {
-	notifier, err := NewToastNotifier()
+func NewDeej(logger *zap.SugaredLogger) (*Deej, error) {
+	logger = logger.Named("deej")
+
+	notifier, err := NewToastNotifier(logger)
 	if err != nil {
+		logger.Errorw("Failed to create ToastNotifier", "error", err)
 		return nil, fmt.Errorf("create new ToastNotifier: %w", err)
 	}
 
 	d := &Deej{
+		logger:      logger,
 		notifier:    notifier,
 		stopChannel: make(chan bool),
 	}
+
+	logger.Debug("Created deej instance")
 
 	return d, nil
 }
 
 // Initialize sets up components and starts to run in the background
 func (d *Deej) Initialize() error {
+	d.logger.Debug("Initializing")
+
 	if _, noTraySet := os.LookupEnv(envNoTray); noTraySet {
+
+		d.logger.Debugw("Running without tray icon", "reason", "envvar set")
 
 		// run in main thread while waiting on ctrl+C
 		interruptChannel := util.SetupCloseHandler()
 
 		go func() {
 			<-interruptChannel
+			d.logger.Warn("Interrupted")
 			d.signalStop()
 		}()
 
@@ -60,19 +73,14 @@ func (d *Deej) Initialize() error {
 }
 
 func (d *Deej) run() {
-
-	// test notification (will be removed)
-	err := d.notifier.Notify("Hello", "deej is running!")
-	if err != nil {
-		log.Fatalf("test notification: %v", err)
-	}
+	d.logger.Info("Run loop starting")
 
 	// wait until stopped
 	<-d.stopChannel
-	log.Printf("Stop signal received, terminating")
+	d.logger.Info("Stop channel signaled, terminating")
 }
 
 func (d *Deej) signalStop() {
-	log.Printf("Signalling stop")
+	d.logger.Debug("Signalling stop channel")
 	d.stopChannel <- true
 }
