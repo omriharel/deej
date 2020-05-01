@@ -93,11 +93,14 @@ func (d *Deej) run() {
 	// watch the config file for changes
 	go d.config.WatchConfigFileChanges()
 
-	// wait until stopped
+	// wait until stopped (gracefully)
 	<-d.stopChannel
 	d.logger.Debug("Stop channel signaled, terminating")
 
 	d.stop()
+
+	// exit with 0
+	os.Exit(0)
 }
 
 func (d *Deej) signalStop() {
@@ -109,4 +112,5 @@ func (d *Deej) stop() {
 	d.logger.Info("Stopping")
 
 	d.config.StopWatchingConfigFile()
+	d.stopTray()
 }

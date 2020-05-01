@@ -31,9 +31,6 @@ func (d *Deej) initializeTray(onDone func()) {
 
 					d.signalStop()
 
-					logger.Debug("Quitting tray")
-					systray.Quit()
-
 				// edit config
 				case <-editConfig.ClickedCh:
 					logger.Debug("Edit config menu item clicked, opening config for editing")
@@ -56,4 +53,9 @@ func (d *Deej) initializeTray(onDone func()) {
 	// start the tray icon
 	logger.Debug("Running in tray")
 	systray.Run(onReady, onExit)
+}
+
+func (d *Deej) stopTray() {
+	d.logger.Debug("Quitting tray")
+	systray.Quit()
 }
