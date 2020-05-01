@@ -21,6 +21,7 @@ const (
 type Deej struct {
 	logger   *zap.SugaredLogger
 	notifier Notifier
+	config   *CanonicalConfig
 
 	stopChannel chan bool
 }
@@ -35,9 +36,16 @@ func NewDeej(logger *zap.SugaredLogger) (*Deej, error) {
 		return nil, fmt.Errorf("create new ToastNotifier: %w", err)
 	}
 
+	config, err := NewConfig(logger, notifier)
+	if err != nil {
+		logger.Errorw("Failed to create Config", "error", err)
+		return nil, fmt.Errorf("create new Config: %w", err)
+	}
+
 	d := &Deej{
 		logger:      logger,
 		notifier:    notifier,
+		config:      config,
 		stopChannel: make(chan bool),
 	}
 
@@ -50,6 +58,13 @@ func NewDeej(logger *zap.SugaredLogger) (*Deej, error) {
 func (d *Deej) Initialize() error {
 	d.logger.Debug("Initializing")
 
+	// load the config for the first time
+	if err := d.config.Load(); err != nil {
+		d.logger.Errorw("Failed to load config during initialization", "error", err)
+		return fmt.Errorf("load config during init: %w", err)
+	}
+
+	// decide whether to run with/without tray
 	if _, noTraySet := os.LookupEnv(envNoTray); noTraySet {
 
 		d.logger.Debugw("Running without tray icon", "reason", "envvar set")
@@ -75,12 +90,23 @@ func (d *Deej) Initialize() error {
 func (d *Deej) run() {
 	d.logger.Info("Run loop starting")
 
+	// watch the config file for changes
+	go d.config.WatchConfigFileChanges()
+
 	// wait until stopped
 	<-d.stopChannel
-	d.logger.Info("Stop channel signaled, terminating")
+	d.logger.Debug("Stop channel signaled, terminating")
+
+	d.stop()
 }
 
 func (d *Deej) signalStop() {
 	d.logger.Debug("Signalling stop channel")
 	d.stopChannel <- true
+}
+
+func (d *Deej) stop() {
+	d.logger.Info("Stopping")
+
+	d.config.StopWatchingConfigFile()
 }

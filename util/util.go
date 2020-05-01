@@ -1,9 +1,13 @@
 package util
 
 import (
+	"fmt"
 	"os"
+	"os/exec"
 	"os/signal"
 	"syscall"
+
+	"go.uber.org/zap"
 )
 
 // FileExists checks if a file exists and is not a directory before we
@@ -23,4 +27,20 @@ func SetupCloseHandler() chan os.Signal {
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
 	return c
+}
+
+// OpenExternal spawns a detached window with the provided command and argument
+func OpenExternal(logger *zap.SugaredLogger, cmd string, arg string) error {
+	command := exec.Command("cmd.exe", "/C", "start", "/b", cmd, arg)
+
+	if err := command.Run(); err != nil {
+		logger.Warnw("Failed to spawn detached process",
+			"command", cmd,
+			"argument", arg,
+			"error", err)
+
+		return fmt.Errorf("spawn detached proc: %w", err)
+	}
+
+	return nil
 }
