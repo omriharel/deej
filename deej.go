@@ -23,6 +23,7 @@ type Deej struct {
 	notifier Notifier
 	config   *CanonicalConfig
 	serial   *SerialIO
+	sessions *sessionMap
 
 	stopChannel chan bool
 }
@@ -58,6 +59,14 @@ func NewDeej(logger *zap.SugaredLogger) (*Deej, error) {
 
 	d.serial = serial
 
+	sessions, err := newSessionMap(d, logger)
+	if err != nil {
+		logger.Errorw("Failed to create sessionMap", "error", err)
+		return nil, fmt.Errorf("create new sessionMap: %w", err)
+	}
+
+	d.sessions = sessions
+
 	logger.Debug("Created deej instance")
 
 	return d, nil
@@ -71,6 +80,12 @@ func (d *Deej) Initialize() error {
 	if err := d.config.Load(); err != nil {
 		d.logger.Errorw("Failed to load config during initialization", "error", err)
 		return fmt.Errorf("load config during init: %w", err)
+	}
+
+	// initialize the session map
+	if err := d.sessions.initialize(); err != nil {
+		d.logger.Errorw("Failed to initialize session map", "error", err)
+		return fmt.Errorf("init session map: %w", err)
 	}
 
 	// decide whether to run with/without tray

@@ -28,9 +28,10 @@ type SerialIO struct {
 	connOptions serial.OpenOptions
 	conn        io.ReadWriteCloser
 
-	sliderMoveConsumers        []chan SliderMoveEvent
 	lastKnownNumSliders        int
 	currentSliderPercentValues []float32
+
+	sliderMoveConsumers []chan SliderMoveEvent
 }
 
 // SliderMoveEvent represents a single slider move captured by deej
@@ -250,7 +251,8 @@ func (sio *SerialIO) handleLine(logger *zap.SugaredLogger, line string) {
 				PercentValue: normalizedScalar,
 			})
 
-			logger.Debugw("Slider moved", "event", moveEvents[len(moveEvents)-1])
+			// like in other places, this is too much to log - we'll log actual target volume events later
+			// logger.Debugw("Slider moved", "event", moveEvents[len(moveEvents)-1])
 		}
 	}
 
