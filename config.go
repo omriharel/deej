@@ -61,9 +61,10 @@ func NewConfig(logger *zap.SugaredLogger, notifier Notifier) (*CanonicalConfig, 
 	logger = logger.Named("config")
 
 	cc := &CanonicalConfig{
-		logger:          logger,
-		notifier:        notifier,
-		reloadConsumers: []chan bool{},
+		logger:             logger,
+		notifier:           notifier,
+		reloadConsumers:    []chan bool{},
+		stopWatcherChannel: make(chan bool),
 	}
 
 	logger.Debug("Created config instance")

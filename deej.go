@@ -22,6 +22,7 @@ type Deej struct {
 	logger   *zap.SugaredLogger
 	notifier Notifier
 	config   *CanonicalConfig
+	serial   *SerialIO
 
 	stopChannel chan bool
 }
@@ -48,6 +49,14 @@ func NewDeej(logger *zap.SugaredLogger) (*Deej, error) {
 		config:      config,
 		stopChannel: make(chan bool),
 	}
+
+	serial, err := NewSerialIO(d, logger)
+	if err != nil {
+		logger.Errorw("Failed to create SerialIO", "error", err)
+		return nil, fmt.Errorf("create new SerialIO: %w", err)
+	}
+
+	d.serial = serial
 
 	logger.Debug("Created deej instance")
 
@@ -93,6 +102,13 @@ func (d *Deej) run() {
 	// watch the config file for changes
 	go d.config.WatchConfigFileChanges()
 
+	// connect to the arduino for the first time
+	go func() {
+		if err := d.serial.Start(); err != nil {
+			d.logger.Warnw("Failed to start first-time serial connection", "error", err)
+		}
+	}()
+
 	// wait until stopped (gracefully)
 	<-d.stopChannel
 	d.logger.Debug("Stop channel signaled, terminating")
@@ -112,5 +128,6 @@ func (d *Deej) stop() {
 	d.logger.Info("Stopping")
 
 	d.config.StopWatchingConfigFile()
+	d.serial.Stop()
 	d.stopTray()
 }
