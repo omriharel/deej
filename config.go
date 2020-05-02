@@ -43,8 +43,6 @@ type marshalledConfig struct {
 const (
 	configFilepath = "config.yaml"
 
-	masterChannelName = "master"
-
 	defaultProcessRefreshFrequency = 5 * time.Second
 	defaultCOMPort                 = "COM4"
 	defaultBaudRate                = 9600
@@ -52,7 +50,7 @@ const (
 
 var defaultSliderMapping = func() *sliderMap {
 	emptyMap := newSliderMap()
-	emptyMap.set(0, []string{masterChannelName})
+	emptyMap.set(0, []string{masterSessionName})
 	return emptyMap
 }()
 

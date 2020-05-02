@@ -22,7 +22,7 @@ func NewLogger() (*zap.SugaredLogger, error) {
 	}
 
 	loggerConfig.EncoderConfig.EncodeName = func(s string, enc zapcore.PrimitiveArrayEncoder) {
-		enc.AppendString(fmt.Sprintf("%-22s", s))
+		enc.AppendString(fmt.Sprintf("%-27s", s))
 	}
 
 	logger, err := loggerConfig.Build()

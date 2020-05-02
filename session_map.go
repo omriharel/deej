@@ -2,8 +2,10 @@ package deej
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 
+	"github.com/go-ole/go-ole"
 	"go.uber.org/zap"
 )
 
@@ -13,16 +15,26 @@ type sessionMap struct {
 
 	m    map[string][]Session
 	lock sync.Locker
+
+	eventCtx *ole.GUID // needed for some session actions to successfully notify other audio consumers
 }
+
+const (
+	masterSessionName = "master" // master device volume
+	systemSessionName = "system" // system sounds volume
+
+	myteriousGUID = "{1ec920a1-7db8-44ba-9779-e5d28ed9f330}"
+)
 
 func newSessionMap(deej *Deej, logger *zap.SugaredLogger) (*sessionMap, error) {
 	logger = logger.Named("sessions")
 
 	m := &sessionMap{
-		deej:   deej,
-		logger: logger,
-		m:      make(map[string][]Session),
-		lock:   &sync.Mutex{},
+		deej:     deej,
+		logger:   logger,
+		m:        make(map[string][]Session),
+		lock:     &sync.Mutex{},
+		eventCtx: ole.NewGUID(myteriousGUID),
 	}
 
 	logger.Debug("Created session map instance")
@@ -51,6 +63,9 @@ func (m *sessionMap) setupOnConfigReload() {
 			case <-configReloadedChannel:
 				m.logger.Debug("Detected config reload, attempting to re-acquire all audio sessions")
 
+				// clear and release sessions first
+				m.clear()
+
 				if err := m.getAllSessions(); err != nil {
 					m.logger.Warnw("Failed to re-acquire all audio sessions", "error", err)
 				} else {
@@ -75,7 +90,57 @@ func (m *sessionMap) setupOnSliderMove() {
 }
 
 func (m *sessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
-	m.logger.Debug("me!")
+	targets, ok := m.deej.config.SliderMapping.get(event.SliderID)
+
+	// slider not found in config - silently ignore
+	if !ok {
+		return
+	}
+
+	targetFound := false
+
+	// for each possible target for this slider...
+	for _, target := range targets {
+
+		// normalize the target name to match session keys
+		normalizedTargetName := strings.ToLower(target)
+
+		// check the map for matching sessions
+		sessions, ok := m.get(normalizedTargetName)
+
+		// no sessions matching this target - move on
+		if !ok {
+			continue
+		}
+
+		targetFound = true
+
+		for _, session := range sessions {
+			if session.GetVolume() != event.PercentValue {
+				if err := session.SetVolume(event.PercentValue); err != nil {
+					m.logger.Warnw("Failed to set target session volume", "error", err)
+				}
+			}
+		}
+	}
+
+	if !targetFound {
+		// ... consider refreshing sessions here on a cooldown
+	}
+}
+
+func (m *sessionMap) add(value Session) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	key := value.Key()
+
+	existing, ok := m.m[key]
+	if !ok {
+		m.m[key] = []Session{value}
+	} else {
+		existing = append(existing, value)
+	}
 }
 
 func (m *sessionMap) get(key string) ([]Session, bool) {
@@ -86,11 +151,21 @@ func (m *sessionMap) get(key string) ([]Session, bool) {
 	return value, ok
 }
 
-func (m *sessionMap) set(key string, value []Session) {
+func (m *sessionMap) clear() {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	m.m[key] = value
+	m.logger.Debug("Releasing and clearing all audio sessions")
+
+	for key, sessions := range m.m {
+		for _, session := range sessions {
+			session.Release()
+		}
+
+		delete(m.m, key)
+	}
+
+	m.logger.Debug("Session map cleared")
 }
 
 func (m *sessionMap) String() string {
