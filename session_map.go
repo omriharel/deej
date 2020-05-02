@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/go-ole/go-ole"
 	"go.uber.org/zap"
@@ -17,6 +18,8 @@ type sessionMap struct {
 	lock sync.Locker
 
 	eventCtx *ole.GUID // needed for some session actions to successfully notify other audio consumers
+
+	lastSessionRefresh time.Time
 }
 
 const (
@@ -62,15 +65,7 @@ func (m *sessionMap) setupOnConfigReload() {
 			select {
 			case <-configReloadedChannel:
 				m.logger.Debug("Detected config reload, attempting to re-acquire all audio sessions")
-
-				// clear and release sessions first
-				m.clear()
-
-				if err := m.getAllSessions(); err != nil {
-					m.logger.Warnw("Failed to re-acquire all audio sessions", "error", err)
-				} else {
-					m.logger.Debug("Re-acquired sessions successfully")
-				}
+				m.refreshSessions()
 			}
 		}
 	}()
@@ -87,6 +82,23 @@ func (m *sessionMap) setupOnSliderMove() {
 			}
 		}
 	}()
+}
+
+func (m *sessionMap) refreshSessions() {
+
+	// make sure enough time passed since the last refresh
+	if m.lastSessionRefresh.Add(m.deej.config.SessionRefreshThreshold).After(time.Now()) {
+		return
+	}
+
+	// clear and release sessions first
+	m.clear()
+
+	if err := m.getAllSessions(); err != nil {
+		m.logger.Warnw("Failed to re-acquire all audio sessions", "error", err)
+	} else {
+		m.logger.Debug("Re-acquired sessions successfully")
+	}
 }
 
 func (m *sessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
@@ -124,8 +136,10 @@ func (m *sessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
 		}
 	}
 
+	// if we still haven't found a target, maybe look for it again - processes could've opened
+	// since the last time this slider moved. if they haven't, the cooldown will take care to not spam it up
 	if !targetFound {
-		// ... consider refreshing sessions here on a cooldown
+		m.refreshSessions()
 	}
 }
 

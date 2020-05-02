@@ -18,7 +18,8 @@ import (
 type CanonicalConfig struct {
 	SliderMapping *sliderMap
 
-	ProcessRefreshFrequency time.Duration
+	// renamed from ProcessRefreshFrequency, key left as is in yaml-config for backwards compatibility
+	SessionRefreshThreshold time.Duration
 
 	ConnectionInfo struct {
 		COMPort  string
@@ -109,7 +110,7 @@ func (cc *CanonicalConfig) Load() error {
 	cc.logger.Info("Loaded config successfully")
 	cc.logger.Debugw("Config values",
 		"sliderMapping", cc.SliderMapping,
-		"processRefreshFreq", cc.ProcessRefreshFrequency,
+		"processRefreshFreq", cc.SessionRefreshThreshold,
 		"connectionInfo", cc.ConnectionInfo)
 
 	return nil
@@ -287,9 +288,9 @@ func (cc *CanonicalConfig) populateFromMarshalled(mc *marshalledConfig) error {
 			"key", "process_refresh_frequency",
 			"value", defaultProcessRefreshFrequency)
 
-		cc.ProcessRefreshFrequency = defaultProcessRefreshFrequency
+		cc.SessionRefreshThreshold = defaultProcessRefreshFrequency
 	} else {
-		cc.ProcessRefreshFrequency = time.Duration(mc.ProcessRefreshFrequency) * time.Second
+		cc.SessionRefreshThreshold = time.Duration(mc.ProcessRefreshFrequency) * time.Second
 	}
 
 	if mc.COMPort == "" {

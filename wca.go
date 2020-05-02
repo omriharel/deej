@@ -2,6 +2,7 @@ package deej
 
 import (
 	"fmt"
+	"time"
 	"unsafe"
 
 	"github.com/go-ole/go-ole"
@@ -10,13 +11,14 @@ import (
 
 func (m *sessionMap) getAllSessions() error {
 
-	// we must call this every time we're about to list devices, i think
+	// we must call this every time we're about to list devices, i think. could be wrong
 	if err := ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED); err != nil {
 		m.logger.Warnw("Failed to call CoInitializeEx", "error", err)
 		return fmt.Errorf("call CoInitializeEx: %w", err)
 	}
 	defer ole.CoUninitialize()
 
+	// get the active device
 	defaultAudioEndpoint, err := getDefaultAudioEndpoint()
 	if err != nil {
 		m.logger.Warnw("Failed to get default audio endpoint", "error", err)
@@ -24,6 +26,13 @@ func (m *sessionMap) getAllSessions() error {
 	}
 	defer defaultAudioEndpoint.Release()
 
+	// get the master session
+	if err := m.getAndAddMasterSession(defaultAudioEndpoint); err != nil {
+		m.logger.Warnw("Failed to get master audio session", "error", err)
+		return fmt.Errorf("get master audio session: %w", err)
+	}
+
+	// get an enumerator for the rest of the sessions
 	sessionEnumerator, err := getSessionEnumerator(defaultAudioEndpoint)
 	if err != nil {
 		m.logger.Warnw("Failed to get audio session enumerator", "error", err)
@@ -31,12 +40,16 @@ func (m *sessionMap) getAllSessions() error {
 	}
 	defer sessionEnumerator.Release()
 
+	// enumerate it and add sessions along the way
 	if err := m.enumerateAndAddSessions(sessionEnumerator); err != nil {
 		m.logger.Warnw("Failed to enumerate audio sessions", "error", err)
 		return fmt.Errorf("enumerate audio sessions: %w", err)
 	}
 
 	m.logger.Debugw("Got all audio sessions successfully", "sessionMap", m)
+
+	// mark completion
+	m.lastSessionRefresh = time.Now()
 
 	return nil
 }
@@ -65,6 +78,27 @@ func getDefaultAudioEndpoint() (*wca.IMMDevice, error) {
 	}
 
 	return mmDevice, nil
+}
+
+func (m *sessionMap) getAndAddMasterSession(mmDevice *wca.IMMDevice) error {
+
+	var audioEndpointVolume *wca.IAudioEndpointVolume
+
+	if err := mmDevice.Activate(wca.IID_IAudioEndpointVolume, wca.CLSCTX_ALL, nil, &audioEndpointVolume); err != nil {
+		m.logger.Warnw("Failed to activate AudioEndpointVolume for master session", "error", err)
+		return fmt.Errorf("activate master session: %w", err)
+	}
+
+	// create the master session
+	master, err := newMasterSession(m.logger, audioEndpointVolume, m.eventCtx)
+	if err != nil {
+		m.logger.Warnw("Failed to create master session instance", "error", err)
+		return fmt.Errorf("create master session: %w", err)
+	}
+
+	m.add(master)
+
+	return nil
 }
 
 func getSessionEnumerator(mmDevice *wca.IMMDevice) (*wca.IAudioSessionEnumerator, error) {
