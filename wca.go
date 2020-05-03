@@ -5,8 +5,8 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/go-ole/go-ole"
-	"github.com/moutend/go-wca"
+	ole "github.com/go-ole/go-ole"
+	wca "github.com/moutend/go-wca"
 )
 
 func (m *sessionMap) getAllSessions() error {

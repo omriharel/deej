@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/go-ole/go-ole"
-	"github.com/mitchellh/go-ps"
-	"github.com/moutend/go-wca"
-	"github.com/omriharel/deej/util"
+	ole "github.com/go-ole/go-ole"
+	ps "github.com/mitchellh/go-ps"
+	wca "github.com/moutend/go-wca"
 	"go.uber.org/zap"
+
+	"github.com/omriharel/deej/util"
 )
 
 // Session represents a single addressable audio session

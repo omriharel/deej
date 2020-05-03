@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-ole/go-ole"
+	ole "github.com/go-ole/go-ole"
 	"go.uber.org/zap"
 )
 
