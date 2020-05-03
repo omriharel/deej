@@ -6,6 +6,12 @@ import (
 	"github.com/omriharel/deej"
 )
 
+var (
+	gitCommit  string
+	versionTag string
+	buildType  string
+)
+
 func main() {
 
 	// first we need a logger
@@ -17,10 +23,26 @@ func main() {
 	named := logger.Named("main")
 	named.Debug("Created logger")
 
+	named.Debugw("Version info",
+		"gitCommit", gitCommit,
+		"versionTag", versionTag,
+		"buildType", buildType)
+
 	// create the deej instance
 	d, err := deej.NewDeej(logger)
 	if err != nil {
 		named.Fatalw("Failed to create deej object", "error", err)
+	}
+
+	// set its version info for the tray to show
+	if buildType != "" && (versionTag != "" || gitCommit != "") {
+		identifier := gitCommit
+		if versionTag != "" {
+			identifier = versionTag
+		}
+
+		versionString := fmt.Sprintf("Version %s-%s", buildType, identifier)
+		d.SetVersion(versionString)
 	}
 
 	// onwards, to glory

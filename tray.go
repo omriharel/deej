@@ -13,12 +13,23 @@ func (d *Deej) initializeTray(onDone func()) {
 	onReady := func() {
 		logger.Debug("Tray instance ready")
 
-		systray.SetTemplateIcon(icon.Data, icon.Data)
+		systray.SetTemplateIcon(icon.DeejLogo, icon.DeejLogo)
 		systray.SetTitle("deej")
 		systray.SetTooltip("deej")
 
 		editConfig := systray.AddMenuItem("Edit configuration", "Open config file with notepad")
+		editConfig.SetIcon(icon.EditConfig)
+
 		refreshSessions := systray.AddMenuItem("Re-scan audio sessions", "Manually refresh audio sessions if something's stuck")
+		refreshSessions.SetIcon(icon.RefreshSessions)
+
+		if d.version != "" {
+			systray.AddSeparator()
+			versionInfo := systray.AddMenuItem(d.version, "")
+			versionInfo.Disable()
+		}
+
+		systray.AddSeparator()
 		quit := systray.AddMenuItem("Quit", "Stop deej and quit")
 
 		// wait on things to happen

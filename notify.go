@@ -45,7 +45,7 @@ func (tn *ToastNotifier) Notify(title string, message string) {
 			tn.logger.Errorw("Failed to create toast notification icon", "error", err)
 		}
 
-		if _, err = f.Write(icon.Data); err != nil {
+		if _, err = f.Write(icon.DeejLogo); err != nil {
 			tn.logger.Errorw("Failed to write toast notification icon", "error", err)
 		}
 

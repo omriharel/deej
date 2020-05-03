@@ -27,6 +27,7 @@ type Deej struct {
 	sessions *sessionMap
 
 	stopChannel chan bool
+	version     string
 }
 
 // NewDeej creates a Deej instance
@@ -110,6 +111,11 @@ func (d *Deej) Initialize() error {
 	}
 
 	return nil
+}
+
+// SetVersion causes deej to add a version string to its tray menu if called before Initialize
+func (d *Deej) SetVersion(version string) {
+	d.version = version
 }
 
 func (d *Deej) run() {
