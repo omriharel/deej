@@ -5,6 +5,7 @@ package deej
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"unsafe"
 
 	ole "github.com/go-ole/go-ole"
@@ -202,17 +203,23 @@ func (sf *wcaSessionFinder) enumerateAndAddSessions(
 
 			// if this is the system sounds session, GetProcessId will error with an undocumented
 			// AUDCLNT_S_NO_CURRENT_PROCESS (0x889000D) - this is fine, we actually want to treat it a bit differently
-			if audioSessionControl2.IsSystemSoundsSession() == nil {
-				// system sounds session
-			} else {
+			// The first part of this condition will be true if the call to IsSystemSoundsSession fails
+			// The second part will be true if the original error mesage from GetProcessId doesn't contain this magical
+			// error code (in decimal format).
+			isSystemSoundsErr := audioSessionControl2.IsSystemSoundsSession()
+			if isSystemSoundsErr != nil && !strings.Contains(err.Error(), "143196173") {
 
 				// of course, if it's not the system sounds session, we got a problem
 				sf.logger.Warnw("Failed to query session's pid",
 					"error", err,
+					"isSystemSoundsError", isSystemSoundsErr,
 					"sessionIdx", sessionIdx)
 
 				return fmt.Errorf("query session %d pid: %w", sessionIdx, err)
 			}
+
+			// make sure to indicate that this is a system sounds session
+			pid = 0
 		}
 
 		// get its ISimpleAudioVolume
