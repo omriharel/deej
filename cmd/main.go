@@ -15,7 +15,7 @@ var (
 func main() {
 
 	// first we need a logger
-	logger, err := deej.NewLogger()
+	logger, err := deej.NewLogger(buildType)
 	if err != nil {
 		panic(fmt.Sprintf("Failed to create logger: %v", err))
 	}
@@ -23,7 +23,7 @@ func main() {
 	named := logger.Named("main")
 	named.Debug("Created logger")
 
-	named.Debugw("Version info",
+	named.Infow("Version info",
 		"gitCommit", gitCommit,
 		"versionTag", versionTag,
 		"buildType", buildType)

@@ -11,6 +11,15 @@ import (
 	"go.uber.org/zap"
 )
 
+// EnsureDirExists creates the given directory path if it doesn't already exist
+func EnsureDirExists(path string) error {
+	if err := os.MkdirAll(path, os.ModePerm); err != nil {
+		return fmt.Errorf("ensure directory exists (%s): %w", path, err)
+	}
+
+	return nil
+}
+
 // FileExists checks if a file exists and is not a directory before we
 // try using it to prevent further errors.
 func FileExists(filename string) bool {

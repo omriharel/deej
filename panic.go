@@ -8,10 +8,11 @@ import (
 	"path/filepath"
 	"runtime/debug"
 	"time"
+
+	"github.com/omriharel/deej/util"
 )
 
 const (
-	crashlogDir             = "logs"
 	crashlogFilename        = "deej-crash-%s.log"
 	crashlogTimestampFormat = "2006.01.02-15.04.05"
 
@@ -41,12 +42,12 @@ func (d *Deej) recoverFromPanic() {
 	now := time.Now()
 
 	// that would suck
-	if err := os.MkdirAll(crashlogDir, os.ModePerm); err != nil {
-		panic(fmt.Errorf("can't even create a dir to put the crashlog in: %w", err))
+	if err := util.EnsureDirExists(logDirectory); err != nil {
+		panic(fmt.Errorf("ensure crashlog dir exists: %w", err))
 	}
 
 	crashlogBytes := bytes.NewBufferString(fmt.Sprintf(crashMessage, now.Format(crashlogTimestampFormat), r, debug.Stack()))
-	crashlogPath := filepath.Join(crashlogDir, fmt.Sprintf(crashlogFilename, now.Format(crashlogTimestampFormat)))
+	crashlogPath := filepath.Join(logDirectory, fmt.Sprintf(crashlogFilename, now.Format(crashlogTimestampFormat)))
 
 	// that would REALLY suck
 	if err := ioutil.WriteFile(crashlogPath, crashlogBytes.Bytes(), os.ModePerm); err != nil {

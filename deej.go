@@ -178,4 +178,7 @@ func (d *Deej) stop() {
 	d.config.StopWatchingConfigFile()
 	d.serial.Stop()
 	d.stopTray()
+
+	// attempt to sync on exit - this won't necessarily work but can't harm
+	d.logger.Sync()
 }
