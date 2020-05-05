@@ -1,6 +1,7 @@
 package deej
 
 import (
+	"errors"
 	"fmt"
 	"time"
 	"unsafe"
@@ -203,11 +204,23 @@ func (m *sessionMap) enumerateAndAddSessions(sessionEnumerator *wca.IAudioSessio
 		// create the deej session object
 		newSession, err := newWCASession(m.logger, audioSessionControl2, simpleAudioVolume, pid, m.eventCtx)
 		if err != nil {
-			m.logger.Warnw("Failed to create new WCA session instance",
-				"error", err,
-				"sessionIdx", sessionIdx)
 
-			return fmt.Errorf("create wca session for session %d: %w", sessionIdx, err)
+			// this could just mean this process is already closed by now, and the session will be cleaned up later by the OS
+			if !errors.Is(err, errNoSuchProcess) {
+				m.logger.Warnw("Failed to create new WCA session instance",
+					"error", err,
+					"sessionIdx", sessionIdx)
+
+				return fmt.Errorf("create wca session for session %d: %w", sessionIdx, err)
+			}
+
+			// in this case, log it and release the session's handles, then skip to the next one
+			m.logger.Warnw("Process already exited, skipping session and releasing handles", "pid", pid)
+
+			audioSessionControl2.Release()
+			simpleAudioVolume.Release()
+
+			continue
 		}
 
 		// add it to our map

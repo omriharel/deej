@@ -1,6 +1,7 @@
 package deej
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -24,6 +25,8 @@ type Session interface {
 	Key() string
 	Release()
 }
+
+var errNoSuchProcess = errors.New("No such process")
 
 type wcaSession struct {
 	pid         uint32
@@ -72,6 +75,13 @@ func newWCASession(
 			defer s.Release()
 
 			return nil, fmt.Errorf("find process name by pid: %w", err)
+		}
+
+		// this PID may be invalid - this means the process has already been
+		// closed and we shouldn't create a session for it.
+		if process == nil {
+			s.logger.Debugw("Process already exited, not creating audio session", "pid", pid)
+			return nil, errNoSuchProcess
 		}
 
 		s.processName = process.Executable()
