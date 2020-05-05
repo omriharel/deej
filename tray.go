@@ -39,13 +39,13 @@ func (d *Deej) initializeTray(onDone func()) {
 
 				// quit
 				case <-quit.ClickedCh:
-					logger.Debug("Quit menu item clicked, stopping")
+					logger.Info("Quit menu item clicked, stopping")
 
 					d.signalStop()
 
 				// edit config
 				case <-editConfig.ClickedCh:
-					logger.Debug("Edit config menu item clicked, opening config for editing")
+					logger.Info("Edit config menu item clicked, opening config for editing")
 
 					if err := util.OpenExternal(logger, "notepad.exe", configFilepath); err != nil {
 						logger.Warnw("Failed to open config file for editing", "error", err)
@@ -53,6 +53,7 @@ func (d *Deej) initializeTray(onDone func()) {
 
 				// refresh sessions
 				case <-refreshSessions.ClickedCh:
+					logger.Info("Refresh sessions menu item clicked, triggering session map refresh")
 					d.sessions.refreshSessions()
 				}
 			}

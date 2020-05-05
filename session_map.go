@@ -65,7 +65,7 @@ func (m *sessionMap) getAndAddSessions() error {
 		m.add(session)
 	}
 
-	m.logger.Debugw("Got all audio sessions successfully", "sessionMap", m)
+	m.logger.Infow("Got all audio sessions successfully", "sessionMap", m)
 
 	// mark completion
 	m.lastSessionRefresh = time.Now()
@@ -80,7 +80,7 @@ func (m *sessionMap) setupOnConfigReload() {
 		for {
 			select {
 			case <-configReloadedChannel:
-				m.logger.Debug("Detected config reload, attempting to re-acquire all audio sessions")
+				m.logger.Info("Detected config reload, attempting to re-acquire all audio sessions")
 				m.refreshSessions()
 			}
 		}

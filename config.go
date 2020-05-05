@@ -108,7 +108,7 @@ func (cc *CanonicalConfig) Load() error {
 	}
 
 	cc.logger.Info("Loaded config successfully")
-	cc.logger.Debugw("Config values",
+	cc.logger.Infow("Config values",
 		"sliderMapping", cc.SliderMapping,
 		"processRefreshFreq", cc.SessionRefreshThreshold,
 		"connectionInfo", cc.ConnectionInfo)
