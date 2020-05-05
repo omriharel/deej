@@ -215,7 +215,7 @@ func (m *sessionMap) enumerateAndAddSessions(sessionEnumerator *wca.IAudioSessio
 			}
 
 			// in this case, log it and release the session's handles, then skip to the next one
-			m.logger.Warnw("Process already exited, skipping session and releasing handles", "pid", pid)
+			m.logger.Debugw("Process already exited, skipping session and releasing handles", "pid", pid)
 
 			audioSessionControl2.Release()
 			simpleAudioVolume.Release()

@@ -41,7 +41,7 @@ type SliderMoveEvent struct {
 	PercentValue float32
 }
 
-var expectedLinePattern = regexp.MustCompile(`\d{1,4}(\|\d{1,4})*\r\n`)
+var expectedLinePattern = regexp.MustCompile(`^\d{1,4}(\|\d{1,4})*\r\n$`)
 
 // NewSerialIO creates a SerialIO instance that uses the provided deej
 // instance's connection info to establish communications with the arduino chip
@@ -218,7 +218,7 @@ func (sio *SerialIO) handleLine(logger *zap.SugaredLogger, line string) {
 
 	// update our slider count, if needed - this will send slider move events for all
 	if numSliders != sio.lastKnownNumSliders {
-		logger.Debugw("Detected sliders", "amount", numSliders)
+		logger.Infow("Detected sliders", "amount", numSliders)
 		sio.lastKnownNumSliders = numSliders
 		sio.currentSliderPercentValues = make([]float32, numSliders)
 
@@ -234,6 +234,13 @@ func (sio *SerialIO) handleLine(logger *zap.SugaredLogger, line string) {
 
 		// convert string values to integers ("1023" -> 1023)
 		number, _ := strconv.Atoi(stringValue)
+
+		// turns out the first line could come out dirty sometimes (i.e. "4558|925|41|643|220")
+		// so let's check the first number for correctness just in case
+		if sliderIdx == 0 && number > 1023 {
+			sio.logger.Debugw("Got malformed line from serial, ignoring", "line", line)
+			return
+		}
 
 		// map the value from raw to a "dirty" float between 0 and 1 (e.g. 0.15451...)
 		dirtyFloat := float32(number) / 1023.0

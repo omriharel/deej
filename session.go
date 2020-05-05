@@ -80,7 +80,7 @@ func newWCASession(
 		// this PID may be invalid - this means the process has already been
 		// closed and we shouldn't create a session for it.
 		if process == nil {
-			s.logger.Debugw("Process already exited, not creating audio session", "pid", pid)
+			logger.Debugw("Process already exited, not creating audio session", "pid", pid)
 			return nil, errNoSuchProcess
 		}
 
@@ -168,7 +168,10 @@ func (s *masterSession) GetVolume() float32 {
 
 func (s *masterSession) SetVolume(v float32) error {
 	if err := s.volume.SetMasterVolumeLevelScalar(v, s.eventCtx); err != nil {
-		s.logger.Warnw("Failed to set session volume", "error", err)
+		s.logger.Warnw("Failed to set session volume",
+			"error", err,
+			"volume", v)
+
 		return fmt.Errorf("adjust session volume: %w", err)
 	}
 
