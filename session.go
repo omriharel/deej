@@ -1,16 +1,9 @@
 package deej
 
 import (
-	"errors"
-	"fmt"
 	"strings"
 
-	ole "github.com/go-ole/go-ole"
-	ps "github.com/mitchellh/go-ps"
-	wca "github.com/moutend/go-wca"
 	"go.uber.org/zap"
-
-	"github.com/omriharel/deej/util"
 )
 
 // Session represents a single addressable audio session
@@ -26,170 +19,36 @@ type Session interface {
 	Release()
 }
 
-var errNoSuchProcess = errors.New("No such process")
+const (
 
-type wcaSession struct {
-	pid         uint32
-	processName string
-	system      bool
+	// ideally these would share a common ground in baseSession
+	// but it will not call the child GetVolume correctly :/
+	sessionCreationLogMessage = "Created audio session instance"
 
-	logger  *zap.SugaredLogger
-	control *wca.IAudioSessionControl2
-	volume  *wca.ISimpleAudioVolume
+	// format this with s.humanReadableDesc and whatever the current volume is
+	sessionStringFormat = "<session: %s, vol: %.2f>"
+)
 
-	eventCtx *ole.GUID
-}
-
-type masterSession struct {
+type baseSession struct {
 	logger *zap.SugaredLogger
+	system bool
+	master bool
 
-	volume *wca.IAudioEndpointVolume
+	// used by Key(), needs to be set by child
+	name string
 
-	eventCtx *ole.GUID
+	// used by String(), needs to be set by child
+	humanReadableDesc string
 }
 
-func newWCASession(
-	logger *zap.SugaredLogger,
-	control *wca.IAudioSessionControl2,
-	volume *wca.ISimpleAudioVolume,
-	pid uint32,
-	eventCtx *ole.GUID,
-) (*wcaSession, error) {
-
-	s := &wcaSession{
-		control:  control,
-		volume:   volume,
-		pid:      pid,
-		eventCtx: eventCtx,
-	}
-
-	// special treatment for system sounds session
-	if pid == 0 {
-		s.system = true
-	} else {
-
-		// find our session's process name
-		process, err := ps.FindProcess(int(pid))
-		if err != nil {
-			logger.Warnw("Failed to find process name by ID", "pid", pid, "error", err)
-			defer s.Release()
-
-			return nil, fmt.Errorf("find process name by pid: %w", err)
-		}
-
-		// this PID may be invalid - this means the process has already been
-		// closed and we shouldn't create a session for it.
-		if process == nil {
-			logger.Debugw("Process already exited, not creating audio session", "pid", pid)
-			return nil, errNoSuchProcess
-		}
-
-		s.processName = process.Executable()
-	}
-
-	// use a self-identifying session name e.g. deej.sessions.chrome
-	s.logger = logger.Named(strings.TrimSuffix(s.Key(), ".exe"))
-	s.logger.Debugw("Created audio session instance", "session", s)
-
-	return s, nil
-}
-
-func newMasterSession(
-	logger *zap.SugaredLogger,
-	volume *wca.IAudioEndpointVolume,
-	eventCtx *ole.GUID,
-) (*masterSession, error) {
-	s := &masterSession{
-		logger:   logger.Named(masterSessionName),
-		volume:   volume,
-		eventCtx: eventCtx,
-	}
-
-	s.logger.Debugw("Created audio session instance", "session", s)
-
-	return s, nil
-}
-
-func (s *wcaSession) GetVolume() float32 {
-	var level float32
-
-	if err := s.volume.GetMasterVolume(&level); err != nil {
-		s.logger.Warnw("Failed to get session volume", "error", err)
-	}
-
-	return util.NormalizeScalar(level)
-}
-
-func (s *wcaSession) SetVolume(v float32) error {
-	if err := s.volume.SetMasterVolume(v, s.eventCtx); err != nil {
-		s.logger.Warnw("Failed to set session volume", "error", err)
-		return fmt.Errorf("adjust session volume: %w", err)
-	}
-
-	s.logger.Debugw("Adjusting session volume", "to", fmt.Sprintf("%.2f", v))
-
-	return nil
-}
-
-func (s *wcaSession) Release() {
-	s.logger.Debug("Releasing audio session")
-
-	s.volume.Release()
-	s.control.Release()
-}
-
-func (s *wcaSession) Key() string {
+func (s *baseSession) Key() string {
 	if s.system {
 		return systemSessionName
 	}
 
-	return strings.ToLower(s.processName)
-}
-
-func (s *wcaSession) String() string {
-	sessionDesc := fmt.Sprintf("%s (pid %d)", s.processName, s.pid)
-
-	if s.system {
-		sessionDesc = "system sounds"
+	if s.master {
+		return masterSessionName
 	}
 
-	return fmt.Sprintf("<session: %s, vol: %.2f>", sessionDesc, s.GetVolume())
-}
-
-func (s *masterSession) GetVolume() float32 {
-	var level float32
-
-	if err := s.volume.GetMasterVolumeLevelScalar(&level); err != nil {
-		s.logger.Warnw("Failed to get session volume", "error", err)
-	}
-
-	return util.NormalizeScalar(level)
-}
-
-func (s *masterSession) SetVolume(v float32) error {
-	if err := s.volume.SetMasterVolumeLevelScalar(v, s.eventCtx); err != nil {
-		s.logger.Warnw("Failed to set session volume",
-			"error", err,
-			"volume", v)
-
-		return fmt.Errorf("adjust session volume: %w", err)
-	}
-
-	s.logger.Debugw("Adjusting session volume", "to", fmt.Sprintf("%.2f", v))
-
-	return nil
-}
-
-func (s *masterSession) Release() {
-	s.logger.Debug("Releasing audio session")
-
-	s.volume.Release()
-}
-
-func (s *masterSession) Key() string {
-	return masterSessionName
-}
-
-func (s *masterSession) String() string {
-	return fmt.Sprintf("<session: %s, vol: %.2f>", masterSessionName, s.GetVolume())
+	return strings.ToLower(s.name)
 }
