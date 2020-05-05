@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	ole "github.com/go-ole/go-ole"
 	"go.uber.org/zap"
 )
 
@@ -17,7 +16,7 @@ type sessionMap struct {
 	m    map[string][]Session
 	lock sync.Locker
 
-	eventCtx *ole.GUID // needed for some session actions to successfully notify other audio consumers
+	sessionFinder SessionFinder
 
 	lastSessionRefresh time.Time
 }
@@ -25,19 +24,17 @@ type sessionMap struct {
 const (
 	masterSessionName = "master" // master device volume
 	systemSessionName = "system" // system sounds volume
-
-	myteriousGUID = "{1ec920a1-7db8-44ba-9779-e5d28ed9f330}"
 )
 
-func newSessionMap(deej *Deej, logger *zap.SugaredLogger) (*sessionMap, error) {
+func newSessionMap(deej *Deej, logger *zap.SugaredLogger, sessionFinder SessionFinder) (*sessionMap, error) {
 	logger = logger.Named("sessions")
 
 	m := &sessionMap{
-		deej:     deej,
-		logger:   logger,
-		m:        make(map[string][]Session),
-		lock:     &sync.Mutex{},
-		eventCtx: ole.NewGUID(myteriousGUID),
+		deej:          deej,
+		logger:        logger,
+		m:             make(map[string][]Session),
+		lock:          &sync.Mutex{},
+		sessionFinder: sessionFinder,
 	}
 
 	logger.Debug("Created session map instance")
@@ -46,13 +43,32 @@ func newSessionMap(deej *Deej, logger *zap.SugaredLogger) (*sessionMap, error) {
 }
 
 func (m *sessionMap) initialize() error {
-	if err := m.getAllSessions(); err != nil {
+	if err := m.getAndAddSessions(); err != nil {
 		m.logger.Warnw("Failed to get all sessions during session map initialization", "error", err)
 		return fmt.Errorf("get all sessions during init: %w", err)
 	}
 
 	m.setupOnConfigReload()
 	m.setupOnSliderMove()
+
+	return nil
+}
+
+func (m *sessionMap) getAndAddSessions() error {
+	sessions, err := m.sessionFinder.GetAllSessions()
+	if err != nil {
+		m.logger.Warnw("Failed to get sessions from session finder", "error", err)
+		return fmt.Errorf("get sessions from SessionFinder: %w", err)
+	}
+
+	for _, session := range sessions {
+		m.add(session)
+	}
+
+	m.logger.Debugw("Got all audio sessions successfully", "sessionMap", m)
+
+	// mark completion
+	m.lastSessionRefresh = time.Now()
 
 	return nil
 }
@@ -94,7 +110,7 @@ func (m *sessionMap) refreshSessions() {
 	// clear and release sessions first
 	m.clear()
 
-	if err := m.getAllSessions(); err != nil {
+	if err := m.getAndAddSessions(); err != nil {
 		m.logger.Warnw("Failed to re-acquire all audio sessions", "error", err)
 	} else {
 		m.logger.Debug("Re-acquired sessions successfully")

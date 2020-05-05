@@ -61,7 +61,13 @@ func NewDeej(logger *zap.SugaredLogger) (*Deej, error) {
 
 	d.serial = serial
 
-	sessions, err := newSessionMap(d, logger)
+	sessionFinder, err := newSessionFinder(logger)
+	if err != nil {
+		logger.Errorw("Failed to create SessionFinder", "error", err)
+		return nil, fmt.Errorf("create new SessionFinder: %w", err)
+	}
+
+	sessions, err := newSessionMap(d, logger, sessionFinder)
 	if err != nil {
 		logger.Errorw("Failed to create sessionMap", "error", err)
 		return nil, fmt.Errorf("create new sessionMap: %w", err)

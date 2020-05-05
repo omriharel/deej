@@ -1,58 +1,84 @@
+// +build windows
+
 package deej
 
 import (
 	"errors"
 	"fmt"
-	"time"
 	"unsafe"
 
 	ole "github.com/go-ole/go-ole"
 	wca "github.com/moutend/go-wca"
+	"go.uber.org/zap"
 )
 
-func (m *sessionMap) getAllSessions() error {
+type wcaSessionFinder struct {
+	logger        *zap.SugaredLogger
+	sessionLogger *zap.SugaredLogger
+
+	eventCtx *ole.GUID // needed for some session actions to successfully notify other audio consumers
+}
+
+const (
+
+	// there's no real mystery here, it's just a random GUID
+	myteriousGUID = "{1ec920a1-7db8-44ba-9779-e5d28ed9f330}"
+)
+
+func newSessionFinder(logger *zap.SugaredLogger) (SessionFinder, error) {
+	sf := &wcaSessionFinder{
+		logger:        logger.Named("session_finder"),
+		sessionLogger: logger.Named("sessions"),
+		eventCtx:      ole.NewGUID(myteriousGUID),
+	}
+
+	sf.logger.Debug("Created WCA session finder instance")
+
+	return sf, nil
+}
+
+func (sf *wcaSessionFinder) GetAllSessions() ([]Session, error) {
+	sessions := []Session{}
 
 	// we must call this every time we're about to list devices, i think. could be wrong
 	if err := ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED); err != nil {
-		m.logger.Warnw("Failed to call CoInitializeEx", "error", err)
-		return fmt.Errorf("call CoInitializeEx: %w", err)
+		sf.logger.Warnw("Failed to call CoInitializeEx", "error", err)
+		return nil, fmt.Errorf("call CoInitializeEx: %w", err)
 	}
 	defer ole.CoUninitialize()
 
 	// get the active device
 	defaultAudioEndpoint, err := getDefaultAudioEndpoint()
 	if err != nil {
-		m.logger.Warnw("Failed to get default audio endpoint", "error", err)
-		return fmt.Errorf("get default audio endpoint: %w", err)
+		sf.logger.Warnw("Failed to get default audio endpoint", "error", err)
+		return nil, fmt.Errorf("get default audio endpoint: %w", err)
 	}
 	defer defaultAudioEndpoint.Release()
 
 	// get the master session
-	if err := m.getAndAddMasterSession(defaultAudioEndpoint); err != nil {
-		m.logger.Warnw("Failed to get master audio session", "error", err)
-		return fmt.Errorf("get master audio session: %w", err)
+	master, err := sf.getMasterSession(defaultAudioEndpoint)
+	if err != nil {
+		sf.logger.Warnw("Failed to get master audio session", "error", err)
+		return nil, fmt.Errorf("get master audio session: %w", err)
 	}
+
+	sessions = append(sessions, master)
 
 	// get an enumerator for the rest of the sessions
 	sessionEnumerator, err := getSessionEnumerator(defaultAudioEndpoint)
 	if err != nil {
-		m.logger.Warnw("Failed to get audio session enumerator", "error", err)
-		return fmt.Errorf("get audio session enumerator: %w", err)
+		sf.logger.Warnw("Failed to get audio session enumerator", "error", err)
+		return nil, fmt.Errorf("get audio session enumerator: %w", err)
 	}
 	defer sessionEnumerator.Release()
 
 	// enumerate it and add sessions along the way
-	if err := m.enumerateAndAddSessions(sessionEnumerator); err != nil {
-		m.logger.Warnw("Failed to enumerate audio sessions", "error", err)
-		return fmt.Errorf("enumerate audio sessions: %w", err)
+	if err := sf.enumerateAndAddSessions(sessionEnumerator, &sessions); err != nil {
+		sf.logger.Warnw("Failed to enumerate audio sessions", "error", err)
+		return nil, fmt.Errorf("enumerate audio sessions: %w", err)
 	}
 
-	m.logger.Debugw("Got all audio sessions successfully", "sessionMap", m)
-
-	// mark completion
-	m.lastSessionRefresh = time.Now()
-
-	return nil
+	return sessions, nil
 }
 
 func getDefaultAudioEndpoint() (*wca.IMMDevice, error) {
@@ -81,25 +107,23 @@ func getDefaultAudioEndpoint() (*wca.IMMDevice, error) {
 	return mmDevice, nil
 }
 
-func (m *sessionMap) getAndAddMasterSession(mmDevice *wca.IMMDevice) error {
+func (sf *wcaSessionFinder) getMasterSession(mmDevice *wca.IMMDevice) (Session, error) {
 
 	var audioEndpointVolume *wca.IAudioEndpointVolume
 
 	if err := mmDevice.Activate(wca.IID_IAudioEndpointVolume, wca.CLSCTX_ALL, nil, &audioEndpointVolume); err != nil {
-		m.logger.Warnw("Failed to activate AudioEndpointVolume for master session", "error", err)
-		return fmt.Errorf("activate master session: %w", err)
+		sf.logger.Warnw("Failed to activate AudioEndpointVolume for master session", "error", err)
+		return nil, fmt.Errorf("activate master session: %w", err)
 	}
 
 	// create the master session
-	master, err := newMasterSession(m.logger, audioEndpointVolume, m.eventCtx)
+	master, err := newMasterSession(sf.sessionLogger, audioEndpointVolume, sf.eventCtx)
 	if err != nil {
-		m.logger.Warnw("Failed to create master session instance", "error", err)
-		return fmt.Errorf("create master session: %w", err)
+		sf.logger.Warnw("Failed to create master session instance", "error", err)
+		return nil, fmt.Errorf("create master session: %w", err)
 	}
 
-	m.add(master)
-
-	return nil
+	return master, nil
 }
 
 func getSessionEnumerator(mmDevice *wca.IMMDevice) (*wca.IAudioSessionEnumerator, error) {
@@ -127,17 +151,20 @@ func getSessionEnumerator(mmDevice *wca.IMMDevice) (*wca.IAudioSessionEnumerator
 	return audioSessionEnumerator, nil
 }
 
-func (m *sessionMap) enumerateAndAddSessions(sessionEnumerator *wca.IAudioSessionEnumerator) error {
+func (sf *wcaSessionFinder) enumerateAndAddSessions(
+	sessionEnumerator *wca.IAudioSessionEnumerator,
+	sessions *[]Session,
+) error {
 
 	// check how many audio sessions there are
 	var sessionCount int
 
 	if err := sessionEnumerator.GetCount(&sessionCount); err != nil {
-		m.logger.Warnw("Failed to get session count from session enumerator", "error", err)
+		sf.logger.Warnw("Failed to get session count from session enumerator", "error", err)
 		return fmt.Errorf("get session count: %w", err)
 	}
 
-	m.logger.Debugw("Got session count from session enumerator", "count", sessionCount)
+	sf.logger.Debugw("Got session count from session enumerator", "count", sessionCount)
 
 	// for each session:
 	for sessionIdx := 0; sessionIdx < sessionCount; sessionIdx++ {
@@ -145,7 +172,7 @@ func (m *sessionMap) enumerateAndAddSessions(sessionEnumerator *wca.IAudioSessio
 		// get the IAudioSessionControl
 		var audioSessionControl *wca.IAudioSessionControl
 		if err := sessionEnumerator.GetSession(sessionIdx, &audioSessionControl); err != nil {
-			m.logger.Warnw("Failed to get session from session enumerator",
+			sf.logger.Warnw("Failed to get session from session enumerator",
 				"error", err,
 				"sessionIdx", sessionIdx)
 
@@ -155,7 +182,7 @@ func (m *sessionMap) enumerateAndAddSessions(sessionEnumerator *wca.IAudioSessio
 		// query its IAudioSessionControl2
 		dispatch, err := audioSessionControl.QueryInterface(wca.IID_IAudioSessionControl2)
 		if err != nil {
-			m.logger.Warnw("Failed to query session's IAudioSessionControl2",
+			sf.logger.Warnw("Failed to query session's IAudioSessionControl2",
 				"error", err,
 				"sessionIdx", sessionIdx)
 
@@ -180,7 +207,7 @@ func (m *sessionMap) enumerateAndAddSessions(sessionEnumerator *wca.IAudioSessio
 			} else {
 
 				// of course, if it's not the system sounds session, we got a problem
-				m.logger.Warnw("Failed to query session's pid",
+				sf.logger.Warnw("Failed to query session's pid",
 					"error", err,
 					"sessionIdx", sessionIdx)
 
@@ -191,7 +218,7 @@ func (m *sessionMap) enumerateAndAddSessions(sessionEnumerator *wca.IAudioSessio
 		// get its ISimpleAudioVolume
 		dispatch, err = audioSessionControl2.QueryInterface(wca.IID_ISimpleAudioVolume)
 		if err != nil {
-			m.logger.Warnw("Failed to query session's ISimpleAudioVolume",
+			sf.logger.Warnw("Failed to query session's ISimpleAudioVolume",
 				"error", err,
 				"sessionIdx", sessionIdx)
 
@@ -202,12 +229,12 @@ func (m *sessionMap) enumerateAndAddSessions(sessionEnumerator *wca.IAudioSessio
 		simpleAudioVolume := (*wca.ISimpleAudioVolume)(unsafe.Pointer(dispatch))
 
 		// create the deej session object
-		newSession, err := newWCASession(m.logger, audioSessionControl2, simpleAudioVolume, pid, m.eventCtx)
+		newSession, err := newWCASession(sf.sessionLogger, audioSessionControl2, simpleAudioVolume, pid, sf.eventCtx)
 		if err != nil {
 
 			// this could just mean this process is already closed by now, and the session will be cleaned up later by the OS
 			if !errors.Is(err, errNoSuchProcess) {
-				m.logger.Warnw("Failed to create new WCA session instance",
+				sf.logger.Warnw("Failed to create new WCA session instance",
 					"error", err,
 					"sessionIdx", sessionIdx)
 
@@ -215,7 +242,7 @@ func (m *sessionMap) enumerateAndAddSessions(sessionEnumerator *wca.IAudioSessio
 			}
 
 			// in this case, log it and release the session's handles, then skip to the next one
-			m.logger.Debugw("Process already exited, skipping session and releasing handles", "pid", pid)
+			sf.logger.Debugw("Process already exited, skipping session and releasing handles", "pid", pid)
 
 			audioSessionControl2.Release()
 			simpleAudioVolume.Release()
@@ -223,8 +250,8 @@ func (m *sessionMap) enumerateAndAddSessions(sessionEnumerator *wca.IAudioSessio
 			continue
 		}
 
-		// add it to our map
-		m.add(newSession)
+		// add it to our slice
+		*sessions = append(*sessions, newSession)
 	}
 
 	return nil
