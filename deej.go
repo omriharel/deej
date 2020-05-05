@@ -96,17 +96,11 @@ func (d *Deej) Initialize() error {
 		d.logger.Debugw("Running without tray icon", "reason", "envvar set")
 
 		// run in main thread while waiting on ctrl+C
-		interruptChannel := util.SetupCloseHandler()
-
-		go func() {
-			<-interruptChannel
-			d.logger.Warn("Interrupted")
-			d.signalStop()
-		}()
-
+		d.setupInterruptHandler()
 		d.run()
 
 	} else {
+		d.setupInterruptHandler()
 		d.initializeTray(d.run)
 	}
 
@@ -116,6 +110,17 @@ func (d *Deej) Initialize() error {
 // SetVersion causes deej to add a version string to its tray menu if called before Initialize
 func (d *Deej) SetVersion(version string) {
 	d.version = version
+}
+
+func (d *Deej) setupInterruptHandler() {
+
+	interruptChannel := util.SetupCloseHandler()
+
+	go func() {
+		signal := <-interruptChannel
+		d.logger.Debugw("Interrupted", "signal", signal)
+		d.signalStop()
+	}()
 }
 
 func (d *Deej) run() {

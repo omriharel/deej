@@ -63,7 +63,7 @@ func (d *Deej) initializeTray(onDone func()) {
 	}
 
 	onExit := func() {
-		logger.Debug("Tray onExit called")
+		logger.Debug("Tray exited")
 	}
 
 	// start the tray icon
