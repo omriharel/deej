@@ -75,10 +75,11 @@ func (sio *SerialIO) Start() error {
 	}
 
 	sio.connOptions = serial.OpenOptions{
-		PortName: sio.deej.config.ConnectionInfo.COMPort,
-		BaudRate: uint(sio.deej.config.ConnectionInfo.BaudRate),
-		DataBits: 8,
-		StopBits: 1,
+		PortName:        sio.deej.config.ConnectionInfo.COMPort,
+		BaudRate:        uint(sio.deej.config.ConnectionInfo.BaudRate),
+		DataBits:        8,
+		StopBits:        1,
+		MinimumReadSize: 1,
 	}
 
 	sio.logger.Debugw("Attempting serial connection",
