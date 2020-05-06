@@ -20,7 +20,7 @@ func newSessionFinder(logger *zap.SugaredLogger) (SessionFinder, error) {
 	client, conn, err := proto.Connect("")
 	if err != nil {
 		logger.Warnw("Failed to establish PulseAudio connection", "error", err)
-		return nil, fmt.Errorf("pulseaudio connect: %w", err)
+		return nil, fmt.Errorf("establish PulseAudio connection: %w", err)
 	}
 
 	request := proto.SetClientName{
@@ -65,6 +65,17 @@ func (sf *paSessionFinder) GetAllSessions() ([]Session, error) {
 	}
 
 	return sessions, nil
+}
+
+func (sf *paSessionFinder) Release() error {
+	if err := sf.conn.Close(); err != nil {
+		sf.logger.Warnw("Failed to close PulseAudio connection", "error", err)
+		return fmt.Errorf("close PulseAudio connection: %w", err)
+	}
+
+	sf.logger.Debug("Released PA session finder instance")
+
+	return nil
 }
 
 func (sf *paSessionFinder) getMasterSession() (Session, error) {

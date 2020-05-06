@@ -80,6 +80,12 @@ func (sf *wcaSessionFinder) GetAllSessions() ([]Session, error) {
 	return sessions, nil
 }
 
+func (sf *wcaSessionFinder) Release() error {
+	sf.logger.Debug("Released WCA session finder instance")
+
+	return nil
+}
+
 func getDefaultAudioEndpoint() (*wca.IMMDevice, error) {
 
 	// get the IMMDeviceEnumerator

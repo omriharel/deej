@@ -54,6 +54,15 @@ func (m *sessionMap) initialize() error {
 	return nil
 }
 
+func (m *sessionMap) release() error {
+	if err := m.sessionFinder.Release(); err != nil {
+		m.logger.Warnw("Failed to release session finder during session map release", "error", err)
+		return fmt.Errorf("release session finder during release: %w", err)
+	}
+
+	return nil
+}
+
 func (m *sessionMap) getAndAddSessions() error {
 	sessions, err := m.sessionFinder.GetAllSessions()
 	if err != nil {
