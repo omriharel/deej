@@ -6,8 +6,6 @@ IF NOT EXIST %GOPATH%\bin\2goarray.exe GOTO INSTALL
 IF "%1"=="" GOTO NOICO
 IF NOT EXIST %1 GOTO BADFILE
 ECHO Creating iconwin.go
-ECHO //+build windows > iconwin.go
-ECHO. >> iconwin.go
 TYPE %1 | %GOPATH%\bin\2goarray Data icon >> iconwin.go
 GOTO DONE
 
