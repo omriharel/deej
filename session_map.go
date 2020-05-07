@@ -135,6 +135,7 @@ func (m *sessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
 	}
 
 	targetFound := false
+	adjustmentFailed := false
 
 	// for each possible target for this slider...
 	for _, target := range targets {
@@ -156,14 +157,16 @@ func (m *sessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
 			if session.GetVolume() != event.PercentValue {
 				if err := session.SetVolume(event.PercentValue); err != nil {
 					m.logger.Warnw("Failed to set target session volume", "error", err)
+					adjustmentFailed = true
 				}
 			}
 		}
 	}
 
-	// if we still haven't found a target, maybe look for it again - processes could've opened
-	// since the last time this slider moved. if they haven't, the cooldown will take care to not spam it up
-	if !targetFound {
+	// if we still haven't found a target or the volume adjustment failed, maybe look for the target again.
+	// processes could've opened since the last time this slider moved.
+	// if they haven't, the cooldown will take care to not spam it up
+	if !targetFound || adjustmentFailed {
 		m.refreshSessions()
 	}
 }
