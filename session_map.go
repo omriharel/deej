@@ -132,6 +132,18 @@ func (m *sessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
 
 		// normalize the target name to match session keys
 		normalizedTargetName := strings.ToLower(target)
+		
+
+		// if target name is current, get foreground window
+		if normalizedTargetName == "current" {
+			var hwnd = win.GetForegroundWindow()
+			var processid uint32
+			win.GetWindowThreadProcessId(hwnd, &processid)
+			var focus, error = ps.FindProcess(int(processid))
+			_ = error
+			normalizedTargetName = focus.Executable()
+			m.logger.Debugw(normalizedTargetName)
+		}
 
 		// check the map for matching sessions
 		sessions, ok := m.get(normalizedTargetName)
