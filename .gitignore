@@ -6,3 +6,5 @@ venv/
 .vscode
 *.lnk
 *.exe
+deej-dev
+deej-release
