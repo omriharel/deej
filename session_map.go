@@ -90,7 +90,7 @@ func (m *sessionMap) setupOnConfigReload() {
 			select {
 			case <-configReloadedChannel:
 				m.logger.Info("Detected config reload, attempting to re-acquire all audio sessions")
-				m.refreshSessions()
+				m.refreshSessions(false)
 			}
 		}
 	}()
@@ -109,10 +109,10 @@ func (m *sessionMap) setupOnSliderMove() {
 	}()
 }
 
-func (m *sessionMap) refreshSessions() {
+func (m *sessionMap) refreshSessions(force bool) {
 
-	// make sure enough time passed since the last refresh
-	if m.lastSessionRefresh.Add(m.deej.config.SessionRefreshThreshold).After(time.Now()) {
+	// make sure enough time passed since the last refresh, unless force is true in which case always clear
+	if !force && m.lastSessionRefresh.Add(m.deej.config.SessionRefreshThreshold).After(time.Now()) {
 		return
 	}
 
@@ -166,8 +166,10 @@ func (m *sessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
 	// if we still haven't found a target or the volume adjustment failed, maybe look for the target again.
 	// processes could've opened since the last time this slider moved.
 	// if they haven't, the cooldown will take care to not spam it up
-	if !targetFound || adjustmentFailed {
-		m.refreshSessions()
+	if !targetFound {
+		m.refreshSessions(false)
+	} else if adjustmentFailed {
+		m.refreshSessions(true)
 	}
 }
 

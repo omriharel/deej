@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"syscall"
+	"time"
 	"unsafe"
 
 	ole "github.com/go-ole/go-ole"
@@ -16,12 +18,22 @@ type wcaSessionFinder struct {
 	sessionLogger *zap.SugaredLogger
 
 	eventCtx *ole.GUID // needed for some session actions to successfully notify other audio consumers
+
+	// needed for device change notifications
+	mmDeviceEnumerator      *wca.IMMDeviceEnumerator
+	mmNotificationClient    *wca.IMMNotificationClient
+	lastDefaultDeviceChange time.Time
+	master                  *masterSession
 }
 
 const (
 
 	// there's no real mystery here, it's just a random GUID
 	myteriousGUID = "{1ec920a1-7db8-44ba-9779-e5d28ed9f330}"
+
+	// the notification client will call this multiple times in quick succession based on the
+	// default device's assigned media roles, so we need to filter out the extraneous calls
+	minDefaultDeviceChangeThreshold = 100 * time.Millisecond
 )
 
 func newSessionFinder(logger *zap.SugaredLogger) (SessionFinder, error) {
@@ -47,21 +59,27 @@ func (sf *wcaSessionFinder) GetAllSessions() ([]Session, error) {
 	defer ole.CoUninitialize()
 
 	// get the active device
-	defaultAudioEndpoint, err := getDefaultAudioEndpoint()
+	defaultAudioEndpoint, err := sf.getDefaultAudioEndpoint()
 	if err != nil {
 		sf.logger.Warnw("Failed to get default audio endpoint", "error", err)
 		return nil, fmt.Errorf("get default audio endpoint: %w", err)
 	}
 	defer defaultAudioEndpoint.Release()
 
+	// receive notifications whenever the default device changes
+	if err := sf.registerDefaultDeviceChangeCallback(); err != nil {
+		sf.logger.Warnw("Failed to register default device change callback", "error", err)
+		return nil, fmt.Errorf("register default device change callback: %w", err)
+	}
+
 	// get the master session
-	master, err := sf.getMasterSession(defaultAudioEndpoint)
+	sf.master, err = sf.getMasterSession(defaultAudioEndpoint)
 	if err != nil {
 		sf.logger.Warnw("Failed to get master audio session", "error", err)
 		return nil, fmt.Errorf("get master audio session: %w", err)
 	}
 
-	sessions = append(sessions, master)
+	sessions = append(sessions, sf.master)
 
 	// get an enumerator for the rest of the sessions
 	sessionEnumerator, err := getSessionEnumerator(defaultAudioEndpoint)
@@ -81,38 +99,66 @@ func (sf *wcaSessionFinder) GetAllSessions() ([]Session, error) {
 }
 
 func (sf *wcaSessionFinder) Release() error {
+
+	// skip unregistering the mmnotificationclient, as it's not implemented in go-wca
+	if sf.mmDeviceEnumerator != nil {
+		sf.mmDeviceEnumerator.Release()
+	}
+
 	sf.logger.Debug("Released WCA session finder instance")
 
 	return nil
 }
 
-func getDefaultAudioEndpoint() (*wca.IMMDevice, error) {
+func (sf *wcaSessionFinder) getDefaultAudioEndpoint() (*wca.IMMDevice, error) {
 
 	// get the IMMDeviceEnumerator
-	var mmDeviceEnumerator *wca.IMMDeviceEnumerator
-
 	if err := wca.CoCreateInstance(
 		wca.CLSID_MMDeviceEnumerator,
 		0,
 		wca.CLSCTX_ALL,
 		wca.IID_IMMDeviceEnumerator,
-		&mmDeviceEnumerator,
+		&sf.mmDeviceEnumerator,
 	); err != nil {
-		return nil, err
+		sf.logger.Warnw("Failed to call CoCreateInstance", "error", err)
+		return nil, fmt.Errorf("call CoCreateInstance: %w", err)
 	}
-	defer mmDeviceEnumerator.Release()
 
 	// get the default audio endpoint as an IMMDevice
 	var mmDevice *wca.IMMDevice
 
-	if err := mmDeviceEnumerator.GetDefaultAudioEndpoint(wca.ERender, wca.EConsole, &mmDevice); err != nil {
-		return nil, err
+	if err := sf.mmDeviceEnumerator.GetDefaultAudioEndpoint(wca.ERender, wca.EConsole, &mmDevice); err != nil {
+		sf.logger.Warnw("Failed to call GetDefaultAudioEndpoint", "error", err)
+		return nil, fmt.Errorf("call GetDefaultAudioEndpoint: %w", err)
 	}
 
 	return mmDevice, nil
 }
 
-func (sf *wcaSessionFinder) getMasterSession(mmDevice *wca.IMMDevice) (Session, error) {
+func (sf *wcaSessionFinder) registerDefaultDeviceChangeCallback() error {
+	sf.mmNotificationClient = &wca.IMMNotificationClient{}
+	sf.mmNotificationClient.VTable = &wca.IMMNotificationClientVtbl{}
+
+	// fill the VTable with noops, except for OnDefaultDeviceChanged. that one's gold
+	sf.mmNotificationClient.VTable.QueryInterface = syscall.NewCallback(sf.noopCallback)
+	sf.mmNotificationClient.VTable.AddRef = syscall.NewCallback(sf.noopCallback)
+	sf.mmNotificationClient.VTable.Release = syscall.NewCallback(sf.noopCallback)
+	sf.mmNotificationClient.VTable.OnDeviceStateChanged = syscall.NewCallback(sf.noopCallback)
+	sf.mmNotificationClient.VTable.OnDeviceAdded = syscall.NewCallback(sf.noopCallback)
+	sf.mmNotificationClient.VTable.OnDeviceRemoved = syscall.NewCallback(sf.noopCallback)
+	sf.mmNotificationClient.VTable.OnPropertyValueChanged = syscall.NewCallback(sf.noopCallback)
+
+	sf.mmNotificationClient.VTable.OnDefaultDeviceChanged = syscall.NewCallback(sf.defaultDeviceChangedCallback)
+
+	if err := sf.mmDeviceEnumerator.RegisterEndpointNotificationCallback(sf.mmNotificationClient); err != nil {
+		sf.logger.Warnw("Failed to call RegisterEndpointNotificationCallback", "error", err)
+		return fmt.Errorf("call RegisterEndpointNotificationCallback: %w", err)
+	}
+
+	return nil
+}
+
+func (sf *wcaSessionFinder) getMasterSession(mmDevice *wca.IMMDevice) (*masterSession, error) {
 
 	var audioEndpointVolume *wca.IAudioEndpointVolume
 
@@ -266,4 +312,30 @@ func (sf *wcaSessionFinder) enumerateAndAddSessions(
 	}
 
 	return nil
+}
+
+func (sf *wcaSessionFinder) defaultDeviceChangedCallback(
+	this *wca.IMMNotificationClient,
+	EDataFlow, eRole uint32,
+	lpcwstr uintptr,
+) (hResult uintptr) {
+
+	// filter out calls that happen in rapid succession
+	now := time.Now()
+
+	if sf.lastDefaultDeviceChange.Add(minDefaultDeviceChangeThreshold).After(now) {
+		return
+	}
+
+	sf.lastDefaultDeviceChange = now
+
+	sf.logger.Debug("Default audio device changed, marking master session as stale")
+	if sf.master != nil {
+		sf.master.markAsStale()
+	}
+
+	return
+}
+func (sf *wcaSessionFinder) noopCallback() (hResult uintptr) {
+	return
 }

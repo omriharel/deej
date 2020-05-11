@@ -54,7 +54,7 @@ func (d *Deej) initializeTray(onDone func()) {
 				// refresh sessions
 				case <-refreshSessions.ClickedCh:
 					logger.Info("Refresh sessions menu item clicked, triggering session map refresh")
-					d.sessions.refreshSessions()
+					d.sessions.refreshSessions(true)
 				}
 			}
 		}()

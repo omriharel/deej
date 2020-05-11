@@ -186,13 +186,14 @@ func (d *Deej) stop() error {
 
 	d.config.StopWatchingConfigFile()
 	d.serial.Stop()
-	d.stopTray()
 
 	// release the session map
 	if err := d.sessions.release(); err != nil {
 		d.logger.Errorw("Failed to release session map", "error", err)
 		return fmt.Errorf("release session map: %w", err)
 	}
+
+	d.stopTray()
 
 	// attempt to sync on exit - this won't necessarily work but can't harm
 	d.logger.Sync()
