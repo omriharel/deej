@@ -1,6 +1,6 @@
 # deej
 
-Arduino and Go project for controlling application volumes on Windows PCs with physical sliders (like a DJ!)
+Arduino and Go project for controlling application volumes on Windows and Linux PCs with physical sliders (like a DJ!)
 
 **_New:_ `deej` has been re-written as a Go application! [More details](#whats-new) | [Download](https://github.com/omriharel/deej/releases)**
 
@@ -132,7 +132,13 @@ Build `deej` for yourself, or as an awesome gift for your gaming buddies!
 
 ### Requirements
 
+#### Windows
+
 - Windows. That's it
+
+#### Linux
+
+- Install `libgtk-3-dev`, `libappindicator3-dev` and `libwebkit2gtk-4.0-dev` for system tray support
 
 ### Download and installation
 
