@@ -1,0 +1,22 @@
+# process names are case-insensitive
+# you can use 'master' to indicate the master channel, or a list of process names to create a group
+# you can also use 'system' on windows to control the "system sounds" volume
+slider_mapping:
+  0: master
+  1: chrome.exe
+  2: spotify.exe
+  3:
+    - pathofexile_x64.exe
+    - rocketleague.exe
+  4: discord.exe
+
+# set this to true if you want the controls inverted (i.e. top is 0%, bottom is 100%)
+invert_sliders: false
+
+# settings for connecting to the arduino board
+com_port: COM4
+baud_rate: 9600
+
+# limits how often deej will look for new processes
+# it's recommended to leave this setting at its default value
+process_refresh_frequency: 5
