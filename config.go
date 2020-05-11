@@ -26,6 +26,8 @@ type CanonicalConfig struct {
 		BaudRate int
 	}
 
+	InvertSliders bool
+
 	logger             *zap.SugaredLogger
 	notifier           Notifier
 	stopWatcherChannel chan bool
@@ -39,6 +41,7 @@ type marshalledConfig struct {
 	ProcessRefreshFrequency int                 `yaml:"process_refresh_frequency"`
 	COMPort                 string              `yaml:"com_port"`
 	BaudRate                int                 `yaml:"baud_rate"`
+	InvertSliders           bool                `yaml:"invert_sliders"`
 }
 
 const (
@@ -110,8 +113,9 @@ func (cc *CanonicalConfig) Load() error {
 	cc.logger.Info("Loaded config successfully")
 	cc.logger.Infow("Config values",
 		"sliderMapping", cc.SliderMapping,
-		"processRefreshFreq", cc.SessionRefreshThreshold,
-		"connectionInfo", cc.ConnectionInfo)
+		"sessionRefreshThreshold", cc.SessionRefreshThreshold,
+		"connectionInfo", cc.ConnectionInfo,
+		"invertSliders", cc.InvertSliders)
 
 	return nil
 }
@@ -313,6 +317,9 @@ func (cc *CanonicalConfig) populateFromMarshalled(mc *marshalledConfig) error {
 	} else {
 		cc.ConnectionInfo.BaudRate = mc.BaudRate
 	}
+
+	// if the key isn't found this will default to false, which is what we want
+	cc.InvertSliders = mc.InvertSliders
 
 	cc.logger.Debug("Populated config fields from marshalled config object")
 

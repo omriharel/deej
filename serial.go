@@ -147,6 +147,16 @@ func (sio *SerialIO) setupOnConfigReload() {
 			select {
 			case <-configReloadedChannel:
 
+				// make any config reload unset our slider number to ensure process volumes are being re-set
+				// (the next read line will emit SliderMoveEvent instances for all sliders)\
+				// this needs to happen after a small delay, because the session map will also re-acquire sessions
+				// whenever the config file is reloaded, and we don't want it to receive these move events while the map
+				// is still cleared. this is kind of ugly, but shouldn't cause any issues
+				go func() {
+					<-time.After(stopDelay)
+					sio.lastKnownNumSliders = 0
+				}()
+
 				// if connection params have changed, attempt to stop and start the connection
 				if sio.deej.config.ConnectionInfo.COMPort != sio.connOptions.PortName ||
 					uint(sio.deej.config.ConnectionInfo.BaudRate) != sio.connOptions.BaudRate {
@@ -248,6 +258,11 @@ func (sio *SerialIO) handleLine(logger *zap.SugaredLogger, line string) {
 
 		// normalize it to an actual volume scalar between 0.0 and 1.0 with 2 points of precision
 		normalizedScalar := util.NormalizeScalar(dirtyFloat)
+
+		// if sliders are inverted, take the complement of 1.0
+		if sio.deej.config.InvertSliders {
+			normalizedScalar = 1 - normalizedScalar
+		}
 
 		// check if it changes the desired state (could just be a jumpy raw slider value)
 		if util.SignificantlyDifferent(sio.currentSliderPercentValues[sliderIdx], normalizedScalar) {

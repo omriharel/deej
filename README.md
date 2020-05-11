@@ -35,7 +35,7 @@ Arduino and Go project for controlling application volumes on Windows and Linux 
 
 ## What's new
 
-`deej` is now written in Go, and [distributed](https://github.com/omriharel/deej/releases) as a single Windows executable (of course you can still [build from source](#building-from-source) if that's your thing).
+`deej` is now written in Go, and [distributed](https://github.com/omriharel/deej/releases) as a single executable (of course you can still [build from source](#building-from-source) if that's your thing).
 
 This means you no longer have to maintain a Python environment. You can even build one for your friends, give them a simple download link and they'll be good to go!
 
@@ -88,13 +88,17 @@ slider_mapping:
     - rocketleague.exe
   4: discord.exe
 
-# limits how often deej will look for new processes
-process_refresh_frequency: 5
+# set this to true if you want the controls inverted (i.e. top is 0%, bottom is 100%)
+invert_sliders: false
 
 # settings for connecting to the arduino board
 com_port: COM4
 baud_rate: 9600
+
+# limits how often deej will look for new processes
+process_refresh_frequency: 5
 ```
+
 - `master` is a special option for controlling master volume of the system.
 - _New:_ `system` is a special option for controlling the "System sounds" volume in the Windows mixer
 - Process names aren't case-sensitive, meaning both `chrome.exe` and `CHROME.exe` will work
