@@ -66,10 +66,12 @@ func (sf *wcaSessionFinder) GetAllSessions() ([]Session, error) {
 	}
 	defer defaultAudioEndpoint.Release()
 
-	// receive notifications whenever the default device changes
-	if err := sf.registerDefaultDeviceChangeCallback(); err != nil {
-		sf.logger.Warnw("Failed to register default device change callback", "error", err)
-		return nil, fmt.Errorf("register default device change callback: %w", err)
+	// receive notifications whenever the default device changes (only do this once)
+	if sf.mmNotificationClient == nil {
+		if err := sf.registerDefaultDeviceChangeCallback(); err != nil {
+			sf.logger.Warnw("Failed to register default device change callback", "error", err)
+			return nil, fmt.Errorf("register default device change callback: %w", err)
+		}
 	}
 
 	// get the master session
@@ -112,16 +114,18 @@ func (sf *wcaSessionFinder) Release() error {
 
 func (sf *wcaSessionFinder) getDefaultAudioEndpoint() (*wca.IMMDevice, error) {
 
-	// get the IMMDeviceEnumerator
-	if err := wca.CoCreateInstance(
-		wca.CLSID_MMDeviceEnumerator,
-		0,
-		wca.CLSCTX_ALL,
-		wca.IID_IMMDeviceEnumerator,
-		&sf.mmDeviceEnumerator,
-	); err != nil {
-		sf.logger.Warnw("Failed to call CoCreateInstance", "error", err)
-		return nil, fmt.Errorf("call CoCreateInstance: %w", err)
+	// get the IMMDeviceEnumerator (only once)
+	if sf.mmDeviceEnumerator == nil {
+		if err := wca.CoCreateInstance(
+			wca.CLSID_MMDeviceEnumerator,
+			0,
+			wca.CLSCTX_ALL,
+			wca.IID_IMMDeviceEnumerator,
+			&sf.mmDeviceEnumerator,
+		); err != nil {
+			sf.logger.Warnw("Failed to call CoCreateInstance", "error", err)
+			return nil, fmt.Errorf("call CoCreateInstance: %w", err)
+		}
 	}
 
 	// get the default audio endpoint as an IMMDevice
