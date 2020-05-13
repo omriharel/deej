@@ -111,12 +111,15 @@ func (sio *SerialIO) Start() error {
 		lineChannel := sio.readLine(namedLogger)
 
 		for {
-			sio.WriteStringLine(namedLogger, "deej.core.values")
 
 			select {
 			case <-sio.stopChannel:
+				lineChannel = nil
 				sio.close(namedLogger)
-			case line := <-lineChannel:
+				return
+			default:
+				sio.WriteStringLine(namedLogger, "deej.core.values")
+				line := <-lineChannel
 				sio.handleLine(namedLogger, line)
 			}
 		}
@@ -125,7 +128,7 @@ func (sio *SerialIO) Start() error {
 	return nil
 }
 
-// Stop signals us to shut down our serial connection, if one is active
+// Shutdown signals us to shut down our serial connection, if one is active
 func (sio *SerialIO) Shutdown() {
 	if sio.connected {
 		sio.logger.Debug("Shutting down serial connection")
