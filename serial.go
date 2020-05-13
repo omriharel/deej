@@ -67,6 +67,7 @@ func NewSerialIO(deej *Deej, logger *zap.SugaredLogger) (*SerialIO, error) {
 
 // Initialize Start the Serial Port
 func (sio *SerialIO) Initialize() error {
+
 	// don't allow multiple concurrent connections
 	if sio.connected {
 		sio.logger.Warn("Already connected, can't start another without closing first")
@@ -172,21 +173,6 @@ func (sio *SerialIO) WriteStringLine(logger *zap.SugaredLogger, line string) {
 	}
 }
 
-// WaitFor returns nothing
-// Waits for the specified line befor continueing
-func (sio *SerialIO) WaitFor(logger *zap.SugaredLogger, cmdKey string) (success bool) {
-	for {
-		line := <-sio.readLine(logger)
-		if len(line) > 1 {
-			if line == cmdKey {
-				return true
-			}
-			logger.Error("Serial Device Error: " + line)
-			return false
-		}
-	}
-}
-
 // WriteBytesLine retruns nothing
 // Writes a byteArray to the serial port
 func (sio *SerialIO) WriteBytesLine(logger *zap.SugaredLogger, line []byte) {
@@ -204,6 +190,21 @@ func (sio *SerialIO) WriteBytesLine(logger *zap.SugaredLogger, line []byte) {
 		// we probably don't need to log this, it'll happen once and the read loop will stop
 		// logger.Warnw("Failed to read line from serial", "error", err, "line", line)
 		return
+	}
+}
+
+// WaitFor returns nothing
+// Waits for the specified line befor continueing
+func (sio *SerialIO) WaitFor(logger *zap.SugaredLogger, cmdKey string) (success bool) {
+	for {
+		line := <-sio.readLine(logger)
+		if len(line) > 1 {
+			if line == cmdKey {
+				return true
+			}
+			logger.Error("Serial Device Error: " + line)
+			return false
+		}
 	}
 }
 
