@@ -151,7 +151,7 @@ func (sio *SerialIO) WriteStringLine(logger *zap.SugaredLogger, line string) {
 
 		// we probably don't need to log this, it'll happen once and the read loop will stop
 		// logger.Warnw("Failed to read line from serial", "error", err, "line", line)
-		// return
+		return
 	}
 	_, err = sio.conn.Write([]byte("\n"))
 
@@ -159,7 +159,42 @@ func (sio *SerialIO) WriteStringLine(logger *zap.SugaredLogger, line string) {
 
 		// we probably don't need to log this, it'll happen once and the read loop will stop
 		// logger.Warnw("Failed to read line from serial", "error", err, "line", line)
-		// return
+		return
+	}
+}
+
+// WaitFor returns nothing
+// Waits for the specified line befor continueing
+func (sio *SerialIO) WaitFor(logger *zap.SugaredLogger, cmdKey string) (success bool) {
+	for {
+		line := <-sio.readLine(logger)
+		if len(line) > 1 {
+			if line == cmdKey {
+				return true
+			}
+			logger.Error("Serial Device Error: " + line)
+			return false
+		}
+	}
+}
+
+// WriteBytesLine retruns nothing
+// Writes a byteArray to the serial port
+func (sio *SerialIO) WriteBytesLine(logger *zap.SugaredLogger, line []byte) {
+	_, err := sio.conn.Write([]byte(line))
+	if err != nil {
+
+		// we probably don't need to log this, it'll happen once and the read loop will stop
+		// logger.Warnw("Failed to read line from serial", "error", err, "line", line)
+		return
+	}
+	_, err = sio.conn.Write([]byte("\n"))
+
+	if err != nil {
+
+		// we probably don't need to log this, it'll happen once and the read loop will stop
+		// logger.Warnw("Failed to read line from serial", "error", err, "line", line)
+		return
 	}
 }
 
