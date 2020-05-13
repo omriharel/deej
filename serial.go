@@ -65,6 +65,7 @@ func NewSerialIO(deej *Deej, logger *zap.SugaredLogger) (*SerialIO, error) {
 	return sio, nil
 }
 
+// Initialize Start the Serial Port
 func (sio *SerialIO) Initialize() error {
 	// don't allow multiple concurrent connections
 	if sio.connected {
@@ -125,7 +126,7 @@ func (sio *SerialIO) Start() error {
 }
 
 // Stop signals us to shut down our serial connection, if one is active
-func (sio *SerialIO) Stop() {
+func (sio *SerialIO) Shutdown() {
 	if sio.connected {
 		sio.logger.Debug("Shutting down serial connection")
 		sio.stopChannel <- true
@@ -223,7 +224,7 @@ func (sio *SerialIO) setupOnConfigReload() {
 					uint(sio.deej.config.ConnectionInfo.BaudRate) != sio.connOptions.BaudRate {
 
 					sio.logger.Info("Detected change in connection parameters, attempting to renew connection")
-					sio.Stop()
+					sio.Shutdown()
 
 					// let the connection close
 					<-time.After(stopDelay)
