@@ -137,7 +137,7 @@ func (d *Deej) run() {
 
 	// connect to the arduino for the first time
 	go func() {
-		if err := d.serial.Start(); err != nil {
+		if err := d.serial.Initialize(); err != nil {
 			d.logger.Warnw("Failed to start first-time serial connection", "error", err)
 
 			// If the port is busy, that's because something else is connected - notify and quit
@@ -161,6 +161,7 @@ func (d *Deej) run() {
 				d.signalStop()
 			}
 		}
+		d.serial.Start()
 	}()
 
 	// wait until stopped (gracefully)

@@ -65,9 +65,7 @@ func NewSerialIO(deej *Deej, logger *zap.SugaredLogger) (*SerialIO, error) {
 	return sio, nil
 }
 
-// Start attempts to connect to our arduino chip
-func (sio *SerialIO) Start() error {
-
+func (sio *SerialIO) Initialize() error {
 	// don't allow multiple concurrent connections
 	if sio.connected {
 		sio.logger.Warn("Already connected, can't start another without closing first")
@@ -100,12 +98,20 @@ func (sio *SerialIO) Start() error {
 	namedLogger.Infow("Connected", "conn", sio.conn)
 	sio.connected = true
 
+	return nil
+}
+
+// Start attempts to connect to our arduino chip
+func (sio *SerialIO) Start() error {
 	// read lines or await a stop
+	namedLogger := sio.logger.Named(strings.ToLower(sio.connOptions.PortName))
 	go func() {
-		connReader := bufio.NewReader(sio.conn)
-		lineChannel := sio.readLine(namedLogger, connReader)
+
+		lineChannel := sio.readLine(namedLogger)
 
 		for {
+			sio.WriteStringLine(namedLogger, "deej.core.values")
+
 			select {
 			case <-sio.stopChannel:
 				sio.close(namedLogger)
@@ -135,6 +141,26 @@ func (sio *SerialIO) SubscribeToSliderMoveEvents() chan SliderMoveEvent {
 	sio.sliderMoveConsumers = append(sio.sliderMoveConsumers, ch)
 
 	return ch
+}
+
+// WriteStringLine retruns nothing
+// Writes a string to the serial port
+func (sio *SerialIO) WriteStringLine(logger *zap.SugaredLogger, line string) {
+	_, err := sio.conn.Write([]byte(line))
+	if err != nil {
+
+		// we probably don't need to log this, it'll happen once and the read loop will stop
+		// logger.Warnw("Failed to read line from serial", "error", err, "line", line)
+		// return
+	}
+	_, err = sio.conn.Write([]byte("\n"))
+
+	if err != nil {
+
+		// we probably don't need to log this, it'll happen once and the read loop will stop
+		// logger.Warnw("Failed to read line from serial", "error", err, "line", line)
+		// return
+	}
 }
 
 func (sio *SerialIO) setupOnConfigReload() {
@@ -189,12 +215,12 @@ func (sio *SerialIO) close(logger *zap.SugaredLogger) {
 	sio.connected = false
 }
 
-func (sio *SerialIO) readLine(logger *zap.SugaredLogger, reader *bufio.Reader) chan string {
+func (sio *SerialIO) readLine(logger *zap.SugaredLogger) chan string {
 	ch := make(chan string)
 
 	go func() {
 		for {
-			line, err := reader.ReadString('\n')
+			line, err := bufio.NewReader(sio.conn).ReadString('\n')
 			if err != nil {
 
 				// we probably don't need to log this, it'll happen once and the read loop will stop
