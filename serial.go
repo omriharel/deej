@@ -21,9 +21,9 @@ type SerialIO struct {
 	comPort  string
 	baudRate uint
 
-	deej   *Deej
-	logger *zap.SugaredLogger
-
+	deej        *Deej
+	logger      *zap.SugaredLogger
+	namedLogger *zap.SugaredLogger
 	stopChannel chan bool
 	connected   bool
 	connOptions serial.OpenOptions
@@ -81,6 +81,8 @@ func (sio *SerialIO) Initialize() error {
 		MinimumReadSize: 1,
 	}
 
+	sio.namedLogger = sio.logger.Named(strings.ToLower(sio.connOptions.PortName))
+
 	sio.logger.Debugw("Attempting serial connection",
 		"comPort", sio.connOptions.PortName,
 		"baudRate", sio.connOptions.BaudRate)
@@ -90,13 +92,11 @@ func (sio *SerialIO) Initialize() error {
 	if err != nil {
 
 		// might need a user notification here, TBD
-		sio.logger.Warnw("Failed to open serial connection", "error", err)
+		sio.namedLogger.Warnw("Failed to open serial connection", "error", err)
 		return fmt.Errorf("open serial connection: %w", err)
 	}
 
-	namedLogger := sio.logger.Named(strings.ToLower(sio.connOptions.PortName))
-
-	namedLogger.Infow("Connected", "conn", sio.conn)
+	sio.namedLogger.Infow("Connected", "conn", sio.conn)
 	sio.connected = true
 
 	return nil
@@ -105,27 +105,32 @@ func (sio *SerialIO) Initialize() error {
 // Start attempts to connect to our arduino chip
 func (sio *SerialIO) Start() error {
 	// read lines or await a stop
-	namedLogger := sio.logger.Named(strings.ToLower(sio.connOptions.PortName))
+
 	go func() {
 
-		lineChannel := sio.readLine(namedLogger)
+		lineChannel := sio.readLine(sio.namedLogger)
 
 		for {
 
 			select {
 			case <-sio.stopChannel:
 				lineChannel = nil
-				sio.close(namedLogger)
+				sio.close(sio.namedLogger)
 				return
 			default:
-				sio.WriteStringLine(namedLogger, "deej.core.values")
+				sio.WriteStringLine(sio.namedLogger, "deej.core.values")
 				line := <-lineChannel
-				sio.handleLine(namedLogger, line)
+				sio.handleLine(sio.namedLogger, line)
 			}
 		}
 	}()
 
 	return nil
+}
+
+// Pause stops active polling for use resume with start
+func (sio *SerialIO) Pause() {
+	<-sio.stopChannel
 }
 
 // Shutdown signals us to shut down our serial connection, if one is active
