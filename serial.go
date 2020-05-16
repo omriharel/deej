@@ -195,15 +195,15 @@ func (sio *SerialIO) WriteBytesLine(logger *zap.SugaredLogger, line []byte) {
 
 // WaitFor returns nothing
 // Waits for the specified line befor continueing
-func (sio *SerialIO) WaitFor(logger *zap.SugaredLogger, cmdKey string) (success bool) {
+func (sio *SerialIO) WaitFor(logger *zap.SugaredLogger, cmdKey string) (success bool, value string) {
 	for {
 		line := <-sio.readLine(logger)
 		if len(line) > 1 {
 			if line == cmdKey {
-				return true
+				return true, line
 			}
 			logger.Error("Serial Device Error: " + line)
-			return false
+			return false, line
 		}
 	}
 }
