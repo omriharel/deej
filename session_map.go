@@ -183,7 +183,7 @@ func (m *sessionMap) add(value Session) {
 	if !ok {
 		m.m[key] = []Session{value}
 	} else {
-		existing = append(existing, value)
+		m.m[key] = append(existing, value)
 	}
 }
 
