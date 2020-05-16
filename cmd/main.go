@@ -49,4 +49,6 @@ func main() {
 	if err = d.Initialize(); err != nil {
 		named.Fatalw("Failed to initialize deej", "error", err)
 	}
+
+	d.Start()
 }
