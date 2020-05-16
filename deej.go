@@ -121,6 +121,10 @@ func (d *Deej) Initialize() error {
 		}
 	}
 
+	return nil
+}
+
+func (d *Deej) Start() error {
 	// decide whether to run with/without tray
 	if _, noTraySet := os.LookupEnv(envNoTray); noTraySet {
 
@@ -134,7 +138,6 @@ func (d *Deej) Initialize() error {
 		d.setupInterruptHandler()
 		d.initializeTray(d.run)
 	}
-
 	return nil
 }
 
