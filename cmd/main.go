@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/omriharel/deej"
+	"github.com/jax-b/deej"
 )
 
 var (

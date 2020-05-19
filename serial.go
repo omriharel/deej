@@ -13,7 +13,7 @@ import (
 	"github.com/jacobsa/go-serial/serial"
 	"go.uber.org/zap"
 
-	"github.com/omriharel/deej/util"
+	"github.com/jax-b/deej/util"
 )
 
 // SerialIO provides a deej-aware abstraction layer to managing serial I/O

@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 
-	"github.com/omriharel/deej/util"
+	"github.com/jax-b/deej/util"
 )
 
 // CanonicalConfig provides application-wide access to configuration fields,
