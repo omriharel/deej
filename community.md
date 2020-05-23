@@ -17,3 +17,11 @@ This build features a very neat 3D-printed enclosure to fit the sliders, and use
 This build uses circular knobs instead of sliders, and adds a 7-segment display showing the volume of the last adjusted knob. It also adds functionality to allow designating a knob to control the volume of whichever application is currently in focus. Those changes are available in Bupher's fork (link above). Very cool!
 
 ![Bupher](./assets/community-builds/bupher.jpg)
+
+## Dimitar
+
+**Links**: Schematic ([.png](./assets/community-builds/extra/dimitar-schematic.png) | [.sch](./assets/community-builds/extra/dimitar-schematic.sch))
+
+This build, based on the above 3D-printed enclosure by [/u/Aithorn](#uaithorn), adds onto it with additional holes drilled for fading LEDs and mute toggles. Their wiring is detailed in the schematic that Dimitar has kindly provided (link above). The sleek dark appearance, coupled with the differently colored knobs and LEDs, makes for a very professional look.
+
+![Dimitar](./assets/community-builds/dimitar.jpg)
