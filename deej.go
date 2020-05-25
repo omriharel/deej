@@ -124,6 +124,18 @@ func (d *Deej) Initialize() error {
 	return nil
 }
 
+// NewNammedLogger Create a new sub logger
+func (d *Deej) NewNammedLogger(loggername string) *zap.SugaredLogger {
+	logger := d.logger.Named(loggername)
+	return logger
+}
+
+// GetSerial returns the serial object for outside use
+func (d *Deej) GetSerial() *SerialIO {
+	return d.serial
+}
+
+// Start Starts deej
 func (d *Deej) Start() error {
 	// decide whether to run with/without tray
 	if _, noTraySet := os.LookupEnv(envNoTray); noTraySet {
