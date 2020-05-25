@@ -15,20 +15,19 @@ slider_mapping:
   3: 
     - discord.exe                       # Discord
     - ts3client_win64.exe               # TeamSpeak 3
-
   4: # Games
-    - Astro-UWP64-Shipping.exe   	      # Astroneer
-    - MoonMan.exe                	      # } MoonMan
-    - MoonMan-Win64-Shipping.exe 	      # }
-    - SporeApp.exe               	      # Spore
-    - pathofexile_x64.exe        	      # Path Of Exile
+    - Astro-UWP64-Shipping.exe          # Astroneer
+    - MoonMan.exe                       # } MoonMan
+    - MoonMan-Win64-Shipping.exe        # }
+    - SporeApp.exe                      # Spore
+    - pathofexile_x64.exe               # Path Of Exile
     - rocketleague.exe                  # Rocket Leauge
-    - quantumbreak.exe		              # Quantum Break
-    - DOOMx64.exe			                  # DOOM
-    - re2.exe				                    # Resident Evil 2
-    - KSP_x64.exe	                      # Kerbal Space Program
+    - quantumbreak.exe                  # Quantum Break
+    - DOOMx64.exe                       # DOOM
+    - re2.exe                           # Resident Evil 2
+    - KSP_x64.exe                       # Kerbal Space Program
     - ReCore.exe                        # ReCore
-    - CrashBandicootNSaneTrilogy.exe 	  # Crash Bandicoot Trilogy
+    - CrashBandicootNSaneTrilogy.exe    # Crash Bandicoot Trilogy
     - DeadByDaylight-Win64-Shipping.exe # Dead By Daylight
   5:
 
