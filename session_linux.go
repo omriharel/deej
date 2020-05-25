@@ -6,8 +6,8 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/jax-b/deej/util"
 	"github.com/jfreymuth/pulse/proto"
-	"github.com/omriharel/deej/util"
 )
 
 // normal PulseAudio volume (100%)

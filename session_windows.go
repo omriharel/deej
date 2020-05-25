@@ -10,7 +10,7 @@ import (
 	wca "github.com/moutend/go-wca"
 	"go.uber.org/zap"
 
-	"github.com/omriharel/deej/util"
+	"github.com/jax-b/deej/util"
 )
 
 var errNoSuchProcess = errors.New("No such process")

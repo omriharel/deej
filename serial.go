@@ -13,7 +13,7 @@ import (
 	"github.com/jacobsa/go-serial/serial"
 	"go.uber.org/zap"
 
-	"github.com/omriharel/deej/util"
+	"github.com/jax-b/deej/util"
 )
 
 // SerialIO provides a deej-aware abstraction layer to managing serial I/O
@@ -109,7 +109,7 @@ func (sio *SerialIO) Start() error {
 
 	go func() {
 
-		lineChannel := sio.readLine(sio.namedLogger)
+		lineChannel := sio.ReadLine(sio.namedLogger)
 
 		for {
 
@@ -193,11 +193,23 @@ func (sio *SerialIO) WriteBytesLine(logger *zap.SugaredLogger, line []byte) {
 	}
 }
 
+// WriteBytes retruns nothing
+// Writes a byteArray to the serial port
+func (sio *SerialIO) WriteBytes(logger *zap.SugaredLogger, line []byte) {
+	_, err := sio.conn.Write([]byte(line))
+	if err != nil {
+
+		// we probably don't need to log this, it'll happen once and the read loop will stop
+		// logger.Warnw("Failed to read line from serial", "error", err, "line", line)
+		return
+	}
+}
+
 // WaitFor returns nothing
 // Waits for the specified line befor continueing
 func (sio *SerialIO) WaitFor(logger *zap.SugaredLogger, cmdKey string) (success bool, value string) {
 	for {
-		line := <-sio.readLine(logger)
+		line := <-sio.ReadLine(logger)
 		if len(line) > 1 {
 			if line == cmdKey {
 				return true, line
@@ -206,6 +218,29 @@ func (sio *SerialIO) WaitFor(logger *zap.SugaredLogger, cmdKey string) (success 
 			return false, line
 		}
 	}
+}
+
+// ReadLine read's a line into a channel
+func (sio *SerialIO) ReadLine(logger *zap.SugaredLogger) chan string {
+	ch := make(chan string)
+
+	go func() {
+		for {
+			line, err := bufio.NewReader(sio.conn).ReadString('\n')
+			if err != nil {
+
+				// we probably don't need to log this, it'll happen once and the read loop will stop
+				// logger.Warnw("Failed to read line from serial", "error", err, "line", line)
+				return
+			}
+
+			// no reason to log here, just deliver the line to the channel
+			// logger.Debugw("Read new line", "line", line)
+			ch <- line
+		}
+	}()
+
+	return ch
 }
 
 func (sio *SerialIO) setupOnConfigReload() {
@@ -258,28 +293,6 @@ func (sio *SerialIO) close(logger *zap.SugaredLogger) {
 
 	sio.conn = nil
 	sio.connected = false
-}
-
-func (sio *SerialIO) readLine(logger *zap.SugaredLogger) chan string {
-	ch := make(chan string)
-
-	go func() {
-		for {
-			line, err := bufio.NewReader(sio.conn).ReadString('\n')
-			if err != nil {
-
-				// we probably don't need to log this, it'll happen once and the read loop will stop
-				// logger.Warnw("Failed to read line from serial", "error", err, "line", line)
-				return
-			}
-
-			// no reason to log here, just deliver the line to the channel
-			// logger.Debugw("Read new line", "line", line)
-			ch <- line
-		}
-	}()
-
-	return ch
 }
 
 func (sio *SerialIO) handleLine(logger *zap.SugaredLogger, line string) {
