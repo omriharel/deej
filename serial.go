@@ -26,6 +26,7 @@ type SerialIO struct {
 	namedLogger *zap.SugaredLogger
 	stopChannel chan bool
 	connected   bool
+	running     bool
 	connOptions serial.OpenOptions
 	conn        io.ReadWriteCloser
 
@@ -55,6 +56,7 @@ func NewSerialIO(deej *Deej, logger *zap.SugaredLogger) (*SerialIO, error) {
 		connected:           false,
 		conn:                nil,
 		sliderMoveConsumers: []chan SliderMoveEvent{},
+		running:             false,
 	}
 
 	logger.Debug("Created serial i/o instance")
@@ -108,37 +110,56 @@ func (sio *SerialIO) Start() error {
 	// read lines or await a stop
 
 	go func() {
-
 		lineChannel := sio.ReadLine(sio.namedLogger)
-
+		sio.running = true
 		for {
-
 			select {
 			case <-sio.stopChannel:
 				lineChannel = nil
-				sio.close(sio.namedLogger)
+				sio.running = false
 				return
 			default:
 				sio.WriteStringLine(sio.namedLogger, "deej.core.values")
-				line := <-lineChannel
-				sio.handleLine(sio.namedLogger, line)
+				var line string
+
+				select {
+				case line = <-lineChannel:
+					sio.handleLine(sio.namedLogger, line)
+				case <-time.After(1 * time.Second):
+					break
+				}
+
 			}
 		}
+
 	}()
 
 	return nil
 }
 
+// IsRunning Returns if the main sync loop is running
+func (sio *SerialIO) IsRunning() bool {
+	return sio.running
+}
+
 // Pause stops active polling for use resume with start
 func (sio *SerialIO) Pause() {
-	<-sio.stopChannel
+	if sio.running {
+		sio.stopChannel <- true
+	}
 }
 
 // Shutdown signals us to shut down our serial connection, if one is active
 func (sio *SerialIO) Shutdown() {
 	if sio.connected {
 		sio.logger.Debug("Shutting down serial connection")
-		sio.stopChannel <- true
+
+		if sio.running {
+			sio.stopChannel <- true
+		}
+
+		sio.close(sio.namedLogger)
+		sio.logger.Debug("Serial Shutdown")
 	} else {
 		sio.logger.Debug("Not currently connected, nothing to stop")
 	}
@@ -208,16 +229,24 @@ func (sio *SerialIO) WriteBytes(logger *zap.SugaredLogger, line []byte) {
 // WaitFor returns nothing
 // Waits for the specified line befor continueing
 func (sio *SerialIO) WaitFor(logger *zap.SugaredLogger, cmdKey string) (success bool, value string) {
-	for {
-		line := <-sio.ReadLine(logger)
-		if len(line) > 1 {
-			if line == cmdKey {
-				return true, line
-			}
-			logger.Error("Serial Device Error: " + line)
-			return false, line
+	lineChannel := sio.ReadLine(sio.logger)
+
+	line := <-lineChannel
+
+	if len(line) > 1 {
+
+		if line == cmdKey {
+			return true, line
 		}
+
+		logger.Error("Serial Device Error: " + line)
+
+		return false, line
 	}
+
+	lineChannel = nil
+
+	return
 }
 
 // ReadLine read's a line into a channel
