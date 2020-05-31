@@ -158,6 +158,11 @@ func (d *Deej) SetVersion(version string) {
 	d.version = version
 }
 
+// SubscribeToChanges allows external components to receive updates when the config is reloaded
+func (d *Deej) SubscribeToChanges() chan bool {
+	return d.config.SubscribeToChanges()
+}
+
 func (d *Deej) setupInterruptHandler() {
 
 	interruptChannel := util.SetupCloseHandler()
