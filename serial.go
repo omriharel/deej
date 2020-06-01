@@ -158,6 +158,9 @@ func (sio *SerialIO) Shutdown() {
 			sio.stopChannel <- true
 		}
 
+		sio.logger.Debug("Rebooting Arduino")
+		sio.WriteStringLine(sio.logger, "deej.core.reboot")
+
 		sio.close(sio.namedLogger)
 		sio.logger.Debug("Serial Shutdown")
 	} else {
