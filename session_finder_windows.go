@@ -23,7 +23,10 @@ type wcaSessionFinder struct {
 	mmDeviceEnumerator      *wca.IMMDeviceEnumerator
 	mmNotificationClient    *wca.IMMNotificationClient
 	lastDefaultDeviceChange time.Time
-	master                  *masterSession
+
+	// our master input and output sessions
+	masterOut *masterSession
+	masterIn  *masterSession
 }
 
 const (
@@ -58,13 +61,14 @@ func (sf *wcaSessionFinder) GetAllSessions() ([]Session, error) {
 	}
 	defer ole.CoUninitialize()
 
-	// get the active device
-	defaultAudioEndpoint, err := sf.getDefaultAudioEndpoint()
+	// get the currently active default output and input devices
+	defaultOutputEndpoint, defaultInputEndpoint, err := sf.getDefaultAudioEndpoints()
 	if err != nil {
-		sf.logger.Warnw("Failed to get default audio endpoint", "error", err)
-		return nil, fmt.Errorf("get default audio endpoint: %w", err)
+		sf.logger.Warnw("Failed to get default audio endpoints", "error", err)
+		return nil, fmt.Errorf("get default audio endpoints: %w", err)
 	}
-	defer defaultAudioEndpoint.Release()
+	defer defaultOutputEndpoint.Release()
+	defer defaultInputEndpoint.Release()
 
 	// receive notifications whenever the default device changes (only do this once)
 	if sf.mmNotificationClient == nil {
@@ -74,17 +78,26 @@ func (sf *wcaSessionFinder) GetAllSessions() ([]Session, error) {
 		}
 	}
 
-	// get the master session
-	sf.master, err = sf.getMasterSession(defaultAudioEndpoint)
+	// get the master output session
+	sf.masterOut, err = sf.getMasterSession(defaultOutputEndpoint, masterSessionName)
 	if err != nil {
-		sf.logger.Warnw("Failed to get master audio session", "error", err)
-		return nil, fmt.Errorf("get master audio session: %w", err)
+		sf.logger.Warnw("Failed to get master audio output session", "error", err)
+		return nil, fmt.Errorf("get master audio output session: %w", err)
 	}
 
-	sessions = append(sessions, sf.master)
+	sessions = append(sessions, sf.masterOut)
 
-	// get an enumerator for the rest of the sessions
-	sessionEnumerator, err := getSessionEnumerator(defaultAudioEndpoint)
+	// get the master input session
+	sf.masterIn, err = sf.getMasterSession(defaultInputEndpoint, inputSessionName)
+	if err != nil {
+		sf.logger.Warnw("Failed to get master audio input session", "error", err)
+		return nil, fmt.Errorf("get master audio input session: %w", err)
+	}
+
+	sessions = append(sessions, sf.masterIn)
+
+	// get an enumerator for the rest of the audio output sessions (mic doesn't really have this concept)
+	sessionEnumerator, err := getSessionEnumerator(defaultOutputEndpoint)
 	if err != nil {
 		sf.logger.Warnw("Failed to get audio session enumerator", "error", err)
 		return nil, fmt.Errorf("get audio session enumerator: %w", err)
@@ -112,7 +125,7 @@ func (sf *wcaSessionFinder) Release() error {
 	return nil
 }
 
-func (sf *wcaSessionFinder) getDefaultAudioEndpoint() (*wca.IMMDevice, error) {
+func (sf *wcaSessionFinder) getDefaultAudioEndpoints() (*wca.IMMDevice, *wca.IMMDevice, error) {
 
 	// get the IMMDeviceEnumerator (only once)
 	if sf.mmDeviceEnumerator == nil {
@@ -124,19 +137,25 @@ func (sf *wcaSessionFinder) getDefaultAudioEndpoint() (*wca.IMMDevice, error) {
 			&sf.mmDeviceEnumerator,
 		); err != nil {
 			sf.logger.Warnw("Failed to call CoCreateInstance", "error", err)
-			return nil, fmt.Errorf("call CoCreateInstance: %w", err)
+			return nil, nil, fmt.Errorf("call CoCreateInstance: %w", err)
 		}
 	}
 
-	// get the default audio endpoint as an IMMDevice
-	var mmDevice *wca.IMMDevice
+	// get the default audio endpoints as IMMDevice instances
+	var mmOutDevice *wca.IMMDevice
+	var mmInDevice *wca.IMMDevice
 
-	if err := sf.mmDeviceEnumerator.GetDefaultAudioEndpoint(wca.ERender, wca.EConsole, &mmDevice); err != nil {
-		sf.logger.Warnw("Failed to call GetDefaultAudioEndpoint", "error", err)
-		return nil, fmt.Errorf("call GetDefaultAudioEndpoint: %w", err)
+	if err := sf.mmDeviceEnumerator.GetDefaultAudioEndpoint(wca.ERender, wca.EConsole, &mmOutDevice); err != nil {
+		sf.logger.Warnw("Failed to call GetDefaultAudioEndpoint (out)", "error", err)
+		return nil, nil, fmt.Errorf("call GetDefaultAudioEndpoint (out): %w", err)
 	}
 
-	return mmDevice, nil
+	if err := sf.mmDeviceEnumerator.GetDefaultAudioEndpoint(wca.ECapture, wca.EConsole, &mmInDevice); err != nil {
+		sf.logger.Warnw("Failed to call GetDefaultAudioEndpoint (in)", "error", err)
+		return nil, nil, fmt.Errorf("call GetDefaultAudioEndpoint (in): %w", err)
+	}
+
+	return mmOutDevice, mmInDevice, nil
 }
 
 func (sf *wcaSessionFinder) registerDefaultDeviceChangeCallback() error {
@@ -162,7 +181,7 @@ func (sf *wcaSessionFinder) registerDefaultDeviceChangeCallback() error {
 	return nil
 }
 
-func (sf *wcaSessionFinder) getMasterSession(mmDevice *wca.IMMDevice) (*masterSession, error) {
+func (sf *wcaSessionFinder) getMasterSession(mmDevice *wca.IMMDevice, key string) (*masterSession, error) {
 
 	var audioEndpointVolume *wca.IAudioEndpointVolume
 
@@ -172,7 +191,7 @@ func (sf *wcaSessionFinder) getMasterSession(mmDevice *wca.IMMDevice) (*masterSe
 	}
 
 	// create the master session
-	master, err := newMasterSession(sf.sessionLogger, audioEndpointVolume, sf.eventCtx)
+	master, err := newMasterSession(sf.sessionLogger, audioEndpointVolume, sf.eventCtx, key)
 	if err != nil {
 		sf.logger.Warnw("Failed to create master session instance", "error", err)
 		return nil, fmt.Errorf("create master session: %w", err)
@@ -333,9 +352,13 @@ func (sf *wcaSessionFinder) defaultDeviceChangedCallback(
 
 	sf.lastDefaultDeviceChange = now
 
-	sf.logger.Debug("Default audio device changed, marking master session as stale")
-	if sf.master != nil {
-		sf.master.markAsStale()
+	sf.logger.Debug("Default audio device changed, marking master sessions as stale")
+	if sf.masterOut != nil {
+		sf.masterOut.markAsStale()
+	}
+
+	if sf.masterIn != nil {
+		sf.masterIn.markAsStale()
 	}
 
 	return

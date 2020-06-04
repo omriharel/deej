@@ -24,6 +24,7 @@ type sessionMap struct {
 const (
 	masterSessionName = "master" // master device volume
 	systemSessionName = "system" // system sounds volume
+	inputSessionName  = "mic"    // microphone input level
 
 	// determines whether the map should be refreshed when a slider moves.
 	// this is a bit greedy but allows us to ensure sessions are always re-acquired, which is

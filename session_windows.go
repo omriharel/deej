@@ -92,6 +92,7 @@ func newMasterSession(
 	logger *zap.SugaredLogger,
 	volume *wca.IAudioEndpointVolume,
 	eventCtx *ole.GUID,
+	key string,
 ) (*masterSession, error) {
 
 	s := &masterSession{
@@ -99,10 +100,10 @@ func newMasterSession(
 		eventCtx: eventCtx,
 	}
 
-	s.logger = logger.Named(masterSessionName)
+	s.logger = logger.Named(key)
 	s.master = true
-	s.name = masterSessionName
-	s.humanReadableDesc = masterSessionName
+	s.name = key
+	s.humanReadableDesc = key
 
 	s.logger.Debugw(sessionCreationLogMessage, "session", s)
 
