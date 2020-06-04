@@ -43,9 +43,10 @@ In addition, check out these features:
 
 - **Fully backwards-compatible** with your existing `config.yaml` and Arduino sketch
 - **Faster** and more lightweight, consuming around 10MB of memory
+- Control your **microphone's input level** by assigning `mic` to a slider (Windows-only, experimental support)
 - Runs from your system tray
 - **Helpful notifications** will let you know if something isn't working
-- New `system` flag lets you assign the "system sounds" volume level
+- New `system` flag lets you assign the "system sounds" volume level (Windows-only)
 - Supports everything the Python version did
 
 > **Migrating from the Python version?** Great! You only need to keep your `config.yaml` file. Download the executable from the [releases page](https://github.com/omriharel/deej/releases/latest), place it alongside the configuration file and you're done.
@@ -99,8 +100,9 @@ baud_rate: 9600
 process_refresh_frequency: 5
 ```
 
-- `master` is a special option for controlling master volume of the system.
-- _New:_ `system` is a special option for controlling the "System sounds" volume in the Windows mixer
+- `master` is a special option to control the master volume of the system _(uses the default playback device)_
+- _New:_ `mic` is a special option on Windows to control your microphone's input level _(uses the default recording device)_. **Please note: this is an experimental feature that might not suit every hardware set-up out there.**
+- `system` is a special option on Windows to control the "System sounds" volume in the Windows mixer
 - Process names aren't case-sensitive, meaning both `chrome.exe` and `CHROME.exe` will work
 - You can create groups of process names (using a list) to either:
     - control more than one app with a single slider
@@ -127,7 +129,7 @@ Build `deej` for yourself, or as an awesome gift for your gaming buddies!
 - Connect everything according to the [schematic](#schematic)
 - Test with a multimeter to be sure your sliders are hooked up correctly
 - Flash the Arduino chip with the sketch in [`arduino\deej-5-sliders-vanilla`](./arduino/deej-5-sliders-vanilla/deej-5-sliders-vanilla.ino)
-  - If you have more or less than 5 sliders, you can edit the sketch to match what you have
+  - _Important:_ If you have more or less than 5 sliders, you must edit the sketch to match what you have
 - After flashing, check the serial monitor. You should see a constant stream of values separated by a pipe (`|`) character, e.g. `0|240|1023|0|483`
   - When you move a slider, its corresponding value should move between 0 and 1023
 - Congratulations, you're now ready to run the `deej` executable!
@@ -164,10 +166,11 @@ If you need any help with this, please [join our Discord server](https://discord
 
 While `deej` is still a very new project, a vibrant community has already started to grow around it. Come hang out with us in the [deej Discord server](https://discord.gg/nf88NJu), or check out awesome builds made by our members in the [community showcase](./community.md).
 
+The server is also a great place to ask questions, suggest features or report bugs (but of course, feel free to use GitHub if you prefer).
+
 ## Long-ish term roadmap
 
 - Serial communications rework to support two-way data flows for better extensibility
-- Mic input support
 - Basic GUI to replace manual configuration editing
 - Feel free to open an issue if you feel like something else is missing
 
