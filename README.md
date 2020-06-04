@@ -43,7 +43,7 @@ In addition, check out these features:
 
 - **Fully backwards-compatible** with your existing `config.yaml` and Arduino sketch
 - **Faster** and more lightweight, consuming around 10MB of memory
-- Control your **microphone's input level** by assigning `mic` to a slider (Windows-only, experimental support)
+- Control your **microphone's input level** by assigning `mic` to a slider (experimental support)
 - Runs from your system tray
 - **Helpful notifications** will let you know if something isn't working
 - New `system` flag lets you assign the "system sounds" volume level (Windows-only)
