@@ -65,6 +65,7 @@ func newMasterSession(
 	client *proto.Client,
 	sinkIndex uint32,
 	sinkChannels byte,
+	key string,
 ) *masterSession {
 
 	s := &masterSession{
@@ -73,10 +74,10 @@ func newMasterSession(
 		sinkChannels: sinkChannels,
 	}
 
-	s.logger = logger.Named(masterSessionName)
+	s.logger = logger.Named(key)
 	s.master = true
-	s.name = masterSessionName
-	s.humanReadableDesc = masterSessionName
+	s.name = key
+	s.humanReadableDesc = key
 
 	s.logger.Debugw(sessionCreationLogMessage, "session", s)
 

@@ -49,14 +49,23 @@ func newSessionFinder(logger *zap.SugaredLogger) (SessionFinder, error) {
 func (sf *paSessionFinder) GetAllSessions() ([]Session, error) {
 	sessions := []Session{}
 
-	// get the master session
-	master, err := sf.getMasterSession()
+	// get the master sink session
+	masterSink, err := sf.getMasterSinkSession()
 	if err != nil {
-		sf.logger.Warnw("Failed to get master audio session", "error", err)
-		return nil, fmt.Errorf("get master audio session: %w", err)
+		sf.logger.Warnw("Failed to get master audio sink session", "error", err)
+		return nil, fmt.Errorf("get master audio sink session: %w", err)
 	}
 
-	sessions = append(sessions, master)
+	sessions = append(sessions, masterSink)
+
+	// get the master source session
+	masterSource, err := sf.getMasterSourceSession()
+	if err != nil {
+		sf.logger.Warnw("Failed to get master audio source session", "error", err)
+		return nil, fmt.Errorf("get master audio source session: %w", err)
+	}
+
+	sessions = append(sessions, masterSource)
 
 	// enumerate sink inputs and add sessions along the way
 	if err := sf.enumerateAndAddSessions(&sessions); err != nil {
@@ -78,7 +87,7 @@ func (sf *paSessionFinder) Release() error {
 	return nil
 }
 
-func (sf *paSessionFinder) getMasterSession() (Session, error) {
+func (sf *paSessionFinder) getMasterSinkSession() (Session, error) {
 	request := proto.GetSinkInfo{
 		SinkIndex: proto.Undefined,
 	}
@@ -89,10 +98,27 @@ func (sf *paSessionFinder) getMasterSession() (Session, error) {
 		return nil, fmt.Errorf("get master sink info: %w", err)
 	}
 
-	// create the master session
-	master := newMasterSession(sf.sessionLogger, sf.client, reply.SinkIndex, reply.Channels)
+	// create the master sink session
+	sink := newMasterSession(sf.sessionLogger, sf.client, reply.SinkIndex, reply.Channels, masterSessionName)
 
-	return master, nil
+	return sink, nil
+}
+
+func (sf *paSessionFinder) getMasterSourceSession() (Session, error) {
+	request := proto.GetSourceInfo{
+		SourceIndex: proto.Undefined,
+	}
+	reply := proto.GetSourceInfoReply{}
+
+	if err := sf.client.Request(&request, &reply); err != nil {
+		sf.logger.Warnw("Failed to get master source info", "error", err)
+		return nil, fmt.Errorf("get master source info: %w", err)
+	}
+
+	// create the master source session
+	source := newMasterSession(sf.sessionLogger, sf.client, reply.SourceIndex, reply.Channels, inputSessionName)
+
+	return source, nil
 }
 
 func (sf *paSessionFinder) enumerateAndAddSessions(sessions *[]Session) error {
