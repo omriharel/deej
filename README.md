@@ -101,7 +101,7 @@ process_refresh_frequency: 5
 ```
 
 - `master` is a special option to control the master volume of the system _(uses the default playback device)_
-- _New:_ `mic` is a special option on Windows to control your microphone's input level _(uses the default recording device)_. **Please note: this is an experimental feature that might not suit every hardware set-up out there.**
+- _New:_ `mic` is a special option to control your microphone's input level _(uses the default recording device)_. **Please note: this is an experimental feature that might not suit every hardware set-up out there.**
 - `system` is a special option on Windows to control the "System sounds" volume in the Windows mixer
 - Process names aren't case-sensitive, meaning both `chrome.exe` and `CHROME.exe` will work
 - You can create groups of process names (using a list) to either:
