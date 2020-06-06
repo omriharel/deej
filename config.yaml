@@ -1,22 +1,42 @@
 # process names are case-insensitive
 # you can use 'master' to indicate the master channel, or a list of process names to create a group
-# experimental - you can use 'mic' to control your mic input level (uses the default recording device)
-# windows only - you can use 'system' to control the "system sounds" volume
+# you can also use 'system' on windows to control the "system sounds" volume
 slider_mapping:
   0: master
-  1: chrome.exe
-  2: spotify.exe
-  3:
-    - pathofexile_x64.exe
-    - rocketleague.exe
-  4: discord.exe
+  1: # Media 
+    - firefox.exe                                    # FireFox
+    - chrome.exe                                     # Chrome
+    - TwitchUI.exe                                   # Twitch
+    - HuluLLC.HuluPlus_2.5.5.0_neutral__fphbd361v8ty # Hulu
+    - 4DF9E0F8.Netflix_6.96.725.0_x64__mcm4njqhnhss8 # Netflix
+  2: # Music
+    - spotify.exe                       # Spotify
+    - Microsoft.ZuneMusic_10.20032.12611.0_x64__8wekyb3d8bbwe # Builtin Media Player
+  3: 
+    - discord.exe                       # Discord
+    - ts3client_win64.exe               # TeamSpeak 3
+  4: # Games
+    - Astro-UWP64-Shipping.exe          # Astroneer
+    - MoonMan.exe                       # } MoonMan
+    - MoonMan-Win64-Shipping.exe        # }
+    - SporeApp.exe                      # Spore
+    - pathofexile_x64.exe               # Path Of Exile
+    - rocketleague.exe                  # Rocket Leauge
+    - quantumbreak.exe                  # Quantum Break
+    - DOOMx64.exe                       # DOOM
+    - re2.exe                           # Resident Evil 2
+    - KSP_x64.exe                       # Kerbal Space Program
+    - ReCore.exe                        # ReCore
+    - CrashBandicootNSaneTrilogy.exe    # Crash Bandicoot Trilogy
+    - DeadByDaylight-Win64-Shipping.exe # Dead By Daylight
+  5:
 
 # set this to true if you want the controls inverted (i.e. top is 0%, bottom is 100%)
 invert_sliders: false
 
 # settings for connecting to the arduino board
-com_port: COM4
-baud_rate: 9600
+com_port: COM6
+baud_rate: 115200
 
 # limits how often deej will look for new processes
 # it's recommended to leave this setting at its default value
