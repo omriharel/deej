@@ -1,6 +1,7 @@
 # process names are case-insensitive
 # you can use 'master' to indicate the master channel, or a list of process names to create a group
-# you can also use 'system' on windows to control the "system sounds" volume
+# experimental - you can use 'mic' to control your mic input level (uses the default recording device)
+# windows only - you can use 'system' to control the "system sounds" volume
 slider_mapping:
   0: master
   1: chrome.exe

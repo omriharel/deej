@@ -24,6 +24,15 @@ type sessionMap struct {
 const (
 	masterSessionName = "master" // master device volume
 	systemSessionName = "system" // system sounds volume
+	inputSessionName  = "mic"    // microphone input level
+
+	// determines whether the map should be refreshed when a slider moves.
+	// this is a bit greedy but allows us to ensure sessions are always re-acquired, which is
+	// especially important for process groups (because you can have one ongoing session
+	// always preventing lookup of other processes bound to its slider, which forces the user
+	// to manually refresh sessions). a cleaner way to do this down the line is by registering to notifications
+	// whenever a new session is added, but that's too hard to justify for how easy this solution is
+	maxTimeBetweenSessionRefreshes = time.Second * 45
 )
 
 func newSessionMap(deej *Deej, logger *zap.SugaredLogger, sessionFinder SessionFinder) (*sessionMap, error) {
@@ -63,6 +72,8 @@ func (m *sessionMap) release() error {
 	return nil
 }
 
+// assumes the session map is clean!
+// only call on a new session map or as part of refreshSessions which calls reset
 func (m *sessionMap) getAndAddSessions() error {
 	sessions, err := m.sessionFinder.GetAllSessions()
 	if err != nil {
@@ -127,9 +138,17 @@ func (m *sessionMap) refreshSessions(force bool) {
 }
 
 func (m *sessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
+
+	// first of all, ensure our session map isn't moldy
+	if m.lastSessionRefresh.Add(maxTimeBetweenSessionRefreshes).Before(time.Now()) {
+		m.logger.Debug("Stale session map detected on slider move, refreshing")
+		m.refreshSessions(true)
+	}
+
+	// get the targets mapped to this slider from the config
 	targets, ok := m.deej.config.SliderMapping.get(event.SliderID)
 
-	// slider not found in config - silently ignore
+	// if slider not found in config, silently ignore
 	if !ok {
 		return
 	}
@@ -153,6 +172,7 @@ func (m *sessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
 
 		targetFound = true
 
+		// iterate sessions and adjust the volume of each one
 		for _, session := range sessions {
 			if session.GetVolume() != event.PercentValue {
 				if err := session.SetVolume(event.PercentValue); err != nil {
