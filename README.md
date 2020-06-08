@@ -66,7 +66,7 @@ In addition, check out these features:
 
 ### Software
 
-- The code running on the Arduino board is a C program constantly writing current slider values over its Serial interface [`deej-arduino.ino`](./deej-arduino.ino)
+- The code running on the Arduino board is a [C program](./arduino/deej-5-sliders-vanilla/deej-5-sliders-vanilla.ino) constantly writing current slider values over its serial interface
 - The PC runs a lightweight Go client [`cmd/main.go`](./cmd/main.go) in the background. This client reads the serial stream and adjusts app volumes according to the given configuration file
 
 ## Slider mapping (configuration)
@@ -150,11 +150,11 @@ Build `deej` for yourself, or as an awesome gift for your gaming buddies!
 
 - Head over to the [releases page](https://github.com/omriharel/deej/releases) and download the [latest version](https://github.com/omriharel/deej/releases/latest)'s executable and configuration file (`deej.exe` and `config.yaml`)
 - Place them in the same directory anywhere on your machine
-- (Optional) Create a shortcut to `deej.exe` and copy it to `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup` to have `deej` run on boot
+- (Optional, on Windows) Create a shortcut to `deej.exe` and copy it to `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup` to have `deej` run on boot
 
 ### Building from source
 
-If you'd rather not download a compiled executable, or want to extend `deej` or modify it to your needs, feel free to clone the repository and build it yourself. All you need is a somewhat recent (v1.12-ish+) Go environment on your machine.
+If you'd rather not download a compiled executable, or want to extend `deej` or modify it to your needs, feel free to clone the repository and build it yourself. All you need is a somewhat recent (v1.12-ish+) Go environment on your machine. If you go this route, make sure to check out the [developer scripts](./scripts).
 
 Like other Go packages, you can also use the `go get` tool: `go get -u github.com/omriharel/deej`.
 
