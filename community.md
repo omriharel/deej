@@ -25,3 +25,11 @@ This build uses circular knobs instead of sliders, and adds a 7-segment display 
 This build, based on the above 3D-printed enclosure by [/u/Aithorn](#uaithorn), adds onto it with additional holes drilled for fading LEDs and mute toggles. Their wiring is detailed in the schematic that Dimitar has kindly provided (link above). The sleek dark appearance, coupled with the differently colored knobs and LEDs, makes for a very professional look.
 
 ![Dimitar](./assets/community-builds/dimitar.jpg)
+
+## [/u/jeremytodd1](https://reddit.com/user/jeremytodd1)
+
+**Links**: [Imgur album](https://imgur.com/a/ys1RLwr)
+
+This build is based on the above 3D-printed enclosure by [/u/Aithorn](#uaithorn) and also uses their 3D-printed knobs for its sliders.
+
+![/u/jeremytodd1](./assets/community-builds/jeremytodd.jpg)
