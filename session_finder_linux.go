@@ -24,8 +24,8 @@ func newSessionFinder(logger *zap.SugaredLogger) (SessionFinder, error) {
 	}
 
 	request := proto.SetClientName{
-		Props: map[string]string{
-			"application.name": "deej",
+		Props: proto.PropList{
+			"application.name": proto.PropListString("deej"),
 		},
 	}
 	reply := proto.SetClientNameReply{}
@@ -141,7 +141,7 @@ func (sf *paSessionFinder) enumerateAndAddSessions(sessions *[]Session) error {
 		}
 
 		// create the deej session object
-		newSession := newPASession(sf.sessionLogger, sf.client, info.SinkInputIndex, info.Channels, name)
+		newSession := newPASession(sf.sessionLogger, sf.client, info.SinkInputIndex, info.Channels, name.String())
 
 		// add it to our slice
 		*sessions = append(*sessions, newSession)
