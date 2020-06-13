@@ -99,7 +99,7 @@ func (sf *paSessionFinder) getMasterSinkSession() (Session, error) {
 	}
 
 	// create the master sink session
-	sink := newMasterSession(sf.sessionLogger, sf.client, reply.SinkIndex, reply.Channels, masterSessionName)
+	sink := newMasterSession(sf.sessionLogger, sf.client, reply.SinkIndex, reply.Channels, true)
 
 	return sink, nil
 }
@@ -116,7 +116,7 @@ func (sf *paSessionFinder) getMasterSourceSession() (Session, error) {
 	}
 
 	// create the master source session
-	source := newMasterSession(sf.sessionLogger, sf.client, reply.SourceIndex, reply.Channels, inputSessionName)
+	source := newMasterSession(sf.sessionLogger, sf.client, reply.SourceIndex, reply.Channels, false)
 
 	return source, nil
 }
