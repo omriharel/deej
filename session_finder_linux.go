@@ -51,21 +51,19 @@ func (sf *paSessionFinder) GetAllSessions() ([]Session, error) {
 
 	// get the master sink session
 	masterSink, err := sf.getMasterSinkSession()
-	if err != nil {
+	if err == nil {
+		sessions = append(sessions, masterSink)
+	} else {
 		sf.logger.Warnw("Failed to get master audio sink session", "error", err)
-		return nil, fmt.Errorf("get master audio sink session: %w", err)
 	}
-
-	sessions = append(sessions, masterSink)
 
 	// get the master source session
 	masterSource, err := sf.getMasterSourceSession()
-	if err != nil {
+	if err == nil {
+		sessions = append(sessions, masterSource)
+	} else {
 		sf.logger.Warnw("Failed to get master audio source session", "error", err)
-		return nil, fmt.Errorf("get master audio source session: %w", err)
 	}
-
-	sessions = append(sessions, masterSource)
 
 	// enumerate sink inputs and add sessions along the way
 	if err := sf.enumerateAndAddSessions(&sessions); err != nil {
