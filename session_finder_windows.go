@@ -61,14 +61,19 @@ func (sf *wcaSessionFinder) GetAllSessions() ([]Session, error) {
 	}
 	defer ole.CoUninitialize()
 
-	// get the currently active default output and input devices
+	// get the currently active default output and input devices.
+	// please note that this can return a nil defaultInputEndpoint, in case there are no input devices connected.
+	// you must check it for non-nil
 	defaultOutputEndpoint, defaultInputEndpoint, err := sf.getDefaultAudioEndpoints()
 	if err != nil {
 		sf.logger.Warnw("Failed to get default audio endpoints", "error", err)
 		return nil, fmt.Errorf("get default audio endpoints: %w", err)
 	}
 	defer defaultOutputEndpoint.Release()
-	defer defaultInputEndpoint.Release()
+
+	if defaultInputEndpoint != nil {
+		defer defaultInputEndpoint.Release()
+	}
 
 	// receive notifications whenever the default device changes (only do this once)
 	if sf.mmNotificationClient == nil {
@@ -87,14 +92,16 @@ func (sf *wcaSessionFinder) GetAllSessions() ([]Session, error) {
 
 	sessions = append(sessions, sf.masterOut)
 
-	// get the master input session
-	sf.masterIn, err = sf.getMasterSession(defaultInputEndpoint, inputSessionName)
-	if err != nil {
-		sf.logger.Warnw("Failed to get master audio input session", "error", err)
-		return nil, fmt.Errorf("get master audio input session: %w", err)
-	}
+	// get the master input session, if a default input device exists
+	if defaultInputEndpoint != nil {
+		sf.masterIn, err = sf.getMasterSession(defaultInputEndpoint, inputSessionName)
+		if err != nil {
+			sf.logger.Warnw("Failed to get master audio input session", "error", err)
+			return nil, fmt.Errorf("get master audio input session: %w", err)
+		}
 
-	sessions = append(sessions, sf.masterIn)
+		sessions = append(sessions, sf.masterIn)
+	}
 
 	// get an enumerator for the rest of the audio output sessions (mic doesn't really have this concept)
 	sessionEnumerator, err := getSessionEnumerator(defaultOutputEndpoint)
@@ -150,9 +157,10 @@ func (sf *wcaSessionFinder) getDefaultAudioEndpoints() (*wca.IMMDevice, *wca.IMM
 		return nil, nil, fmt.Errorf("call GetDefaultAudioEndpoint (out): %w", err)
 	}
 
+	// allow this call to fail (not all users have a microphone connected)
 	if err := sf.mmDeviceEnumerator.GetDefaultAudioEndpoint(wca.ECapture, wca.EConsole, &mmInDevice); err != nil {
-		sf.logger.Warnw("Failed to call GetDefaultAudioEndpoint (in)", "error", err)
-		return nil, nil, fmt.Errorf("call GetDefaultAudioEndpoint (in): %w", err)
+		sf.logger.Warn("No default input device detected, proceeding without it (\"mic\" will not work)")
+		mmInDevice = nil
 	}
 
 	return mmOutDevice, mmInDevice, nil
