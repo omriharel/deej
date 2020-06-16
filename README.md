@@ -10,9 +10,9 @@ Arduino and Go project for controlling application volumes on Windows and Linux 
 
 [**Video demonstration on YouTube**](https://youtu.be/VoByJ4USMr8)
 
-[**See some awesome versions built by people around the world!**](./community.md)
+[**See some awesome versions built by people around the world!**](./community.md) | [**_New:_ Design collection on Thingiverse**](https://thingiverse.com/omriharel/collections/deej)
 
-![Physical build](assets/build.jpg)
+![The OG shoebox build](assets/build.jpg)
 
 ## Table of contents
 
@@ -25,6 +25,7 @@ Arduino and Go project for controlling application volumes on Windows and Linux 
 - [Build your own!](#build-your-own)
   - [Bill of Materials](#bill-of-materials)
   - [Build procedure](#build-procedure)
+  - [Thingiverse collection](#thingiverse-collection)
 - [How to run](#how-to-run)
   - [Requirements](#requirements)
   - [Download and installation](#download-and-installation)
@@ -110,19 +111,29 @@ process_refresh_frequency: 5
 
 ## Build your own!
 
-Building `deej` is very simple. You only need a few cheap parts - it's an excellent starter project (and my first Arduino project, personally). Remember that if you need any help or have a question that's not answered here, you can always [join the deej Discord server](https://discord.gg/nf88NJu).
+Building `deej` is very simple. You only need a few relatively cheap parts - it's an excellent starter project (and my first Arduino project, personally). Remember that if you need any help or have a question that's not answered here, you can always [join the deej Discord server](https://discord.gg/nf88NJu).
 
 Build `deej` for yourself, or as an awesome gift for your gaming buddies!
 
 ### Bill of Materials
 
-- An Arduino Nano or Uno board
-  - I officially recommend using a Nano as it offers a smaller form-factor, a friendlier USB connector and more analog pins. Plus it's cheaper
-- A few slider potentiometers, up to your number of free analog pins (they're around 1-2 USD each, and come with a standard 10K Ohm variable resistor)
+- An Arduino Nano, Pro Micro or Uno board
+  - I officially recommend using a Nano or a Pro Micro for their smaller form-factor, friendlier USB connectors and more analog pins. Plus they're cheaper
+  - You can also use any other development board that has a Serial over USB interface
+- A few slider potentiometers, up to your number of free analog pins (the cheaper ones cost around 1-2 USD each, and come with a standard 10K Ohm variable resistor. These _should_ work just fine for this project)
   - **Important:** make sure to get **linear** sliders, not logarithmic ones! Check the product description
   - You can also use circular knobs if you like
 - Some wires
-- Any kind of box to hold everything together
+- Any kind of box to hold everything together. **You don't need a 3D printer for this project!** It works fantastically with just a piece of cardboard or a shoebox. That being said, if you do have one, read on...
+
+### Thingiverse collection
+
+With many different 3D-printed designs being added to our [community showcase](./community.md), it felt right to gather all of them in a Thingiverse collection for you to browse. If you have access to a 3D printer, feel free to use one of the designs in your build.
+
+**[Visit our community-created design collection on Thingiverse!](https://thingiverse.com/omriharel/collections/deej)**
+
+> You can also [submit your own](https://discord.gg/nf88NJu) design to be added to the collection. Regardless, if you do upload your design to Thingiverse, _please add a `deej` tag to it so that others can find it more easily_.
+
 
 ### Build procedure
 
