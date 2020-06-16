@@ -35,6 +35,8 @@ type SerialIO struct {
 	currentSliderPercentValues []float32
 
 	sliderMoveConsumers []chan SliderMoveEvent
+
+	returnCommandConsumers []chan string
 }
 
 // SliderMoveEvent represents a single slider move captured by deej
@@ -43,7 +45,7 @@ type SliderMoveEvent struct {
 	PercentValue float32
 }
 
-var expectedLinePattern = regexp.MustCompile(`^\d{1,4}(\|\d{1,4})*\r\n$`)
+var expectedLinePattern = regexp.MustCompile(`^\d{1,4}(\|\d{1,4})*(:(([a-z]*\.?)*)(\|([a-z]*\.?)*)*)?\r?\n?$`)
 
 // NewSerialIO creates a SerialIO instance that uses the provided deej
 // instance's connection info to establish communications with the arduino chip
@@ -51,13 +53,14 @@ func NewSerialIO(deej *Deej, logger *zap.SugaredLogger) (*SerialIO, error) {
 	logger = logger.Named("serial")
 
 	sio := &SerialIO{
-		deej:                deej,
-		logger:              logger,
-		stopChannel:         make(chan bool),
-		connected:           false,
-		conn:                nil,
-		sliderMoveConsumers: []chan SliderMoveEvent{},
-		running:             false,
+		deej:                   deej,
+		logger:                 logger,
+		stopChannel:            make(chan bool),
+		connected:              false,
+		conn:                   nil,
+		sliderMoveConsumers:    []chan SliderMoveEvent{},
+		running:                false,
+		returnCommandConsumers: []chan string{},
 	}
 
 	logger.Debug("Created serial i/o instance")
@@ -185,6 +188,22 @@ func (sio *SerialIO) SubscribeToSliderMoveEvents() chan SliderMoveEvent {
 	sio.sliderMoveConsumers = append(sio.sliderMoveConsumers, ch)
 
 	return ch
+}
+
+// SubscribeToCommands allows external components to receive updates when a command is recived from the arduino
+func (sio *SerialIO) SubscribeToCommands() chan string {
+	c := make(chan string)
+	sio.returnCommandConsumers = append(sio.returnCommandConsumers, c)
+
+	return c
+}
+
+func (sio *SerialIO) notifyConsumers(command string) {
+	sio.logger.Info("Command Recived, Notifying Consumers")
+
+	for _, consumer := range sio.returnCommandConsumers {
+		consumer <- command
+	}
 }
 
 // WriteStringLine retruns nothing
@@ -349,9 +368,27 @@ func (sio *SerialIO) handleLine(logger *zap.SugaredLogger, line string) {
 	// trim the suffix
 	line = strings.TrimSuffix(line, "\r\n")
 
-	// split on pipe (|), this gives a slice of numerical strings between "0" and "1023"
-	splitLine := strings.Split(line, "|")
-	numSliders := len(splitLine)
+	var splitValues []string
+
+	// if there are subcommand seperate them out
+	if strings.Contains(line, ":") {
+		splitLine := strings.Split(line, ":")
+		// split on pipe (|), this gives a slice of numerical strings between "0" and "1023"
+		splitValues = strings.Split(splitLine[0], "|")
+
+		// split on pipe (|)
+		splitCommands := strings.Split(splitLine[1], "|")
+
+		for _, value := range splitCommands {
+			sio.notifyConsumers(value)
+		}
+
+	} else {
+		// split on pipe (|), this gives a slice of numerical strings between "0" and "1023"
+		splitValues = strings.Split(line, "|")
+	}
+
+	numSliders := len(splitValues)
 
 	// update our slider count, if needed - this will send slider move events for all
 	if numSliders != sio.lastKnownNumSliders {
@@ -367,7 +404,7 @@ func (sio *SerialIO) handleLine(logger *zap.SugaredLogger, line string) {
 
 	// for each slider:
 	moveEvents := []SliderMoveEvent{}
-	for sliderIdx, stringValue := range splitLine {
+	for sliderIdx, stringValue := range splitValues {
 
 		// convert string values to integers ("1023" -> 1023)
 		number, _ := strconv.Atoi(stringValue)
