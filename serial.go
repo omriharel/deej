@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -74,17 +75,26 @@ func (sio *SerialIO) Start() error {
 		return errors.New("serial: connection already active")
 	}
 
+	// set minimum read size according to platform (0 for windows, 1 for linux)
+	// this prevents a rare bug on windows where serial reads get congested,
+	// resulting in significant lag
+	minimumReadSize := 0
+	if runtime.GOOS == "linux" {
+		minimumReadSize = 1
+	}
+
 	sio.connOptions = serial.OpenOptions{
 		PortName:        sio.deej.config.ConnectionInfo.COMPort,
 		BaudRate:        uint(sio.deej.config.ConnectionInfo.BaudRate),
 		DataBits:        8,
 		StopBits:        1,
-		MinimumReadSize: 1,
+		MinimumReadSize: uint(minimumReadSize),
 	}
 
 	sio.logger.Debugw("Attempting serial connection",
 		"comPort", sio.connOptions.PortName,
-		"baudRate", sio.connOptions.BaudRate)
+		"baudRate", sio.connOptions.BaudRate,
+		"minReadSize", minimumReadSize)
 
 	var err error
 	sio.conn, err = serial.Open(sio.connOptions)
