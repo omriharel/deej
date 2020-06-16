@@ -33,3 +33,20 @@ This build, based on the above 3D-printed enclosure by [/u/Aithorn](#uaithorn), 
 This build is based on the above 3D-printed enclosure by [/u/Aithorn](#uaithorn) and also uses their 3D-printed knobs for its sliders.
 
 ![/u/jeremytodd1](./assets/community-builds/jeremytodd.jpg)
+
+## CptnObvious
+
+**Links**: [Imgur album](https://imgur.com/a/pnptoo7)
+
+This build uses a flat 3D-printed enclosure, but the real kicker is its magnetically-snapping application logo covers, made with a midway-filament-swapping technique. Looking snappy!
+
+![CptnObvious](./assets/community-builds/cptnobvious.jpg)
+
+## nightfox939
+
+**Links**: [Imgur album](https://imgur.com/a/rrLbTHI) | [Enclosure model on Thingiverse](https://www.thingiverse.com/thing:4460296)
+
+This build takes a different spin on 3D-printed enclosures by positioning the sliders at an angle, such that the box can be placed right behind the keyboard (as shown [here](https://i.imgur.com/FuvaaTO.jpg)). It also features seven sliders, which is fantastic for power users.
+
+![nightfox939](./assets/community-builds/nightfox939.jpg)
+
