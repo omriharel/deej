@@ -7,7 +7,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/jfreymuth/pulse/proto"
-	"github.com/omriharel/deej/util"
 )
 
 // normal PulseAudio volume (100%)
@@ -106,7 +105,7 @@ func (s *paSession) GetVolume() float32 {
 
 	level := parseChannelVolumes(reply.ChannelVolumes)
 
-	return util.NormalizeScalar(level)
+	return level
 }
 
 func (s *paSession) SetVolume(v float32) error {
@@ -163,7 +162,7 @@ func (s *masterSession) GetVolume() float32 {
 		level = parseChannelVolumes(reply.ChannelVolumes)
 	}
 
-	return util.NormalizeScalar(level)
+	return level
 }
 
 func (s *masterSession) SetVolume(v float32) error {
