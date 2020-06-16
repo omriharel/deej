@@ -9,8 +9,6 @@ import (
 	ps "github.com/mitchellh/go-ps"
 	wca "github.com/moutend/go-wca"
 	"go.uber.org/zap"
-
-	"github.com/jax-b/deej/util"
 )
 
 var errNoSuchProcess = errors.New("No such process")
@@ -117,7 +115,7 @@ func (s *wcaSession) GetVolume() float32 {
 		s.logger.Warnw("Failed to get session volume", "error", err)
 	}
 
-	return util.NormalizeScalar(level)
+	return level
 }
 
 func (s *wcaSession) SetVolume(v float32) error {
@@ -162,7 +160,7 @@ func (s *masterSession) GetVolume() float32 {
 		s.logger.Warnw("Failed to get session volume", "error", err)
 	}
 
-	return util.NormalizeScalar(level)
+	return level
 }
 
 func (s *masterSession) SetVolume(v float32) error {

@@ -39,6 +39,8 @@ github.com/jacobsa/go-serial v0.0.0-20180131005756-15cf729a72d4 h1:G2ztCwXov8mRv
 github.com/jacobsa/go-serial v0.0.0-20180131005756-15cf729a72d4/go.mod h1:2RvX5ZjVtsznNZPEt4xwJXNJrM3VTZoQf7V6gk0ysvs=
 github.com/jax-b/deej v0.9.5/go.mod h1:BWZYMajKestXNCzFIP3w2ulLROzRs38kj36i7IWDm6k=
 github.com/jfreymuth/pulse v0.0.0-20200506145638-1534c4af9659/go.mod h1:cpYspI6YljhkUf1WLXLLDmeaaPFc3CnGLjDZf9dZ4no=
+github.com/jfreymuth/pulse v0.0.0-20200608153616-84b2d752b9d4 h1:hqRsCQVbjl5GPWT9F+q5esXRiFPqc2WqbL5+qb5P6rk=
+github.com/jfreymuth/pulse v0.0.0-20200608153616-84b2d752b9d4/go.mod h1:cpYspI6YljhkUf1WLXLLDmeaaPFc3CnGLjDZf9dZ4no=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
 github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=

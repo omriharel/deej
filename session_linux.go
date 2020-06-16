@@ -31,8 +31,9 @@ type masterSession struct {
 
 	client *proto.Client
 
-	sinkIndex    uint32
-	sinkChannels byte
+	streamIndex    uint32
+	streamChannels byte
+	isOutput       bool
 }
 
 func newPASession(
@@ -63,15 +64,24 @@ func newPASession(
 func newMasterSession(
 	logger *zap.SugaredLogger,
 	client *proto.Client,
-	sinkIndex uint32,
-	sinkChannels byte,
-	key string,
+	streamIndex uint32,
+	streamChannels byte,
+	isOutput bool,
 ) *masterSession {
 
 	s := &masterSession{
-		client:       client,
-		sinkIndex:    sinkIndex,
-		sinkChannels: sinkChannels,
+		client:         client,
+		streamIndex:    streamIndex,
+		streamChannels: streamChannels,
+		isOutput:       isOutput,
+	}
+
+	var key string
+
+	if isOutput {
+		key = masterSessionName
+	} else {
+		key = inputSessionName
 	}
 
 	s.logger = logger.Named(key)
@@ -96,7 +106,7 @@ func (s *paSession) GetVolume() float32 {
 
 	level := parseChannelVolumes(reply.ChannelVolumes)
 
-	return util.NormalizeScalar(level)
+	return level
 }
 
 func (s *paSession) SetVolume(v float32) error {
@@ -125,28 +135,55 @@ func (s *paSession) String() string {
 }
 
 func (s *masterSession) GetVolume() float32 {
-	request := proto.GetSinkInfo{
-		SinkIndex: s.sinkIndex,
+	var level float32
+
+	if s.isOutput {
+		request := proto.GetSinkInfo{
+			SinkIndex: s.streamIndex,
+		}
+		reply := proto.GetSinkInfoReply{}
+
+		if err := s.client.Request(&request, &reply); err != nil {
+			s.logger.Warnw("Failed to get session volume", "error", err)
+			return 0
+		}
+
+		level = parseChannelVolumes(reply.ChannelVolumes)
+	} else {
+		request := proto.GetSourceInfo{
+			SourceIndex: s.streamIndex,
+		}
+		reply := proto.GetSourceInfoReply{}
+
+		if err := s.client.Request(&request, &reply); err != nil {
+			s.logger.Warnw("Failed to get session volume", "error", err)
+			return 0
+		}
+
+		level = parseChannelVolumes(reply.ChannelVolumes)
 	}
-	reply := proto.GetSinkInfoReply{}
 
-	if err := s.client.Request(&request, &reply); err != nil {
-		s.logger.Warnw("Failed to get session volume", "error", err)
-	}
-
-	level := parseChannelVolumes(reply.ChannelVolumes)
-
-	return util.NormalizeScalar(level)
+	return level
 }
 
 func (s *masterSession) SetVolume(v float32) error {
-	volumes := createChannelVolumes(s.sinkChannels, v)
-	request := proto.SetSinkVolume{
-		SinkIndex:      s.sinkIndex,
-		ChannelVolumes: volumes,
+	var request proto.RequestArgs
+
+	volumes := createChannelVolumes(s.streamChannels, v)
+
+	if s.isOutput {
+		request = &proto.SetSinkVolume{
+			SinkIndex:      s.streamIndex,
+			ChannelVolumes: volumes,
+		}
+	} else {
+		request = &proto.SetSourceVolume{
+			SourceIndex:    s.streamIndex,
+			ChannelVolumes: volumes,
+		}
 	}
 
-	if err := s.client.Request(&request, nil); err != nil {
+	if err := s.client.Request(request, nil); err != nil {
 		s.logger.Warnw("Failed to set session volume",
 			"error", err,
 			"volume", v)
