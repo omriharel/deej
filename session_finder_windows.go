@@ -25,8 +25,8 @@ type wcaSessionFinder struct {
 	lastDefaultDeviceChange time.Time
 
 	// our master input and output sessions
-	masterOut *masterSession
-	masterIn  *masterSession
+	masterOut *MasterSession
+	masterIn  *MasterSession
 }
 
 const (
@@ -189,7 +189,7 @@ func (sf *wcaSessionFinder) registerDefaultDeviceChangeCallback() error {
 	return nil
 }
 
-func (sf *wcaSessionFinder) getMasterSession(mmDevice *wca.IMMDevice, key string) (*masterSession, error) {
+func (sf *wcaSessionFinder) getMasterSession(mmDevice *wca.IMMDevice, key string) (*MasterSession, error) {
 
 	var audioEndpointVolume *wca.IAudioEndpointVolume
 

@@ -14,7 +14,8 @@ import (
 var errNoSuchProcess = errors.New("No such process")
 var errRefreshSessions = errors.New("Trigger session refresh")
 
-type wcaSession struct {
+// WcaSession sub session controllers
+type WcaSession struct {
 	baseSession
 
 	pid         uint32
@@ -26,7 +27,8 @@ type wcaSession struct {
 	eventCtx *ole.GUID
 }
 
-type masterSession struct {
+// MasterSession master session controllers
+type MasterSession struct {
 	baseSession
 
 	volume *wca.IAudioEndpointVolume
@@ -42,9 +44,9 @@ func newWCASession(
 	volume *wca.ISimpleAudioVolume,
 	pid uint32,
 	eventCtx *ole.GUID,
-) (*wcaSession, error) {
+) (*WcaSession, error) {
 
-	s := &wcaSession{
+	s := &WcaSession{
 		control:  control,
 		volume:   volume,
 		pid:      pid,
@@ -82,7 +84,6 @@ func newWCASession(
 	// use a self-identifying session name e.g. deej.sessions.chrome
 	s.logger = logger.Named(strings.TrimSuffix(s.Key(), ".exe"))
 	s.logger.Debugw(sessionCreationLogMessage, "session", s)
-
 	return s, nil
 }
 
@@ -91,9 +92,9 @@ func newMasterSession(
 	volume *wca.IAudioEndpointVolume,
 	eventCtx *ole.GUID,
 	key string,
-) (*masterSession, error) {
+) (*MasterSession, error) {
 
-	s := &masterSession{
+	s := &MasterSession{
 		volume:   volume,
 		eventCtx: eventCtx,
 	}
@@ -108,7 +109,17 @@ func newMasterSession(
 	return s, nil
 }
 
-func (s *wcaSession) GetVolume() float32 {
+// GetIconPath returns the icon path for the session
+func (s *WcaSession) GetIconPath() string {
+	var iconPath string
+	if err := s.control.GetIconPath(&iconPath); err != nil {
+		s.logger.Warnw("Failed to get sessiom icon", "error", err)
+	}
+	return iconPath
+}
+
+// GetVolume returns the volume of the session
+func (s *WcaSession) GetVolume() float32 {
 	var level float32
 
 	if err := s.volume.GetMasterVolume(&level); err != nil {
@@ -118,7 +129,8 @@ func (s *wcaSession) GetVolume() float32 {
 	return level
 }
 
-func (s *wcaSession) SetVolume(v float32) error {
+// SetVolume sets the volume of the session
+func (s *WcaSession) SetVolume(v float32) error {
 	if err := s.volume.SetMasterVolume(v, s.eventCtx); err != nil {
 		s.logger.Warnw("Failed to set session volume", "error", err)
 		return fmt.Errorf("adjust session volume: %w", err)
@@ -142,18 +154,20 @@ func (s *wcaSession) SetVolume(v float32) error {
 	return nil
 }
 
-func (s *wcaSession) Release() {
+// Release relases the session parts to the wind
+func (s *WcaSession) Release() {
 	s.logger.Debug("Releasing audio session")
 
 	s.volume.Release()
 	s.control.Release()
 }
 
-func (s *wcaSession) String() string {
+func (s *WcaSession) String() string {
 	return fmt.Sprintf(sessionStringFormat, s.humanReadableDesc, s.GetVolume())
 }
 
-func (s *masterSession) GetVolume() float32 {
+// GetVolume returns the volume of the master session
+func (s *MasterSession) GetVolume() float32 {
 	var level float32
 
 	if err := s.volume.GetMasterVolumeLevelScalar(&level); err != nil {
@@ -163,7 +177,8 @@ func (s *masterSession) GetVolume() float32 {
 	return level
 }
 
-func (s *masterSession) SetVolume(v float32) error {
+// SetVolume sets the volume of the master sessions
+func (s *MasterSession) SetVolume(v float32) error {
 	if s.stale {
 		s.logger.Warnw("Session expired because default device has changed, triggering session refresh")
 		return errRefreshSessions
@@ -182,16 +197,17 @@ func (s *masterSession) SetVolume(v float32) error {
 	return nil
 }
 
-func (s *masterSession) Release() {
+// Release relases the master session parts to the wind
+func (s *MasterSession) Release() {
 	s.logger.Debug("Releasing audio session")
 
 	s.volume.Release()
 }
 
-func (s *masterSession) String() string {
+func (s *MasterSession) String() string {
 	return fmt.Sprintf(sessionStringFormat, s.humanReadableDesc, s.GetVolume())
 }
 
-func (s *masterSession) markAsStale() {
+func (s *MasterSession) markAsStale() {
 	s.stale = true
 }
