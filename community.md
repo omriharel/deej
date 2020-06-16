@@ -18,7 +18,7 @@ This build features a very neat 3D-printed enclosure to fit the sliders, and use
 
 **Links**: [Imgur album](https://imgur.com/a/Rwq0ynd) | [Enclosure model on Thingiverse](https://www.thingiverse.com/thing:4237483) | [GitHub fork](https://github.com/Bupher/deej)
 
-This build uses circular knobs instead of sliders, and adds a 7-segment display showing the volume of the last adjusted knob. It also adds functionality to allow designating a knob to control the volume of whichever application is currently in focus. Those changes are available in Bupher's fork (link above). Very cool!
+This build uses circular knobs instead of sliders, and adds a 7-segment display showing the volume of the last adjusted knob. It also adds functionality to allow designating a knob to control the volume of whichever application is currently in focus. Those changes are available in Bupher's fork (link above).. Very cool!
 
 ![Bupher](./assets/community-builds/bupher.jpg)
 
@@ -26,7 +26,7 @@ This build uses circular knobs instead of sliders, and adds a 7-segment display 
 
 **Links**: Schematic ([.png](./assets/community-builds/extra/dimitar-schematic.png) | [.sch](./assets/community-builds/extra/dimitar-schematic.sch))
 
-This build, based on the above 3D-printed enclosure by [/u/Aithorn](#uaithorn), adds onto it with additional holes drilled for fading LEDs and mute toggles. Their wiring is detailed in the schematic that Dimitar has kindly provided (link above). The sleek dark appearance, coupled with the differently colored knobs and LEDs, makes for a very professional look.
+This build, based on the above 3D-printed enclosure by [/u/Aithorn](#uaithorn), adds onto it with additional holes drilled for fading LEDs and mute toggles. Their wiring is detailed in the schematic that Dimitar has kindly provided (link above).. The sleek dark appearance, coupled with the differently colored knobs and LEDs, makes for a very professional look.
 
 ![Dimitar](./assets/community-builds/dimitar.jpg)
 
@@ -54,3 +54,10 @@ This build takes a different spin on 3D-printed enclosures by positioning the sl
 
 ![nightfox939](./assets/community-builds/nightfox939.jpg)
 
+## [Snackya](https://github.com/Snackya)
+
+**Links**: [Imgur album](https://imgur.com/a/ZL6UBuR) | [GitHub repository with PCB files and instructions](https://github.com/Snackya/Snackboard-mix)
+
+This one's a very special build, as it's designed to look great with absolutely no 3D printing, mill or any casing at all. It's made with custom PCBs that are mounted together with bolts and nuts. The top plate's silkscreen layer adds its own visual flair. The build uses six 100 mm sliders and an Arduino Pro Micro. Snackya has kindly provided the gerber files, as well as detailed instructions, in their GitHub repository (link above).
+
+![Snackya](./assets/community-builds/snackya.jpg)
