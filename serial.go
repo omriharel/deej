@@ -207,13 +207,19 @@ func (sio *SerialIO) readLine(logger *zap.SugaredLogger, reader *bufio.Reader) c
 			line, err := reader.ReadString('\n')
 			if err != nil {
 
-				// we probably don't need to log this, it'll happen once and the read loop will stop
-				// logger.Warnw("Failed to read line from serial", "error", err, "line", line)
+				if sio.deej.Verbose() {
+					logger.Warnw("Failed to read line from serial", "error", err, "line", line)
+				}
+
+				// just ignore the line, the read loop will stop after this
 				return
 			}
 
-			// no reason to log here, just deliver the line to the channel
-			// logger.Debugw("Read new line", "line", line)
+			if sio.deej.Verbose() {
+				logger.Debugw("Read new line", "line", line)
+			}
+
+			// deliver the line to the channel
 			ch <- line
 		}
 	}()
@@ -285,8 +291,9 @@ func (sio *SerialIO) handleLine(logger *zap.SugaredLogger, line string) {
 				PercentValue: normalizedScalar,
 			})
 
-			// like in other places, this is too much to log - we'll log actual target volume events later
-			// logger.Debugw("Slider moved", "event", moveEvents[len(moveEvents)-1])
+			if sio.deej.Verbose() {
+				logger.Debugw("Slider moved", "event", moveEvents[len(moveEvents)-1])
+			}
 		}
 	}
 
