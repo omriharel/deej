@@ -24,8 +24,8 @@ func newSessionFinder(logger *zap.SugaredLogger) (SessionFinder, error) {
 	}
 
 	request := proto.SetClientName{
-		Props: map[string]string{
-			"application.name": "deej",
+		Props: proto.PropList{
+			"application.name": proto.PropListString("deej"),
 		},
 	}
 	reply := proto.SetClientNameReply{}
@@ -51,21 +51,19 @@ func (sf *paSessionFinder) GetAllSessions() ([]Session, error) {
 
 	// get the master sink session
 	masterSink, err := sf.getMasterSinkSession()
-	if err != nil {
+	if err == nil {
+		sessions = append(sessions, masterSink)
+	} else {
 		sf.logger.Warnw("Failed to get master audio sink session", "error", err)
-		return nil, fmt.Errorf("get master audio sink session: %w", err)
 	}
-
-	sessions = append(sessions, masterSink)
 
 	// get the master source session
 	masterSource, err := sf.getMasterSourceSession()
-	if err != nil {
+	if err == nil {
+		sessions = append(sessions, masterSource)
+	} else {
 		sf.logger.Warnw("Failed to get master audio source session", "error", err)
-		return nil, fmt.Errorf("get master audio source session: %w", err)
 	}
-
-	sessions = append(sessions, masterSource)
 
 	// enumerate sink inputs and add sessions along the way
 	if err := sf.enumerateAndAddSessions(&sessions); err != nil {
@@ -99,7 +97,7 @@ func (sf *paSessionFinder) getMasterSinkSession() (Session, error) {
 	}
 
 	// create the master sink session
-	sink := newMasterSession(sf.sessionLogger, sf.client, reply.SinkIndex, reply.Channels, masterSessionName)
+	sink := newMasterSession(sf.sessionLogger, sf.client, reply.SinkIndex, reply.Channels, true)
 
 	return sink, nil
 }
@@ -116,7 +114,7 @@ func (sf *paSessionFinder) getMasterSourceSession() (Session, error) {
 	}
 
 	// create the master source session
-	source := newMasterSession(sf.sessionLogger, sf.client, reply.SourceIndex, reply.Channels, inputSessionName)
+	source := newMasterSession(sf.sessionLogger, sf.client, reply.SourceIndex, reply.Channels, false)
 
 	return source, nil
 }
@@ -141,7 +139,7 @@ func (sf *paSessionFinder) enumerateAndAddSessions(sessions *[]Session) error {
 		}
 
 		// create the deej session object
-		newSession := newPASession(sf.sessionLogger, sf.client, info.SinkInputIndex, info.Channels, name)
+		newSession := newPASession(sf.sessionLogger, sf.client, info.SinkInputIndex, info.Channels, name.String())
 
 		// add it to our slice
 		*sessions = append(*sessions, newSession)
