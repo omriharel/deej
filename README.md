@@ -24,8 +24,8 @@ Arduino and Go project for controlling application volumes on Windows and Linux 
 - [Slider mapping (configuration)](#slider-mapping-configuration)
 - [Build your own!](#build-your-own)
   - [Bill of Materials](#bill-of-materials)
-  - [Build procedure](#build-procedure)
   - [Thingiverse collection](#thingiverse-collection)
+  - [Build procedure](#build-procedure)
 - [How to run](#how-to-run)
   - [Requirements](#requirements)
   - [Download and installation](#download-and-installation)
@@ -165,7 +165,7 @@ With many different 3D-printed designs being added to our [community showcase](.
 
 ### Building from source
 
-If you'd rather not download a compiled executable, or want to extend `deej` or modify it to your needs, feel free to clone the repository and build it yourself. All you need is a somewhat recent (v1.12-ish+) Go environment on your machine. If you go this route, make sure to check out the [developer scripts](./scripts).
+If you'd rather not download a compiled executable, or want to extend `deej` or modify it to your needs, feel free to clone the repository and build it yourself. All you need is a Go 1.14 (or above) environment on your machine. If you go this route, make sure to check out the [developer scripts](./scripts).
 
 Like other Go packages, you can also use the `go get` tool: `go get -u github.com/omriharel/deej`.
 
