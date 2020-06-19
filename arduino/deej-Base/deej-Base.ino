@@ -1,6 +1,10 @@
 #include "arduino.h"
 #include <avr/wdt.h>
 
+//Microcontroller type
+//#define MCU32U4 1
+#define MCUA328P 1
+
 //You must Hard Code in the number of Sliders in
 #define NUM_SLIDERS 6
 #define SERIALSPEED 9600
@@ -41,9 +45,13 @@ void loop() {
 }
 
 void reboot() {
+#if MCU32U4
   wdt_disable();
   wdt_enable(WDTO_30MS);
   while (1) {}
+#elif MCUA328P
+  asm volatile ("  jmp 0");  
+#endif
 }
 
 void updateSliderValues() {
