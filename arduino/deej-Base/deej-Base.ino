@@ -14,6 +14,8 @@ uint16_t analogSliderValues[NUM_SLIDERS];
 // Constend Send
 bool pushSliderValuesToPC = false;
 
+string outboundCommands = "";
+
 void setup() { 
   Serial.begin(SERIALSPEED);
   Serial.print("INITBEGIN");
@@ -51,17 +53,27 @@ void updateSliderValues() {
 }
 
 void sendSliderValues() {
-  String builtString = String("");
-
   for (uint8_t i = 0; i < NUM_SLIDERS; i++) {
-    builtString += String((int)analogSliderValues[i]);
+    Serial.print(analogSliderValues[i]);
 
     if (i < NUM_SLIDERS - 1) {
-      builtString += String("|");
+      Serial.print("|");
     }
   }
-  
-  Serial.println(builtString);
+  if outboundCommands != "" {
+    serial.print(":");
+    serial.print(outboundCommands);
+    outboundCommands = "";
+  }
+
+  Serial.println();
+}
+
+void addCommand(String cmd) {
+  if outboundCommands != "" {
+    outboundCommands += "|"
+  }
+  outboundCommands += cmd;
 }
 
 void printSliderValues() {
