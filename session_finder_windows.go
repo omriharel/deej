@@ -56,8 +56,33 @@ func (sf *wcaSessionFinder) GetAllSessions() ([]Session, error) {
 
 	// we must call this every time we're about to list devices, i think. could be wrong
 	if err := ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED); err != nil {
-		sf.logger.Warnw("Failed to call CoInitializeEx", "error", err)
-		return nil, fmt.Errorf("call CoInitializeEx: %w", err)
+
+		// if the error is "Incorrect function" that corresponds to 0x00000001,
+		// which represents E_FALSE in COM error handling. this is fine for this function,
+		// and just means that the call was redundant.
+		const eFalse = 1
+		oleError := &ole.OleError{}
+
+		if errors.As(err, &oleError) {
+			if oleError.Code() == eFalse {
+				sf.logger.Warn("CoInitializeEx failed with E_FALSE due to redundant invocation")
+			} else {
+				sf.logger.Warnw("Failed to call CoInitializeEx",
+					"isOleError", true,
+					"error", err,
+					"oleError", oleError)
+
+				return nil, fmt.Errorf("call CoInitializeEx: %w", err)
+			}
+		} else {
+			sf.logger.Warnw("Failed to call CoInitializeEx",
+				"isOleError", false,
+				"error", err,
+				"oleError", nil)
+
+			return nil, fmt.Errorf("call CoInitializeEx: %w", err)
+		}
+
 	}
 	defer ole.CoUninitialize()
 
