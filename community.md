@@ -61,3 +61,11 @@ This build takes a different spin on 3D-printed enclosures by positioning the sl
 This one's a very special build, as it's designed to look great with absolutely no 3D printing, mill or any casing at all. It's made with custom PCBs that are mounted together with bolts and nuts. The top plate's silkscreen layer adds its own visual flair. The build uses six 100 mm sliders and an Arduino Pro Micro. Snackya has kindly provided the gerber files, as well as detailed instructions, in their GitHub repository (link above).
 
 ![Snackya](./assets/community-builds/snackya.jpg)
+
+## [olijoe](https://github.com/olijoe)
+
+**Links**: [Imgur album](https://imgur.com/a/Wibnqi7) | [GitHub repository with PCB files and instructions](https://github.com/olijoe/Deej-board)
+
+This PCB build also takes advantage of sandwiching between two identical custom PCBs to avoid any need for 3D printing or other tools. Both sides of the PCB are used, one for mounting and wiring the components and the other for the silkscreen design (which in this case features some app logos and a cute geometric alpaca). olijoe has kindly provided the gerber files, as well as detailed insturctions, in their GitHub repository (link above).
+
+![olijoe](./assets/community-builds/olijoe.jpg)
