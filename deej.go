@@ -120,6 +120,7 @@ func (d *Deej) SetVersion(version string) {
 	d.version = version
 }
 
+// Verbose returns a boolean indicating whether deej is running in verbose mode
 func (d *Deej) Verbose() bool {
 	return d.verbose
 }
