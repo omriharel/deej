@@ -72,8 +72,8 @@ This PCB build also takes advantage of sandwiching between two identical custom 
 
 ## [Daggr](https://www.thingiverse.com/daggr)
 
-**Links**: [Imgur album](https://imgur.com/a/YmTALay) | [Enclosure model on Thigiverse](https://www.thingiverse.com/thing:4555424) | [Blog post](https://blogg.spofify.se/index.php/2020/07/28/physical-volume-controller-part-2/)
+**Links**: [Imgur album](https://imgur.com/a/YmTALay) | [Enclosure model on Thingiverse](https://www.thingiverse.com/thing:4555424) | [Blog post](https://blogg.spofify.se/index.php/2020/07/28/physical-volume-controller-part-2/)
 
 This design is a remixed version of the above build by [nightfox939](#nightfox939), this time using five circular knobs instead of sliders. It adds onto it with a patterned top infill in the slicer settings, as well as some sharp looking filament-swapped app icons.
 
-![Daggr](./assets/community-builds/Daggr.jpg)
+![Daggr](./assets/community-builds/daggr.jpg)
