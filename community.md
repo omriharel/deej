@@ -69,3 +69,11 @@ This one's a very special build, as it's designed to look great with absolutely 
 This PCB build also takes advantage of sandwiching between two identical custom PCBs to avoid any need for 3D printing or other tools. Both sides of the PCB are used, one for mounting and wiring the components and the other for the silkscreen design (which in this case features some app logos and a cute geometric alpaca). olijoe has kindly provided the gerber files, as well as detailed insturctions, in their GitHub repository (link above).
 
 ![olijoe](./assets/community-builds/olijoe.jpg)
+
+## [Daggr](https://www.thingiverse.com/daggr)
+
+**Links**: [Imgur album](https://imgur.com/a/YmTALay) | [Enclosure model on Thigiverse](https://www.thingiverse.com/thing:4555424) | [Blog post](https://blogg.spofify.se/index.php/2020/07/28/physical-volume-controller-part-2/)
+
+This design is a remixed version of the above build by [nightfox939](#nightfox939), this time using five circular knobs instead of sliders. It adds onto it with a patterned top infill in the slicer settings, as well as some sharp looking filament-swapped app icons.
+
+![Daggr](./assets/community-builds/Daggr.jpg)
