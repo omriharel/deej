@@ -22,6 +22,7 @@ deej consists of a [lightweight desktop client](#features) written in Go, and an
   - [Software](#software)
 - [Slider mapping (configuration)](#slider-mapping-configuration)
 - [Build your own!](#build-your-own)
+  - [Build video](#build-video)
   - [Bill of Materials](#bill-of-materials)
   - [Thingiverse collection](#thingiverse-collection)
   - [Build procedure](#build-procedure)
@@ -111,6 +112,10 @@ process_refresh_frequency: 5
 Building `deej` is very simple. You only need a few relatively cheap parts - it's an excellent starter project (and my first Arduino project, personally). Remember that if you need any help or have a question that's not answered here, you can always [join the deej Discord server](https://discord.gg/nf88NJu).
 
 Build `deej` for yourself, or as an awesome gift for your gaming buddies!
+
+### Build video
+
+In case you prefer watching to reading, Charles from the [**Tech Always**](https://www.youtube.com/c/TechAlways) YouTube channel has made [**a fantastic video**](https://youtu.be/x2yXbFiiAeI) that covers the basics of building deej for yourself, including parts, costs, assembly and software. I highly recommend checking it out!
 
 ### Bill of Materials
 
