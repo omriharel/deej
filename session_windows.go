@@ -91,6 +91,7 @@ func newMasterSession(
 	volume *wca.IAudioEndpointVolume,
 	eventCtx *ole.GUID,
 	key string,
+	loggerKey string,
 ) (*masterSession, error) {
 
 	s := &masterSession{
@@ -98,7 +99,7 @@ func newMasterSession(
 		eventCtx: eventCtx,
 	}
 
-	s.logger = logger.Named(key)
+	s.logger = logger.Named(loggerKey)
 	s.master = true
 	s.name = key
 	s.humanReadableDesc = key
