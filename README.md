@@ -1,22 +1,21 @@
 # deej
 
-Arduino and Go project for controlling application volumes on Windows and Linux PCs with physical sliders (like a DJ!)
+deej is an **open-source hardware volume mixer** for Windows and Linux PCs. It lets you use real-life sliders (like a DJ!) to **seamlessly control the volumes of different apps** (such as your music player, the game you're playing and your voice chat session) without having to stop what you're doing.
 
-**_New:_ `deej` has been re-written as a Go application! [More details](#whats-new) | [Download](https://github.com/omriharel/deej/releases)**
-
-**_New:_ join the [deej Discord server](https://discord.gg/nf88NJu) if you need help or have any questions!**
+**Join the [deej Discord server](https://discord.gg/nf88NJu) if you need help or have any questions!**
 
 [![Discord](https://img.shields.io/discord/702940502038937667?logo=discord)](https://discord.gg/nf88NJu)
 
-[**Video demonstration on YouTube**](https://youtu.be/VoByJ4USMr8)
+deej consists of a [lightweight desktop client](#features) written in Go, and an Arduino-based hardware setup that's simple and cheap to build. [**Check out some versions built by members of our community!**](./community.md)
 
-[**See some awesome versions built by people around the world!**](./community.md) | [**_New:_ Design collection on Thingiverse**](https://thingiverse.com/omriharel/collections/deej)
+**[Download the latest release](https://github.com/omriharel/deej/releases/latest) | [Video demonstration](https://youtu.be/VoByJ4USMr8) | [Build video by Tech Always](https://youtu.be/x2yXbFiiAeI)**
+
 
 ![The OG shoebox build](assets/build.jpg)
 
 ## Table of contents
 
-- [What's new](#whats-new)
+- [Features](#features)
 - [How it works](#how-it-works)
   - [Hardware](#hardware)
     - [Schematic](#schematic)
@@ -34,25 +33,20 @@ Arduino and Go project for controlling application volumes on Windows and Linux 
 - [Long-ish term roadmap](#long-ish-term-roadmap)
 - [License](#license)
 
-## What's new
+## Features
 
-`deej` is now written in Go, and [distributed](https://github.com/omriharel/deej/releases) as a single executable (of course you can still [build from source](#building-from-source) if that's your thing).
+deej is written in Go and [distributed](https://github.com/omriharel/deej/releases/latest) as a portable (no installer needed) executable.
 
-This means you no longer have to maintain a Python environment. You can even build one for your friends, give them a simple download link and they'll be good to go!
-
-In addition, check out these features:
-
-- **Fully backwards-compatible** with your existing `config.yaml` and Arduino sketch
-- **Faster** and more lightweight, consuming around 10MB of memory
-- Control your **microphone's input level** by assigning `mic` to a slider (experimental support)
+- Bind apps to different sliders
+  - Bind multiple apps per slider (i.e. one slider for all your games)
+  - Bind the master channel
+  - Bind "system sounds" (on Windows)
+- Control your microphone's input level (experimental)
+- Lightweight desktop client, consuming around 10MB of memory
 - Runs from your system tray
-- **Helpful notifications** will let you know if something isn't working
-- New `system` flag lets you assign the "system sounds" volume level (Windows-only)
-- Supports everything the Python version did
+- Helpful notifications to let you know if something isn't working
 
-> **Migrating from the Python version?** Great! You only need to keep your `config.yaml` file. Download the executable from the [releases page](https://github.com/omriharel/deej/releases/latest), place it alongside the configuration file and you're done.
-
-> **Prefer to stick with Python?** That's totally fine. It will no longer be maintained, but you can always find it in the [`legacy-python` branch](https://github.com/omriharel/deej/tree/legacy-python).
+> **Looking for the older Python version?** It's no longer maintained, but you can always find it in the [`legacy-python` branch](https://github.com/omriharel/deej/tree/legacy-python).
 
 ## How it works
 
@@ -102,7 +96,7 @@ process_refresh_frequency: 5
 ```
 
 - `master` is a special option to control the master volume of the system _(uses the default playback device)_
-- _New:_ `mic` is a special option to control your microphone's input level _(uses the default recording device)_. **Please note: this is an experimental feature that might not suit every hardware set-up out there.**
+- _New:_ `mic` is a special option to control your microphone's input level _(uses the default recording device)_. **Please note: this is an experimental feature that might not suit every hardware setup out there.**
 - `system` is a special option on Windows to control the "System sounds" volume in the Windows mixer
 - Process names aren't case-sensitive, meaning both `chrome.exe` and `CHROME.exe` will work
 - You can create groups of process names (using a list) to either:
