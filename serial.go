@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"regexp"
-	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -79,7 +78,7 @@ func (sio *SerialIO) Start() error {
 	// this prevents a rare bug on windows where serial reads get congested,
 	// resulting in significant lag
 	minimumReadSize := 0
-	if runtime.GOOS == "linux" {
+	if util.Linux() {
 		minimumReadSize = 1
 	}
 
