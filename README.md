@@ -41,7 +41,8 @@ deej is written in Go and [distributed](https://github.com/omriharel/deej/releas
   - Bind multiple apps per slider (i.e. one slider for all your games)
   - Bind the master channel
   - Bind "system sounds" (on Windows)
-- Control your microphone's input level (experimental)
+  - **_New:_** Bind specific audio devices by name (on Windows, _experimental_)
+- Control your microphone's input level
 - Lightweight desktop client, consuming around 10MB of memory
 - Runs from your system tray
 - Helpful notifications to let you know if something isn't working
@@ -68,7 +69,7 @@ deej is written in Go and [distributed](https://github.com/omriharel/deej/releas
 
 `deej` uses a simple YAML-formatted configuration file named [`config.yaml`](./config.yaml), placed alongside the deej executable.
 
-The config file determines which applications are mapped to which sliders, and which COM port/baud rate to use for the connection to the Arduino board.
+The config file determines which applications (and devices) are mapped to which sliders, and which parameters to use for the connection to the Arduino board, as well as other user preferences.
 
 **This file auto-reloads when its contents are changed, so you can change application mappings on-the-fly without restarting `deej`.**
 
@@ -96,9 +97,11 @@ process_refresh_frequency: 5
 ```
 
 - `master` is a special option to control the master volume of the system _(uses the default playback device)_
-- _New:_ `mic` is a special option to control your microphone's input level _(uses the default recording device)_. **Please note: this is an experimental feature that might not suit every hardware setup out there.**
+- `mic` is a special option to control your microphone's input level _(uses the default recording device)_.
+- On Windows, you can specify a device's full name, i.e. `Speakers (Realtek High Definition Audio)`, to bind that device's level to a slider. This doesn't conflict with the default `master` and `mic` options, and works for both input and output devices.
+  - Be sure to use the full device name, as seen in the menu that comes up when left-clicking the speaker icon in the tray menu
 - `system` is a special option on Windows to control the "System sounds" volume in the Windows mixer
-- Process names aren't case-sensitive, meaning both `chrome.exe` and `CHROME.exe` will work
+- All names are case-**in**sensitive, meaning both `chrome.exe` and `CHROME.exe` will work
 - You can create groups of process names (using a list) to either:
     - control more than one app with a single slider
     - choose whichever process in the group that's currently running (i.e. to have one slider control any game you're playing)
