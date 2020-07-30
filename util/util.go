@@ -51,7 +51,7 @@ func OpenExternal(logger *zap.SugaredLogger, cmd string, arg string) error {
 	// use cmd for windows, bash for linux
 	execCommandArgs := []string{"cmd.exe", "/C", "start", "/b", cmd, arg}
 	if Linux() {
-		execCommandArgs = []string{"/bin/bash", "-c", fmt.Sprintf("'nohup %s %s &'", cmd, arg)}
+		execCommandArgs = []string{"/bin/bash", "-c", fmt.Sprintf("%s %s", cmd, arg)}
 	}
 
 	command := exec.Command(execCommandArgs[0], execCommandArgs[1:]...)
