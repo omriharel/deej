@@ -77,3 +77,19 @@ This PCB build also takes advantage of sandwiching between two identical custom 
 This design is a remixed version of the above build by [nightfox939](#nightfox939), this time using five circular knobs instead of sliders. It adds onto it with a patterned top infill in the slicer settings, as well as some sharp looking filament-swapped app icons.
 
 ![Daggr](./assets/community-builds/daggr.jpg)
+
+## [/u/thesqueakywheel](https://reddit.com/user/thesqueakywheel)
+
+**Links**: [Imgur album](https://imgur.com/a/vTsrSa7) | [Enclosure model on Thingiverse](https://www.thingiverse.com/thing:4557639)
+
+This one's a compact 3-part design made to be [mounted to the underside of a desk](https://i.imgur.com/hGB5NH2.png). Each part is flat to allow for easy 3D printing without support material. The design is made such that the mounting plate in-between the two covers is actually what's holding them together and hidden between them for a seamless packaging.
+
+![/u/thesqueakywheel](./assets/community-builds/thesqueakywheel.jpg)
+
+## [Optagon](https://www.thingiverse.com/Optagon)
+
+**Links**: [Imgur album](https://imgur.com/a/8WKr8W9) | [Enclosure model on Thingiverse](https://www.thingiverse.com/thing:4556291)
+
+This design incorporates fading LEDs that shine through 3D-printed app icons (they look way better in reality, but hopefully the picture gives a bit of an idea). Instructions for how to wire everything up, including some pictures, are inside the links above. A bright idea, and some very stylish execution!
+
+![Optagon](./assets/community-builds/optagon.jpg)
