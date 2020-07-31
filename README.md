@@ -181,6 +181,12 @@ While `deej` is still a very new project, a vibrant community has already starte
 
 The server is also a great place to ask questions, suggest features or report bugs (but of course, feel free to use GitHub if you prefer).
 
+### Donations
+
+If you love deej and want to show your support for this project, you can do so using the link below. Please don't feel obligated to donate - building the project and telling your friends about it goes a very long way! Thank you very much.
+
+[![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/omriharel)
+
 ## Long-ish term roadmap
 
 - Serial communications rework to support two-way data flows for better extensibility
