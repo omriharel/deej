@@ -93,3 +93,27 @@ This one's a compact 3-part design made to be [mounted to the underside of a des
 This design incorporates fading LEDs that shine through 3D-printed app icons (they look way better in reality, but hopefully the picture gives a bit of an idea). Instructions for how to wire everything up, including some pictures, are inside the links above. A bright idea, and some very stylish execution!
 
 ![Optagon](./assets/community-builds/optagon.jpg)
+
+## mozza
+
+**Links**: [Imgur album](https://imgur.com/a/KnWkJCS) | [Enclosure model on Thingiverse](https://www.thingiverse.com/thing:4558424)
+
+This compact build was designed to be positioned side-by-side with a keyboard, [as shown here](https://i.imgur.com/cfqV8t5.jpg). Contrary to most other designs, the knobs here are laid out vertically, making ideal use of the space they occupy. Perfect for a quick adjustment without ever taking off your hand from that side of the keyboard!
+
+![mozza](./assets/community-builds/mozza.jpg)
+
+## Max
+
+**Links**: [Imgur album](https://imgur.com/a/T8OR4b3)
+
+This build uses laser-cut acrylic as for its top plate which results in an absolutely stunning shine. It's lined with LEDs to indicate mute state, controllable by one of the two rows of buttons. The second row is used as custom triggers for F13-F19 keys, which brings a lot of added utility. This one's definitely for power users!
+
+![Max](./assets/community-builds/max.jpg)
+
+## [/u/functionalism](https://reddit.com/user/functionalism)
+
+**Links**: [Imgur album](https://imgur.com/a/zavi9jL) | [Enclosure model on Thingiverse](https://www.thingiverse.com/thing:4561669)
+
+This build uses a 3D-printed design remixed from [/u/Aithorn](#uaithorn)'s above enclosure. This one was made to be held in place by magnets, as it's situated on top of a metallic monitor stand. Magnets are also used instead of screws to hold the top cover and the enclosure's base together. In addition, app icons have been embossed into the 3D-printed slider knobs.
+
+![/u/functionalism](./assets/community-builds/functionalism.jpg)
