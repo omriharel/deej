@@ -96,9 +96,9 @@ This design incorporates fading LEDs that shine through 3D-printed app icons (th
 
 ## mozza
 
-**Links**: [Imgur album](https://imgur.com/a/KnWkJCS) | [Enclosure model on Thingiverse](https://www.thingiverse.com/thing:4558424)
+**Links**: [Imgur album](https://imgur.com/a/suMAJ5Y) | [Enclosure model on Thingiverse](https://www.thingiverse.com/thing:4558424)
 
-This compact build was designed to be positioned side-by-side with a keyboard, [as shown here](https://i.imgur.com/cfqV8t5.jpg). Contrary to most other designs, the knobs here are laid out vertically, making ideal use of the space they occupy. Perfect for a quick adjustment without ever taking off your hand from that side of the keyboard!
+This compact build was designed to be positioned side-by-side with a keyboard. Contrary to most other designs, the knobs here are laid out vertically, making ideal use of the space they occupy. Perfect for a quick adjustment without ever taking off your hand from that side of the keyboard!
 
 ![mozza](./assets/community-builds/mozza.jpg)
 
