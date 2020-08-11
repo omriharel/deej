@@ -122,7 +122,7 @@ This build uses a 3D-printed design remixed from [/u/Aithorn](#uaithorn)'s above
 
 **Links**: [Imgur album](https://imgur.com/a/1q2MYI1) | [Enclosure model on Thingiverse](https://www.thingiverse.com/thing:4562009) | [Full Instructable](https://www.instructables.com/id/Hardware-Volume-Mixer-for-PC-With-RGB-LEDs)
 
-This clever retro-style design features LEDs that change their color based on each slider's volume. These LEDs shine through light diffusers mounted below icon cutouts for the different apps, providing a controlled brightness that's easy on the eyes. In addition, a satisying push button provides global mute toggling. /u/FantasticFeature84 has kindly provided full instructions for anyone else who wishes to build the same box, available on Instructables (link above).
+This clever retro-style design features LEDs that change their color based on each slider's volume. These LEDs shine through light diffusers mounted below icon cutouts for the different apps, providing a controlled brightness that's easy on the eyes. In addition, a satisfying push button provides global mute toggling. /u/FantasticFeature84 has kindly provided full instructions for anyone else who wishes to build the same box, available on Instructables (link above).
 
 ![/u/Fantastic-Feature-84](./assets/community-builds/fantasticfeature84.jpg)
 
