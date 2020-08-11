@@ -104,7 +104,7 @@ This compact build was designed to be positioned side-by-side with a keyboard. C
 
 ## Max
 
-**Links**: [Imgur album](https://imgur.com/a/T8OR4b3)
+**Links**: [Imgur album](https://imgur.com/a/T8OR4b3) | [Enclosure model on PrusaPrinters](https://www.prusaprinters.org/prints/37823-deej-mixer)
 
 This build uses laser-cut acrylic as for its top plate which results in an absolutely stunning shine. It's lined with LEDs to indicate mute state, controllable by one of the two rows of buttons. The second row is used as custom triggers for F13-F19 keys, which brings a lot of added utility. This one's definitely for power users!
 
@@ -117,3 +117,27 @@ This build uses laser-cut acrylic as for its top plate which results in an absol
 This build uses a 3D-printed design remixed from [/u/Aithorn](#uaithorn)'s above enclosure. This one was made to be held in place by magnets, as it's situated on top of a metallic monitor stand. Magnets are also used instead of screws to hold the top cover and the enclosure's base together. In addition, app icons have been embossed into the 3D-printed slider knobs.
 
 ![/u/functionalism](./assets/community-builds/functionalism.jpg)
+
+## [/u/Fantastic-Feature-84](https://www.reddit.com/user/Fantastic-Feature-84)
+
+**Links**: [Imgur album](https://imgur.com/a/1q2MYI1) | [Enclosure model on Thingiverse](https://www.thingiverse.com/thing:4562009) | [Full Instructable](https://www.instructables.com/id/Hardware-Volume-Mixer-for-PC-With-RGB-LEDs)
+
+This clever retro-style design features LEDs that change their color based on each slider's volume. These LEDs shine through light diffusers mounted below icon cutouts for the different apps, providing a controlled brightness that's easy on the eyes. In addition, a satisying push button provides global mute toggling. /u/FantasticFeature84 has kindly provided full instructions for anyone else who wishes to build the same box, available on Instructables (link above).
+
+![/u/Fantastic-Feature-84](./assets/community-builds/fantasticfeature84.jpg)
+
+## [Cole Morris](http://colemorris.me)
+
+**Links**: [Imgur album](https://imgur.com/a/qkSlVGt)
+
+This compact 3D-printed build makes clever use of vertical space by having slight dips along each slider's travel area, making the knobs seem more integrated with the rest of the enclosure. The bright colors used for its different parts compliment each other well, and band together with its form factor and rounded edges to create a cute, toy-like appearance.
+
+![Cole Morris](./assets/community-builds/colemorris.jpg)
+
+## [wshaf](https://www.twitch.tv/wshaf)
+
+**Links**: [Imgur album](https://imgur.com/a/KWONZ5A) | [Build VOD on Twitch](https://www.twitch.tv/videos/704168677)
+
+This is a pink-and-black rendition of (/u/Aithorn)[#u-aithorn]'s above build, built by the author for one of their friends. Its primary use will be to control different audio sources while live-streaming on Twitch, which highlights deej's usefulness as a cheap DIY alternative to GoXLR and other similar products.
+
+![wshaf](./assets/community-builds/wshaf.jpg)
