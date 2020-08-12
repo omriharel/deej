@@ -141,3 +141,11 @@ This compact 3D-printed build makes clever use of vertical space by having sligh
 This is a pink-and-black rendition of (/u/Aithorn)[#u-aithorn]'s above build, built by the author for one of their friends. Its primary use will be to control different audio sources while live-streaming on Twitch, which highlights deej's usefulness as a cheap DIY alternative to GoXLR and other similar products.
 
 ![wshaf](./assets/community-builds/wshaf.jpg)
+
+## scotte
+
+**Links**: [Imgur album](https://imgur.com/a/Wj2Fe5w) | [Enclosure model on Thingiverse](https://www.thingiverse.com/thing:4567647)
+
+This one is a super-compact mini design! It features a 2-part snap-fit 3D-printed case, as well as 3D-printed knobs. With a total of three sliders and a tiny footprint of about 45 by 75 millimeters, this mini deej version is perfect for those looking to balance fewer audio sources and save some precious desk space. Did we mention it's adorable?
+
+![scotte](./assets/community-builds/scotte.jpg)
