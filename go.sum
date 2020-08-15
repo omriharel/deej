@@ -44,6 +44,12 @@ github.com/gopherjs/gopherwasm v1.1.0 h1:fA2uLoctU5+T3OhOn2vYP0DVT6pxc7xhTlBB1pa
 github.com/gopherjs/gopherwasm v1.1.0/go.mod h1:SkZ8z7CWBz5VXbhJel8TxCmAcsQqzgWGR/8nMhyhZSI=
 github.com/jacobsa/go-serial v0.0.0-20180131005756-15cf729a72d4 h1:G2ztCwXov8mRvP0ZfjE6nAlaCX2XbykaeHdbT6KwDz0=
 github.com/jacobsa/go-serial v0.0.0-20180131005756-15cf729a72d4/go.mod h1:2RvX5ZjVtsznNZPEt4xwJXNJrM3VTZoQf7V6gk0ysvs=
+github.com/jfreymuth/pulse v0.0.0-20200424182717-3b0820ad352f h1:XyMNiJ5vCUTlgl4R/pfw11rzt1sbdzNLbZCk/bb3LfU=
+github.com/jfreymuth/pulse v0.0.0-20200424182717-3b0820ad352f/go.mod h1:cpYspI6YljhkUf1WLXLLDmeaaPFc3CnGLjDZf9dZ4no=
+github.com/jfreymuth/pulse v0.0.0-20200506145638-1534c4af9659 h1:DRA4BuRlhEILiud720WFWqqdADPzp1jTjQvyCr/PP80=
+github.com/jfreymuth/pulse v0.0.0-20200506145638-1534c4af9659/go.mod h1:cpYspI6YljhkUf1WLXLLDmeaaPFc3CnGLjDZf9dZ4no=
+github.com/jfreymuth/pulse v0.0.0-20200608153616-84b2d752b9d4 h1:hqRsCQVbjl5GPWT9F+q5esXRiFPqc2WqbL5+qb5P6rk=
+github.com/jfreymuth/pulse v0.0.0-20200608153616-84b2d752b9d4/go.mod h1:cpYspI6YljhkUf1WLXLLDmeaaPFc3CnGLjDZf9dZ4no=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/kr/pretty v0.1.0 h1:L/CwN0zerZDmRFUapSPitk6f+Q3+0za1rQkzVuMiMFI=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=

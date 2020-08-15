@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"runtime"
 	"syscall"
 
 	"go.uber.org/zap"
@@ -30,6 +31,11 @@ func FileExists(filename string) bool {
 	return !info.IsDir()
 }
 
+// Linux returns true if we're running on Linux
+func Linux() bool {
+	return runtime.GOOS == "linux"
+}
+
 // SetupCloseHandler creates a 'listener' on a new goroutine which will notify the
 // program if it receives an interrupt from the OS
 func SetupCloseHandler() chan os.Signal {
@@ -41,7 +47,14 @@ func SetupCloseHandler() chan os.Signal {
 
 // OpenExternal spawns a detached window with the provided command and argument
 func OpenExternal(logger *zap.SugaredLogger, cmd string, arg string) error {
-	command := exec.Command("cmd.exe", "/C", "start", "/b", cmd, arg)
+
+	// use cmd for windows, bash for linux
+	execCommandArgs := []string{"cmd.exe", "/C", "start", "/b", cmd, arg}
+	if Linux() {
+		execCommandArgs = []string{"/bin/bash", "-c", fmt.Sprintf("%s %s", cmd, arg)}
+	}
+
+	command := exec.Command(execCommandArgs[0], execCommandArgs[1:]...)
 
 	if err := command.Run(); err != nil {
 		logger.Warnw("Failed to spawn detached process",
@@ -63,6 +76,9 @@ func NormalizeScalar(v float32) float32 {
 
 // SignificantlyDifferent returns true if there's a significant enough volume difference between two given values
 func SignificantlyDifferent(old float32, new float32) bool {
+
+	// this threshold is solely responsible for dealing with hardware interference when sliders are producing noisy values
+	// users with amazing hardware could maybe get away with reducing it to 0.015 or even 0.005, but i'm not risking it at the moment
 	const significantDifferenceThreshold = 0.025
 
 	if math.Abs(float64(old-new)) >= significantDifferenceThreshold {
@@ -70,10 +86,15 @@ func SignificantlyDifferent(old float32, new float32) bool {
 	}
 
 	// special behavior is needed around the edges of 0.0 and 1.0 - this makes it snap (just a tiny bit) to them
-	if (new == 1.0 && old != 1.0) || (new == 0.0 && old != 0.0) {
+	if (almostEquals(new, 1.0) && old != 1.0) || (almostEquals(new, 0.0) && old != 0.0) {
 		return true
 	}
 
 	// values are close enough to not warrant any action
 	return false
+}
+
+// a helper to make sure volume snaps correctly to 0 and 100, where appropriate
+func almostEquals(a float32, b float32) bool {
+	return math.Abs(float64(a-b)) < 0.000001
 }

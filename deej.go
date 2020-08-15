@@ -28,10 +28,11 @@ type Deej struct {
 
 	stopChannel chan bool
 	version     string
+	verbose     bool
 }
 
 // NewDeej creates a Deej instance
-func NewDeej(logger *zap.SugaredLogger) (*Deej, error) {
+func NewDeej(logger *zap.SugaredLogger, verbose bool) (*Deej, error) {
 	logger = logger.Named("deej")
 
 	notifier, err := NewToastNotifier(logger)
@@ -51,6 +52,7 @@ func NewDeej(logger *zap.SugaredLogger) (*Deej, error) {
 		notifier:    notifier,
 		config:      config,
 		stopChannel: make(chan bool),
+		verbose:     verbose,
 	}
 
 	serial, err := NewSerialIO(d, logger)
@@ -118,6 +120,11 @@ func (d *Deej) SetVersion(version string) {
 	d.version = version
 }
 
+// Verbose returns a boolean indicating whether deej is running in verbose mode
+func (d *Deej) Verbose() bool {
+	return d.verbose
+}
+
 func (d *Deej) setupInterruptHandler() {
 
 	interruptChannel := util.SetupCloseHandler()
@@ -167,10 +174,13 @@ func (d *Deej) run() {
 	<-d.stopChannel
 	d.logger.Debug("Stop channel signaled, terminating")
 
-	d.stop()
-
-	// exit with 0
-	os.Exit(0)
+	if err := d.stop(); err != nil {
+		d.logger.Warnw("Failed to stop deej", "error", err)
+		os.Exit(1)
+	} else {
+		// exit with 0
+		os.Exit(0)
+	}
 }
 
 func (d *Deej) signalStop() {
@@ -178,13 +188,22 @@ func (d *Deej) signalStop() {
 	d.stopChannel <- true
 }
 
-func (d *Deej) stop() {
+func (d *Deej) stop() error {
 	d.logger.Info("Stopping")
 
 	d.config.StopWatchingConfigFile()
 	d.serial.Stop()
+
+	// release the session map
+	if err := d.sessions.release(); err != nil {
+		d.logger.Errorw("Failed to release session map", "error", err)
+		return fmt.Errorf("release session map: %w", err)
+	}
+
 	d.stopTray()
 
 	// attempt to sync on exit - this won't necessarily work but can't harm
 	d.logger.Sync()
+
+	return nil
 }

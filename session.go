@@ -47,7 +47,7 @@ func (s *baseSession) Key() string {
 	}
 
 	if s.master {
-		return masterSessionName
+		return strings.ToLower(s.name) // could be master or mic, or any device's friendly name
 	}
 
 	return strings.ToLower(s.name)

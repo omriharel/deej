@@ -1,16 +1,25 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 
-	"github.com/bupher/deej"
+	"github.com/omriharel/deej"
 )
 
 var (
 	gitCommit  string
 	versionTag string
 	buildType  string
+
+	verbose bool
 )
+
+func init() {
+	flag.BoolVar(&verbose, "verbose", false, "show verbose logs (useful for debugging serial)")
+	flag.BoolVar(&verbose, "v", false, "shorthand for --verbose")
+	flag.Parse()
+}
 
 func main() {
 
@@ -28,8 +37,13 @@ func main() {
 		"versionTag", versionTag,
 		"buildType", buildType)
 
+	// provide a fair warning
+	if verbose {
+		named.Debug("Verbose flag provided, all log messages will be shown")
+	}
+
 	// create the deej instance
-	d, err := deej.NewDeej(logger)
+	d, err := deej.NewDeej(logger, verbose)
 	if err != nil {
 		named.Fatalw("Failed to create deej object", "error", err)
 	}

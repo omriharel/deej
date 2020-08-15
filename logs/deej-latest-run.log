@@ -1,0 +1,20 @@
+2020-08-10 16:46:00.603	info	main                       	Version info	{"gitCommit": "3869ff2", "versionTag": "v0.9.9-8-g3869ff2", "buildType": "release"}
+2020-08-10 16:46:00.604	info	deej.config                	Loaded config successfully
+2020-08-10 16:46:00.604	info	deej.config                	Config values	{"sliderMapping": "<5 sliders mapped to 7 targets>", "sessionRefreshThreshold": 5, "connectionInfo": {"COMPort":"COM3","BaudRate":9600}, "invertSliders": false}
+2020-08-10 16:46:00.631	info	deej.sessions              	Got all audio sessions successfully	{"sessionMap": "<12 audio sessions>"}
+2020-08-10 16:46:00.667	info	deej                       	Run loop starting
+2020-08-10 16:46:00.691	info	deej.serial.com3           	Connected	{"conn": {}}
+2020-08-10 16:46:00.691	info	deej.serial.com3           	Detected sliders	{"amount": 5}
+2020-08-10 16:46:13.394	info	deej.sessions              	Got all audio sessions successfully	{"sessionMap": "<12 audio sessions>"}
+2020-08-10 16:46:21.633	info	deej.sessions              	Got all audio sessions successfully	{"sessionMap": "<13 audio sessions>"}
+2020-08-10 16:47:24.456	info	deej.tray                  	Quit menu item clicked, stopping
+2020-08-10 16:47:24.456	info	deej                       	Stopping
+2020-08-15 16:15:58.323	info	main                       	Version info	{"gitCommit": "3869ff2", "versionTag": "v0.9.9-8-g3869ff2", "buildType": "release"}
+2020-08-15 16:15:58.327	info	deej.config                	Loaded config successfully
+2020-08-15 16:15:58.327	info	deej.config                	Config values	{"sliderMapping": "<5 sliders mapped to 7 targets>", "sessionRefreshThreshold": 5, "connectionInfo": {"COMPort":"COM3","BaudRate":9600}, "invertSliders": false}
+2020-08-15 16:15:58.362	info	deej.sessions              	Got all audio sessions successfully	{"sessionMap": "<14 audio sessions>"}
+2020-08-15 16:15:58.400	info	deej                       	Run loop starting
+2020-08-15 16:15:58.423	info	deej.serial.com3           	Connected	{"conn": {}}
+2020-08-15 16:15:58.423	info	deej.serial.com3           	Detected sliders	{"amount": 5}
+2020-08-15 16:16:02.707	info	deej.tray                  	Quit menu item clicked, stopping
+2020-08-15 16:16:02.707	info	deej                       	Stopping

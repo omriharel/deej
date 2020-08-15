@@ -1,5 +1,3 @@
-// +build windows
-
 package deej
 
 import (
@@ -11,11 +9,10 @@ import (
 	ps "github.com/mitchellh/go-ps"
 	wca "github.com/moutend/go-wca"
 	"go.uber.org/zap"
-
-	"github.com/omriharel/deej/util"
 )
 
 var errNoSuchProcess = errors.New("No such process")
+var errRefreshSessions = errors.New("Trigger session refresh")
 
 type wcaSession struct {
 	baseSession
@@ -35,6 +32,8 @@ type masterSession struct {
 	volume *wca.IAudioEndpointVolume
 
 	eventCtx *ole.GUID
+
+	stale bool // when set to true, we should refresh sessions on the next call to SetVolume
 }
 
 func newWCASession(
@@ -91,6 +90,8 @@ func newMasterSession(
 	logger *zap.SugaredLogger,
 	volume *wca.IAudioEndpointVolume,
 	eventCtx *ole.GUID,
+	key string,
+	loggerKey string,
 ) (*masterSession, error) {
 
 	s := &masterSession{
@@ -98,10 +99,10 @@ func newMasterSession(
 		eventCtx: eventCtx,
 	}
 
-	s.logger = logger.Named(masterSessionName)
+	s.logger = logger.Named(loggerKey)
 	s.master = true
-	s.name = masterSessionName
-	s.humanReadableDesc = masterSessionName
+	s.name = key
+	s.humanReadableDesc = key
 
 	s.logger.Debugw(sessionCreationLogMessage, "session", s)
 
@@ -115,13 +116,26 @@ func (s *wcaSession) GetVolume() float32 {
 		s.logger.Warnw("Failed to get session volume", "error", err)
 	}
 
-	return util.NormalizeScalar(level)
+	return level
 }
 
 func (s *wcaSession) SetVolume(v float32) error {
 	if err := s.volume.SetMasterVolume(v, s.eventCtx); err != nil {
 		s.logger.Warnw("Failed to set session volume", "error", err)
 		return fmt.Errorf("adjust session volume: %w", err)
+	}
+
+	// mitigate expired sessions by checking the state whenever we change volumes
+	var state uint32
+
+	if err := s.control.GetState(&state); err != nil {
+		s.logger.Warnw("Failed to get session state while setting volume", "error", err)
+		return fmt.Errorf("get session state: %w", err)
+	}
+
+	if state == wca.AudioSessionStateExpired {
+		s.logger.Warnw("Audio session expired, triggering session refresh")
+		return errRefreshSessions
 	}
 
 	s.logger.Debugw("Adjusting session volume", "to", fmt.Sprintf("%.2f", v))
@@ -147,10 +161,15 @@ func (s *masterSession) GetVolume() float32 {
 		s.logger.Warnw("Failed to get session volume", "error", err)
 	}
 
-	return util.NormalizeScalar(level)
+	return level
 }
 
 func (s *masterSession) SetVolume(v float32) error {
+	if s.stale {
+		s.logger.Warnw("Session expired because default device has changed, triggering session refresh")
+		return errRefreshSessions
+	}
+
 	if err := s.volume.SetMasterVolumeLevelScalar(v, s.eventCtx); err != nil {
 		s.logger.Warnw("Failed to set session volume",
 			"error", err,
@@ -172,4 +191,8 @@ func (s *masterSession) Release() {
 
 func (s *masterSession) String() string {
 	return fmt.Sprintf(sessionStringFormat, s.humanReadableDesc, s.GetVolume())
+}
+
+func (s *masterSession) markAsStale() {
+	s.stale = true
 }

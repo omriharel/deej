@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/lxn/win"
+	ps "github.com/mitchellh/go-ps"
 	"go.uber.org/zap"
 )
 
@@ -24,6 +26,15 @@ type sessionMap struct {
 const (
 	masterSessionName = "master" // master device volume
 	systemSessionName = "system" // system sounds volume
+	inputSessionName  = "mic"    // microphone input level
+
+	// determines whether the map should be refreshed when a slider moves.
+	// this is a bit greedy but allows us to ensure sessions are always re-acquired, which is
+	// especially important for process groups (because you can have one ongoing session
+	// always preventing lookup of other processes bound to its slider, which forces the user
+	// to manually refresh sessions). a cleaner way to do this down the line is by registering to notifications
+	// whenever a new session is added, but that's too hard to justify for how easy this solution is
+	maxTimeBetweenSessionRefreshes = time.Second * 45
 )
 
 func newSessionMap(deej *Deej, logger *zap.SugaredLogger, sessionFinder SessionFinder) (*sessionMap, error) {
@@ -54,7 +65,22 @@ func (m *sessionMap) initialize() error {
 	return nil
 }
 
+func (m *sessionMap) release() error {
+	if err := m.sessionFinder.Release(); err != nil {
+		m.logger.Warnw("Failed to release session finder during session map release", "error", err)
+		return fmt.Errorf("release session finder during release: %w", err)
+	}
+
+	return nil
+}
+
+// assumes the session map is clean!
+// only call on a new session map or as part of refreshSessions which calls reset
 func (m *sessionMap) getAndAddSessions() error {
+
+	// mark that we're refreshing before anything else
+	m.lastSessionRefresh = time.Now()
+
 	sessions, err := m.sessionFinder.GetAllSessions()
 	if err != nil {
 		m.logger.Warnw("Failed to get sessions from session finder", "error", err)
@@ -67,9 +93,6 @@ func (m *sessionMap) getAndAddSessions() error {
 
 	m.logger.Infow("Got all audio sessions successfully", "sessionMap", m)
 
-	// mark completion
-	m.lastSessionRefresh = time.Now()
-
 	return nil
 }
 
@@ -81,7 +104,7 @@ func (m *sessionMap) setupOnConfigReload() {
 			select {
 			case <-configReloadedChannel:
 				m.logger.Info("Detected config reload, attempting to re-acquire all audio sessions")
-				m.refreshSessions()
+				m.refreshSessions(false)
 			}
 		}
 	}()
@@ -100,10 +123,10 @@ func (m *sessionMap) setupOnSliderMove() {
 	}()
 }
 
-func (m *sessionMap) refreshSessions() {
+func (m *sessionMap) refreshSessions(force bool) {
 
-	// make sure enough time passed since the last refresh
-	if m.lastSessionRefresh.Add(m.deej.config.SessionRefreshThreshold).After(time.Now()) {
+	// make sure enough time passed since the last refresh, unless force is true in which case always clear
+	if !force && m.lastSessionRefresh.Add(m.deej.config.SessionRefreshThreshold).After(time.Now()) {
 		return
 	}
 
@@ -118,23 +141,30 @@ func (m *sessionMap) refreshSessions() {
 }
 
 func (m *sessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
+
+	// first of all, ensure our session map isn't moldy
+	if m.lastSessionRefresh.Add(maxTimeBetweenSessionRefreshes).Before(time.Now()) {
+		m.logger.Debug("Stale session map detected on slider move, refreshing")
+		m.refreshSessions(true)
+	}
+
+	// get the targets mapped to this slider from the config
 	targets, ok := m.deej.config.SliderMapping.get(event.SliderID)
 
-	// slider not found in config - silently ignore
+	// if slider not found in config, silently ignore
 	if !ok {
 		return
 	}
 
 	targetFound := false
+	adjustmentFailed := false
 
 	// for each possible target for this slider...
 	for _, target := range targets {
 
 		// normalize the target name to match session keys
 		normalizedTargetName := strings.ToLower(target)
-		
-
-		// if target name is current, get foreground window
+		m.logger.Debugw(normalizedTargetName)
 		if normalizedTargetName == "current" {
 			var hwnd = win.GetForegroundWindow()
 			var processid uint32
@@ -155,19 +185,24 @@ func (m *sessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
 
 		targetFound = true
 
+		// iterate sessions and adjust the volume of each one
 		for _, session := range sessions {
 			if session.GetVolume() != event.PercentValue {
 				if err := session.SetVolume(event.PercentValue); err != nil {
 					m.logger.Warnw("Failed to set target session volume", "error", err)
+					adjustmentFailed = true
 				}
 			}
 		}
 	}
 
-	// if we still haven't found a target, maybe look for it again - processes could've opened
-	// since the last time this slider moved. if they haven't, the cooldown will take care to not spam it up
+	// if we still haven't found a target or the volume adjustment failed, maybe look for the target again.
+	// processes could've opened since the last time this slider moved.
+	// if they haven't, the cooldown will take care to not spam it up
 	if !targetFound {
-		m.refreshSessions()
+		m.refreshSessions(false)
+	} else if adjustmentFailed {
+		m.refreshSessions(true)
 	}
 }
 
@@ -181,7 +216,7 @@ func (m *sessionMap) add(value Session) {
 	if !ok {
 		m.m[key] = []Session{value}
 	} else {
-		existing = append(existing, value)
+		m.m[key] = append(existing, value)
 	}
 }
 
