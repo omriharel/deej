@@ -61,3 +61,91 @@ This build takes a different spin on 3D-printed enclosures by positioning the sl
 This one's a very special build, as it's designed to look great with absolutely no 3D printing, mill or any casing at all. It's made with custom PCBs that are mounted together with bolts and nuts. The top plate's silkscreen layer adds its own visual flair. The build uses six 100 mm sliders and an Arduino Pro Micro. Snackya has kindly provided the gerber files, as well as detailed instructions, in their GitHub repository (link above).
 
 ![Snackya](./assets/community-builds/snackya.jpg)
+
+## [olijoe](https://github.com/olijoe)
+
+**Links**: [Imgur album](https://imgur.com/a/Wibnqi7) | [GitHub repository with PCB files and instructions](https://github.com/olijoe/Deej-board)
+
+This PCB build also takes advantage of sandwiching between two identical custom PCBs to avoid any need for 3D printing or other tools. Both sides of the PCB are used, one for mounting and wiring the components and the other for the silkscreen design (which in this case features some app logos and a cute geometric alpaca). olijoe has kindly provided the gerber files, as well as detailed insturctions, in their GitHub repository (link above).
+
+![olijoe](./assets/community-builds/olijoe.jpg)
+
+## [Daggr](https://www.thingiverse.com/daggr)
+
+**Links**: [Imgur album](https://imgur.com/a/YmTALay) | [Enclosure model on Thingiverse](https://www.thingiverse.com/thing:4555424) | [Blog post](https://blogg.spofify.se/index.php/2020/07/28/physical-volume-controller-part-2/)
+
+This design is a remixed version of the above build by [nightfox939](#nightfox939), this time using five circular knobs instead of sliders. It adds onto it with a patterned top infill in the slicer settings, as well as some sharp looking filament-swapped app icons.
+
+![Daggr](./assets/community-builds/daggr.jpg)
+
+## [/u/thesqueakywheel](https://reddit.com/user/thesqueakywheel)
+
+**Links**: [Imgur album](https://imgur.com/a/vTsrSa7) | [Enclosure model on Thingiverse](https://www.thingiverse.com/thing:4557639)
+
+This one's a compact 3-part design made to be [mounted to the underside of a desk](https://i.imgur.com/hGB5NH2.png). Each part is flat to allow for easy 3D printing without support material. The design is made such that the mounting plate in-between the two covers is actually what's holding them together and hidden between them for a seamless packaging.
+
+![/u/thesqueakywheel](./assets/community-builds/thesqueakywheel.jpg)
+
+## [Optagon](https://www.thingiverse.com/Optagon)
+
+**Links**: [Imgur album](https://imgur.com/a/8WKr8W9) | [Enclosure model on Thingiverse](https://www.thingiverse.com/thing:4556291)
+
+This design incorporates fading LEDs that shine through 3D-printed app icons (they look way better in reality, but hopefully the picture gives a bit of an idea). Instructions for how to wire everything up, including some pictures, are inside the links above. A bright idea, and some very stylish execution!
+
+![Optagon](./assets/community-builds/optagon.jpg)
+
+## mozza
+
+**Links**: [Imgur album](https://imgur.com/a/suMAJ5Y) | [Enclosure model on Thingiverse](https://www.thingiverse.com/thing:4558424)
+
+This compact build was designed to be positioned side-by-side with a keyboard. Contrary to most other designs, the knobs here are laid out vertically, making ideal use of the space they occupy. Perfect for a quick adjustment without ever taking off your hand from that side of the keyboard!
+
+![mozza](./assets/community-builds/mozza.jpg)
+
+## Max
+
+**Links**: [Imgur album](https://imgur.com/a/T8OR4b3) | [Enclosure model on PrusaPrinters](https://www.prusaprinters.org/prints/37823-deej-mixer)
+
+This build uses laser-cut acrylic as for its top plate which results in an absolutely stunning shine. It's lined with LEDs to indicate mute state, controllable by one of the two rows of buttons. The second row is used as custom triggers for F13-F19 keys, which brings a lot of added utility. This one's definitely for power users!
+
+![Max](./assets/community-builds/max.jpg)
+
+## [/u/functionalism](https://reddit.com/user/functionalism)
+
+**Links**: [Imgur album](https://imgur.com/a/zavi9jL) | [Enclosure model on Thingiverse](https://www.thingiverse.com/thing:4561669)
+
+This build uses a 3D-printed design remixed from [/u/Aithorn](#uaithorn)'s above enclosure. This one was made to be held in place by magnets, as it's situated on top of a metallic monitor stand. Magnets are also used instead of screws to hold the top cover and the enclosure's base together. In addition, app icons have been embossed into the 3D-printed slider knobs.
+
+![/u/functionalism](./assets/community-builds/functionalism.jpg)
+
+## [/u/Fantastic-Feature-84](https://www.reddit.com/user/Fantastic-Feature-84)
+
+**Links**: [Imgur album](https://imgur.com/a/1q2MYI1) | [Enclosure model on Thingiverse](https://www.thingiverse.com/thing:4562009) | [Full Instructable](https://www.instructables.com/id/Hardware-Volume-Mixer-for-PC-With-RGB-LEDs)
+
+This clever retro-style design features LEDs that change their color based on each slider's volume. These LEDs shine through light diffusers mounted below icon cutouts for the different apps, providing a controlled brightness that's easy on the eyes. In addition, a satisfying push button provides global mute toggling. /u/FantasticFeature84 has kindly provided full instructions for anyone else who wishes to build the same box, available on Instructables (link above).
+
+![/u/Fantastic-Feature-84](./assets/community-builds/fantasticfeature84.jpg)
+
+## [Cole Morris](http://colemorris.me)
+
+**Links**: [Imgur album](https://imgur.com/a/qkSlVGt)
+
+This compact 3D-printed build makes clever use of vertical space by having slight dips along each slider's travel area, making the knobs seem more integrated with the rest of the enclosure. The bright colors used for its different parts compliment each other well, and band together with its form factor and rounded edges to create a cute, toy-like appearance.
+
+![Cole Morris](./assets/community-builds/colemorris.jpg)
+
+## [wshaf](https://www.twitch.tv/wshaf)
+
+**Links**: [Imgur album](https://imgur.com/a/KWONZ5A) | [Build VOD on Twitch](https://www.twitch.tv/videos/704168677)
+
+This is a pink-and-black rendition of (/u/Aithorn)[#u-aithorn]'s above build, built by the author for one of their friends. Its primary use will be to control different audio sources while live-streaming on Twitch, which highlights deej's usefulness as a cheap DIY alternative to GoXLR and other similar products.
+
+![wshaf](./assets/community-builds/wshaf.jpg)
+
+## scotte
+
+**Links**: [Imgur album](https://imgur.com/a/Wj2Fe5w) | [Enclosure model on Thingiverse](https://www.thingiverse.com/thing:4567647)
+
+This one is a super-compact mini design! It features a 2-part snap-fit 3D-printed case, as well as 3D-printed knobs. With a total of three sliders and a tiny footprint of about 45 by 75 millimeters, this mini deej version is perfect for those looking to balance fewer audio sources and save some precious desk space. Did we mention it's adorable?
+
+![scotte](./assets/community-builds/scotte.jpg)

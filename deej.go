@@ -165,7 +165,7 @@ func (d *Deej) SubscribeToChanges() chan bool {
 	return d.config.SubscribeToChanges()
 }
 
-// Verbose
+// Verbose returns a boolean indicating whether deej is running in verbose mode
 func (d *Deej) Verbose() bool {
 	return d.verbose
 }

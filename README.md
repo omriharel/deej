@@ -1,31 +1,31 @@
 # deej
 
-Arduino and Go project for controlling application volumes on Windows and Linux PCs with physical sliders (like a DJ!)
+deej is an **open-source hardware volume mixer** for Windows and Linux PCs. It lets you use real-life sliders (like a DJ!) to **seamlessly control the volumes of different apps** (such as your music player, the game you're playing and your voice chat session) without having to stop what you're doing.
 
-**_New:_ `deej` has been re-written as a Go application! [More details](#whats-new) | [Download](https://github.com/omriharel/deej/releases)**
-
-**_New:_ join the [deej Discord server](https://discord.gg/nf88NJu) if you need help or have any questions!**
+**Join the [deej Discord server](https://discord.gg/nf88NJu) if you need help or have any questions!**
 
 [![Discord](https://img.shields.io/discord/702940502038937667?logo=discord)](https://discord.gg/nf88NJu)
 
-[**Video demonstration on YouTube**](https://youtu.be/VoByJ4USMr8)
+deej consists of a [lightweight desktop client](#features) written in Go, and an Arduino-based hardware setup that's simple and cheap to build. [**Check out some versions built by members of our community!**](./community.md)
 
-[**See some awesome versions built by people around the world!**](./community.md) | [**_New:_ Design collection on Thingiverse**](https://thingiverse.com/omriharel/collections/deej)
+**[Download the latest release](https://github.com/omriharel/deej/releases/latest) | [Video demonstration](https://youtu.be/VoByJ4USMr8) | [Build video by Tech Always](https://youtu.be/x2yXbFiiAeI)**
+
 
 ![The OG shoebox build](assets/build.jpg)
 
 ## Table of contents
 
-- [What's new](#whats-new)
+- [Features](#features)
 - [How it works](#how-it-works)
   - [Hardware](#hardware)
     - [Schematic](#schematic)
   - [Software](#software)
 - [Slider mapping (configuration)](#slider-mapping-configuration)
 - [Build your own!](#build-your-own)
+  - [Build video](#build-video)
   - [Bill of Materials](#bill-of-materials)
-  - [Build procedure](#build-procedure)
   - [Thingiverse collection](#thingiverse-collection)
+  - [Build procedure](#build-procedure)
 - [How to run](#how-to-run)
   - [Requirements](#requirements)
   - [Download and installation](#download-and-installation)
@@ -34,25 +34,21 @@ Arduino and Go project for controlling application volumes on Windows and Linux 
 - [Long-ish term roadmap](#long-ish-term-roadmap)
 - [License](#license)
 
-## What's new
+## Features
 
-`deej` is now written in Go, and [distributed](https://github.com/omriharel/deej/releases) as a single executable (of course you can still [build from source](#building-from-source) if that's your thing).
+deej is written in Go and [distributed](https://github.com/omriharel/deej/releases/latest) as a portable (no installer needed) executable.
 
-This means you no longer have to maintain a Python environment. You can even build one for your friends, give them a simple download link and they'll be good to go!
-
-In addition, check out these features:
-
-- **Fully backwards-compatible** with your existing `config.yaml` and Arduino sketch
-- **Faster** and more lightweight, consuming around 10MB of memory
-- Control your **microphone's input level** by assigning `mic` to a slider (experimental support)
+- Bind apps to different sliders
+  - Bind multiple apps per slider (i.e. one slider for all your games)
+  - Bind the master channel
+  - Bind "system sounds" (on Windows)
+  - **_New:_** Bind specific audio devices by name (on Windows, _experimental_)
+- Control your microphone's input level
+- Lightweight desktop client, consuming around 10MB of memory
 - Runs from your system tray
-- **Helpful notifications** will let you know if something isn't working
-- New `system` flag lets you assign the "system sounds" volume level (Windows-only)
-- Supports everything the Python version did
+- Helpful notifications to let you know if something isn't working
 
-> **Migrating from the Python version?** Great! You only need to keep your `config.yaml` file. Download the executable from the [releases page](https://github.com/omriharel/deej/releases/latest), place it alongside the configuration file and you're done.
-
-> **Prefer to stick with Python?** That's totally fine. It will no longer be maintained, but you can always find it in the [`legacy-python` branch](https://github.com/omriharel/deej/tree/legacy-python).
+> **Looking for the older Python version?** It's no longer maintained, but you can always find it in the [`legacy-python` branch](https://github.com/omriharel/deej/tree/legacy-python).
 
 ## How it works
 
@@ -74,7 +70,7 @@ In addition, check out these features:
 
 `deej` uses a simple YAML-formatted configuration file named [`config.yaml`](./config.yaml), placed alongside the deej executable.
 
-The config file determines which applications are mapped to which sliders, and which COM port/baud rate to use for the connection to the Arduino board.
+The config file determines which applications (and devices) are mapped to which sliders, and which parameters to use for the connection to the Arduino board, as well as other user preferences.
 
 **This file auto-reloads when its contents are changed, so you can change application mappings on-the-fly without restarting `deej`.**
 
@@ -102,9 +98,11 @@ process_refresh_frequency: 5
 ```
 
 - `master` is a special option to control the master volume of the system _(uses the default playback device)_
-- _New:_ `mic` is a special option to control your microphone's input level _(uses the default recording device)_. **Please note: this is an experimental feature that might not suit every hardware set-up out there.**
+- `mic` is a special option to control your microphone's input level _(uses the default recording device)_.
+- On Windows, you can specify a device's full name, i.e. `Speakers (Realtek High Definition Audio)`, to bind that device's level to a slider. This doesn't conflict with the default `master` and `mic` options, and works for both input and output devices.
+  - Be sure to use the full device name, as seen in the menu that comes up when left-clicking the speaker icon in the tray menu
 - `system` is a special option on Windows to control the "System sounds" volume in the Windows mixer
-- Process names aren't case-sensitive, meaning both `chrome.exe` and `CHROME.exe` will work
+- All names are case-**in**sensitive, meaning both `chrome.exe` and `CHROME.exe` will work
 - You can create groups of process names (using a list) to either:
     - control more than one app with a single slider
     - choose whichever process in the group that's currently running (i.e. to have one slider control any game you're playing)
@@ -114,6 +112,10 @@ process_refresh_frequency: 5
 Building `deej` is very simple. You only need a few relatively cheap parts - it's an excellent starter project (and my first Arduino project, personally). Remember that if you need any help or have a question that's not answered here, you can always [join the deej Discord server](https://discord.gg/nf88NJu).
 
 Build `deej` for yourself, or as an awesome gift for your gaming buddies!
+
+### Build video
+
+In case you prefer watching to reading, Charles from the [**Tech Always**](https://www.youtube.com/c/TechAlways) YouTube channel has made [**a fantastic video**](https://youtu.be/x2yXbFiiAeI) that covers the basics of building deej for yourself, including parts, costs, assembly and software. I highly recommend checking it out!
 
 ### Bill of Materials
 
@@ -165,7 +167,7 @@ With many different 3D-printed designs being added to our [community showcase](.
 
 ### Building from source
 
-If you'd rather not download a compiled executable, or want to extend `deej` or modify it to your needs, feel free to clone the repository and build it yourself. All you need is a somewhat recent (v1.12-ish+) Go environment on your machine. If you go this route, make sure to check out the [developer scripts](./scripts).
+If you'd rather not download a compiled executable, or want to extend `deej` or modify it to your needs, feel free to clone the repository and build it yourself. All you need is a Go 1.14 (or above) environment on your machine. If you go this route, make sure to check out the [developer scripts](./scripts).
 
 Like other Go packages, you can also use the `go get` tool: `go get -u github.com/omriharel/deej`.
 
@@ -178,6 +180,12 @@ If you need any help with this, please [join our Discord server](https://discord
 While `deej` is still a very new project, a vibrant community has already started to grow around it. Come hang out with us in the [deej Discord server](https://discord.gg/nf88NJu), or check out awesome builds made by our members in the [community showcase](./community.md).
 
 The server is also a great place to ask questions, suggest features or report bugs (but of course, feel free to use GitHub if you prefer).
+
+### Donations
+
+If you love deej and want to show your support for this project, you can do so using the link below. Please don't feel obligated to donate - building the project and telling your friends about it goes a very long way! Thank you very much.
+
+[![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/omriharel)
 
 ## Long-ish term roadmap
 

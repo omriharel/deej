@@ -37,6 +37,9 @@ const (
 	// the notification client will call this multiple times in quick succession based on the
 	// default device's assigned media roles, so we need to filter out the extraneous calls
 	minDefaultDeviceChangeThreshold = 100 * time.Millisecond
+
+	// prefix for device sessions in logger
+	deviceSessionFormat = "device.%s"
 )
 
 func newSessionFinder(logger *zap.SugaredLogger) (SessionFinder, error) {
@@ -56,10 +59,41 @@ func (sf *wcaSessionFinder) GetAllSessions() ([]Session, error) {
 
 	// we must call this every time we're about to list devices, i think. could be wrong
 	if err := ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED); err != nil {
-		sf.logger.Warnw("Failed to call CoInitializeEx", "error", err)
-		return nil, fmt.Errorf("call CoInitializeEx: %w", err)
+
+		// if the error is "Incorrect function" that corresponds to 0x00000001,
+		// which represents E_FALSE in COM error handling. this is fine for this function,
+		// and just means that the call was redundant.
+		const eFalse = 1
+		oleError := &ole.OleError{}
+
+		if errors.As(err, &oleError) {
+			if oleError.Code() == eFalse {
+				sf.logger.Warn("CoInitializeEx failed with E_FALSE due to redundant invocation")
+			} else {
+				sf.logger.Warnw("Failed to call CoInitializeEx",
+					"isOleError", true,
+					"error", err,
+					"oleError", oleError)
+
+				return nil, fmt.Errorf("call CoInitializeEx: %w", err)
+			}
+		} else {
+			sf.logger.Warnw("Failed to call CoInitializeEx",
+				"isOleError", false,
+				"error", err,
+				"oleError", nil)
+
+			return nil, fmt.Errorf("call CoInitializeEx: %w", err)
+		}
+
 	}
 	defer ole.CoUninitialize()
+
+	// ensure we have a device enumerator
+	if err := sf.getDeviceEnumerator(); err != nil {
+		sf.logger.Warnw("Failed to get device enumerator", "error", err)
+		return nil, fmt.Errorf("get device enumerator: %w", err)
+	}
 
 	// get the currently active default output and input devices.
 	// please note that this can return a nil defaultInputEndpoint, in case there are no input devices connected.
@@ -84,7 +118,7 @@ func (sf *wcaSessionFinder) GetAllSessions() ([]Session, error) {
 	}
 
 	// get the master output session
-	sf.masterOut, err = sf.getMasterSession(defaultOutputEndpoint, masterSessionName)
+	sf.masterOut, err = sf.getMasterSession(defaultOutputEndpoint, masterSessionName, masterSessionName)
 	if err != nil {
 		sf.logger.Warnw("Failed to get master audio output session", "error", err)
 		return nil, fmt.Errorf("get master audio output session: %w", err)
@@ -94,7 +128,7 @@ func (sf *wcaSessionFinder) GetAllSessions() ([]Session, error) {
 
 	// get the master input session, if a default input device exists
 	if defaultInputEndpoint != nil {
-		sf.masterIn, err = sf.getMasterSession(defaultInputEndpoint, inputSessionName)
+		sf.masterIn, err = sf.getMasterSession(defaultInputEndpoint, inputSessionName, inputSessionName)
 		if err != nil {
 			sf.logger.Warnw("Failed to get master audio input session", "error", err)
 			return nil, fmt.Errorf("get master audio input session: %w", err)
@@ -103,18 +137,11 @@ func (sf *wcaSessionFinder) GetAllSessions() ([]Session, error) {
 		sessions = append(sessions, sf.masterIn)
 	}
 
-	// get an enumerator for the rest of the audio output sessions (mic doesn't really have this concept)
-	sessionEnumerator, err := getSessionEnumerator(defaultOutputEndpoint)
-	if err != nil {
-		sf.logger.Warnw("Failed to get audio session enumerator", "error", err)
-		return nil, fmt.Errorf("get audio session enumerator: %w", err)
-	}
-	defer sessionEnumerator.Release()
-
-	// enumerate it and add sessions along the way
-	if err := sf.enumerateAndAddSessions(sessionEnumerator, &sessions); err != nil {
-		sf.logger.Warnw("Failed to enumerate audio sessions", "error", err)
-		return nil, fmt.Errorf("enumerate audio sessions: %w", err)
+	// enumerate all devices and make their "master" sessions bindable by friendly name;
+	// for output devices, this is also where we enumerate process sessions
+	if err := sf.enumerateAndAddSessions(&sessions); err != nil {
+		sf.logger.Warnw("Failed to enumerate device sessions", "error", err)
+		return nil, fmt.Errorf("enumerate device sessions: %w", err)
 	}
 
 	return sessions, nil
@@ -132,7 +159,7 @@ func (sf *wcaSessionFinder) Release() error {
 	return nil
 }
 
-func (sf *wcaSessionFinder) getDefaultAudioEndpoints() (*wca.IMMDevice, *wca.IMMDevice, error) {
+func (sf *wcaSessionFinder) getDeviceEnumerator() error {
 
 	// get the IMMDeviceEnumerator (only once)
 	if sf.mmDeviceEnumerator == nil {
@@ -144,9 +171,14 @@ func (sf *wcaSessionFinder) getDefaultAudioEndpoints() (*wca.IMMDevice, *wca.IMM
 			&sf.mmDeviceEnumerator,
 		); err != nil {
 			sf.logger.Warnw("Failed to call CoCreateInstance", "error", err)
-			return nil, nil, fmt.Errorf("call CoCreateInstance: %w", err)
+			return fmt.Errorf("call CoCreateInstance: %w", err)
 		}
 	}
+
+	return nil
+}
+
+func (sf *wcaSessionFinder) getDefaultAudioEndpoints() (*wca.IMMDevice, *wca.IMMDevice, error) {
 
 	// get the default audio endpoints as IMMDevice instances
 	var mmOutDevice *wca.IMMDevice
@@ -189,7 +221,7 @@ func (sf *wcaSessionFinder) registerDefaultDeviceChangeCallback() error {
 	return nil
 }
 
-func (sf *wcaSessionFinder) getMasterSession(mmDevice *wca.IMMDevice, key string) (*MasterSession, error) {
+func (sf *wcaSessionFinder) getMasterSession(mmDevice *wca.IMMDevice, key string, loggerKey string) (*MasterSession, error) {
 
 	var audioEndpointVolume *wca.IAudioEndpointVolume
 
@@ -199,7 +231,7 @@ func (sf *wcaSessionFinder) getMasterSession(mmDevice *wca.IMMDevice, key string
 	}
 
 	// create the master session
-	master, err := newMasterSession(sf.sessionLogger, audioEndpointVolume, sf.eventCtx, key)
+	master, err := newMasterSession(sf.sessionLogger, audioEndpointVolume, sf.eventCtx, key, loggerKey)
 	if err != nil {
 		sf.logger.Warnw("Failed to create master session instance", "error", err)
 		return nil, fmt.Errorf("create master session: %w", err)
@@ -208,35 +240,168 @@ func (sf *wcaSessionFinder) getMasterSession(mmDevice *wca.IMMDevice, key string
 	return master, nil
 }
 
-func getSessionEnumerator(mmDevice *wca.IMMDevice) (*wca.IAudioSessionEnumerator, error) {
+func (sf *wcaSessionFinder) enumerateAndAddSessions(sessions *[]Session) error {
+
+	// get list of devices
+	var deviceCollection *wca.IMMDeviceCollection
+
+	if err := sf.mmDeviceEnumerator.EnumAudioEndpoints(wca.EAll, wca.DEVICE_STATE_ACTIVE, &deviceCollection); err != nil {
+		sf.logger.Warnw("Failed to enumerate active audio endpoints", "error", err)
+		return fmt.Errorf("enumerate active audio endpoints: %w", err)
+	}
+
+	// check how many devices there are
+	var deviceCount uint32
+
+	if err := deviceCollection.GetCount(&deviceCount); err != nil {
+		sf.logger.Warnw("Failed to get device count from device collection", "error", err)
+		return fmt.Errorf("get device count from device collection: %w", err)
+	}
+
+	// for each device:
+	for deviceIdx := uint32(0); deviceIdx < deviceCount; deviceIdx++ {
+
+		// get its IMMDevice instance
+		var endpoint *wca.IMMDevice
+
+		if err := deviceCollection.Item(deviceIdx, &endpoint); err != nil {
+			sf.logger.Warnw("Failed to get device from device collection",
+				"deviceIdx", deviceIdx,
+				"error", err)
+
+			return fmt.Errorf("get device %d from device collection: %w", deviceIdx, err)
+		}
+		defer endpoint.Release()
+
+		// get its IMMEndpoint instance to figure out if it's an output device (and we need to enumerate its process sessions later)
+		dispatch, err := endpoint.QueryInterface(wca.IID_IMMEndpoint)
+		if err != nil {
+			sf.logger.Warnw("Failed to query IMMEndpoint for device",
+				"deviceIdx", deviceIdx,
+				"error", err)
+
+			return fmt.Errorf("query device %d IMMEndpoint: %w", deviceIdx, err)
+		}
+
+		// get the device's property store
+		var propertyStore *wca.IPropertyStore
+
+		if err := endpoint.OpenPropertyStore(wca.STGM_READ, &propertyStore); err != nil {
+			sf.logger.Warnw("Failed to open property store for endpoint",
+				"deviceIdx", deviceIdx,
+				"error", err)
+
+			return fmt.Errorf("open endpoint %d property store: %w", deviceIdx, err)
+		}
+		defer propertyStore.Release()
+
+		// query the property store for the device's description and friendly name
+		value := &wca.PROPVARIANT{}
+
+		if err := propertyStore.GetValue(&wca.PKEY_Device_DeviceDesc, value); err != nil {
+			sf.logger.Warnw("Failed to get description for device",
+				"deviceIdx", deviceIdx,
+				"error", err)
+
+			return fmt.Errorf("get device %d description: %w", deviceIdx, err)
+		}
+
+		// device description i.e. "Headphones"
+		endpointDescription := strings.ToLower(value.String())
+
+		if err := propertyStore.GetValue(&wca.PKEY_Device_FriendlyName, value); err != nil {
+			sf.logger.Warnw("Failed to get friendly name for device",
+				"deviceIdx", deviceIdx,
+				"error", err)
+
+			return fmt.Errorf("get device %d friendly name: %w", deviceIdx, err)
+		}
+
+		// device friendly name i.e. "Headphones (Realtek Audio)"
+		endpointFriendlyName := value.String()
+
+		// receive a useful object instead of our dispatch
+		endpointType := (*wca.IMMEndpoint)(unsafe.Pointer(dispatch))
+		defer endpointType.Release()
+
+		var dataFlow uint32
+		if err := endpointType.GetDataFlow(&dataFlow); err != nil {
+			sf.logger.Warnw("Failed to get data flow for endpoint",
+				"deviceIdx", deviceIdx,
+				"error", err)
+
+			return fmt.Errorf("get device %d data flow: %w", deviceIdx, err)
+		}
+
+		sf.logger.Debugw("Enumerated device info",
+			"deviceIdx", deviceIdx,
+			"deviceDescription", endpointDescription,
+			"deviceFriendlyName", endpointFriendlyName,
+			"dataFlow", dataFlow)
+
+		// if the device is an output device, enumerate and add its per-process audio sessions
+		if dataFlow == wca.ERender {
+			if err := sf.enumerateAndAddProcessSessions(endpoint, endpointFriendlyName, sessions); err != nil {
+				sf.logger.Warnw("Failed to enumerate and add process sessions for device",
+					"deviceIdx", deviceIdx,
+					"error", err)
+
+				return fmt.Errorf("enumerate and add device %d process sessions: %w", deviceIdx, err)
+			}
+		}
+
+		// for all devices (both input and output), add a named "master" session that can be addressed
+		// by using the device's friendly name (as appears when the user left-clicks the speaker icon in the tray)
+		newSession, err := sf.getMasterSession(endpoint,
+			endpointFriendlyName,
+			fmt.Sprintf(deviceSessionFormat, endpointDescription))
+
+		if err != nil {
+			sf.logger.Warnw("Failed to get master session for device",
+				"deviceIdx", deviceIdx,
+				"error", err)
+
+			return fmt.Errorf("get device %d master session: %w", deviceIdx, err)
+		}
+
+		// add it to our slice
+		*sessions = append(*sessions, newSession)
+	}
+
+	return nil
+}
+
+func (sf *wcaSessionFinder) enumerateAndAddProcessSessions(
+	endpoint *wca.IMMDevice,
+	endpointFriendlyName string,
+	sessions *[]Session,
+) error {
+
+	sf.logger.Debugw("Enumerating and adding process sessions for audio output device",
+		"deviceFriendlyName", endpointFriendlyName)
 
 	// query the given IMMDevice's IAudioSessionManager2 interface
 	var audioSessionManager2 *wca.IAudioSessionManager2
 
-	if err := mmDevice.Activate(
+	if err := endpoint.Activate(
 		wca.IID_IAudioSessionManager2,
 		wca.CLSCTX_ALL,
 		nil,
 		&audioSessionManager2,
 	); err != nil {
-		return nil, err
+
+		sf.logger.Warnw("Failed to activate endpoint as IAudioSessionManager2", "error", err)
+		return fmt.Errorf("activate endpoint: %w", err)
 	}
 	defer audioSessionManager2.Release()
 
 	// get its IAudioSessionEnumerator
-	var audioSessionEnumerator *wca.IAudioSessionEnumerator
+	var sessionEnumerator *wca.IAudioSessionEnumerator
 
-	if err := audioSessionManager2.GetSessionEnumerator(&audioSessionEnumerator); err != nil {
-		return nil, err
+	if err := audioSessionManager2.GetSessionEnumerator(&sessionEnumerator); err != nil {
+		return err
 	}
-
-	return audioSessionEnumerator, nil
-}
-
-func (sf *wcaSessionFinder) enumerateAndAddSessions(
-	sessionEnumerator *wca.IAudioSessionEnumerator,
-	sessions *[]Session,
-) error {
+	defer sessionEnumerator.Release()
 
 	// check how many audio sessions there are
 	var sessionCount int

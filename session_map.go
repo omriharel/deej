@@ -75,6 +75,10 @@ func (m *sessionMap) release() error {
 // assumes the session map is clean!
 // only call on a new session map or as part of refreshSessions which calls reset
 func (m *sessionMap) getAndAddSessions() error {
+
+	// mark that we're refreshing before anything else
+	m.lastSessionRefresh = time.Now()
+
 	sessions, err := m.sessionFinder.GetAllSessions()
 	if err != nil {
 		m.logger.Warnw("Failed to get sessions from session finder", "error", err)
@@ -86,9 +90,6 @@ func (m *sessionMap) getAndAddSessions() error {
 	}
 
 	m.logger.Infow("Got all audio sessions successfully", "sessionMap", m)
-
-	// mark completion
-	m.lastSessionRefresh = time.Now()
 
 	return nil
 }
