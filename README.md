@@ -11,7 +11,7 @@ deej consists of a [lightweight desktop client](#features) written in Go, and an
 **[Download the latest release](https://github.com/omriharel/deej/releases/latest) | [Video demonstration](https://youtu.be/VoByJ4USMr8) | [Build video by Tech Always](https://youtu.be/x2yXbFiiAeI)**
 
 
-![The OG shoebox build](assets/build.jpg)
+![Bupher's Current Build](assets/build.jpg)
 
 ## Table of contents
 
