@@ -123,6 +123,7 @@ In case you prefer watching to reading, Charles from the [**Tech Always**](https
 
 - An Arduino Nano, Pro Micro or Uno board
   - I officially recommend using a Nano or a Pro Micro for their smaller form-factor, friendlier USB connectors and more analog pins. Plus they're cheaper
+  - A Pro micro works best for buttons, as it has baked in HID support
   - You can also use any other development board that has a Serial over USB interface
 - A few slider potentiometers, up to your number of free analog pins (the cheaper ones cost around 1-2 USD each, and come with a standard 10K Ohm variable resistor. These _should_ work just fine for this project)
   - **Important:** make sure to get **linear** sliders, not logarithmic ones! Check the product description
