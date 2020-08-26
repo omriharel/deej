@@ -55,6 +55,7 @@ deej is written in Go and [distributed](https://github.com/omriharel/deej/releas
 ### Hardware
 
 - The sliders are connected to 5 (or as many as you like) analog pins on an Arduino Nano/Uno board. They're powered from the board's 5V output (see schematic)
+- You can also add buttons if desiered. These can be bound to keyboard keys if using a Leonardo/Pro board (32u2 or 32u4 processor).
 - The board connects via a USB cable to the PC
 
 #### Schematic
@@ -102,6 +103,7 @@ process_refresh_frequency: 5
 - On Windows, you can specify a device's full name, i.e. `Speakers (Realtek High Definition Audio)`, to bind that device's level to a slider. This doesn't conflict with the default `master` and `mic` options, and works for both input and output devices.
   - Be sure to use the full device name, as seen in the menu that comes up when left-clicking the speaker icon in the tray menu
 - `system` is a special option on Windows to control the "System sounds" volume in the Windows mixer
+- `current` is a special option on Windows to control whatever application is currently in focus. (Does not work for modern/windows store apps)
 - All names are case-**in**sensitive, meaning both `chrome.exe` and `CHROME.exe` will work
 - You can create groups of process names (using a list) to either:
     - control more than one app with a single slider
