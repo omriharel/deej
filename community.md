@@ -16,9 +16,9 @@ This build features a very neat 3D-printed enclosure to fit the sliders, and use
 
 ## [Bupher](https://github.com/Bupher)
 
-**Links**: [Imgur album](https://imgur.com/a/Rwq0ynd) | [Enclosure model on Thingiverse](https://www.thingiverse.com/thing:4237483) | [GitHub fork](https://github.com/Bupher/deej)
+**Links**: [Imgur album](https://imgur.com/a/ZZ4I8AK) | [Enclosure model on Thingiverse](https://www.thingiverse.com/thing:4580420) | [GitHub fork](https://github.com/Bupher/deej)
 
-This build uses circular knobs instead of sliders, and adds a 7-segment display showing the volume of the last adjusted knob. It also adds functionality to allow designating a knob to control the volume of whichever application is currently in focus. Those changes are available in Bupher's fork (link above).. Very cool!
+This recently-updated build uses circular knobs instead of sliders, and adds a 7-segment display showing the volume of the last adjusted knob. The five buttons are used to trigger various macros that the author configured separately. This build also adds software functionality to allow designating a knob to control the volume of whichever application is currently in focus. Those changes are available in Bupher's fork (link above). Very cool!
 
 ![Bupher](./assets/community-builds/bupher.jpg)
 
@@ -118,7 +118,7 @@ This build uses a 3D-printed design remixed from [/u/Aithorn](#uaithorn)'s above
 
 ![/u/functionalism](./assets/community-builds/functionalism.jpg)
 
-## [/u/Fantastic-Feature-84](https://www.reddit.com/user/Fantastic-Feature-84)
+## [/u/Fantastic-Feature-84](https://reddit.com/user/Fantastic-Feature-84)
 
 **Links**: [Imgur album](https://imgur.com/a/1q2MYI1) | [Enclosure model on Thingiverse](https://www.thingiverse.com/thing:4562009) | [Full Instructable](https://www.instructables.com/id/Hardware-Volume-Mixer-for-PC-With-RGB-LEDs)
 
@@ -172,10 +172,34 @@ This simple build consists of five knobs with, wait for it - **2D**-printed app 
 
 ![Probird](./assets/community-builds/probird.jpg)
 
-## [/u/DruciferRedBeard](https://www.reddit.com/user/DruciferRedBeard)
+## [/u/DruciferRedBeard](https://reddit.com/user/DruciferRedBeard)
 
 **Links**: [Imgur album](https://imgur.com/a/nBGLd9b) | [Enclosure model on Thingiverse](https://www.thingiverse.com/thing:4568300)
 
 This wonderfully colorful build was made [twice](https://i.imgur.com/v3FQXkF.jpg) by its author, one for themselves and one for their son.  It's a clever 3D-printed design featuring no visible screws on its top surface, achieved by mounting a stabilizer in-between the top and bottom covers. The knobs have also been printed out with a satisfying range of colors (meant to represent different apps). The indicator line down the middle of each slider is made using the "color change" feature in PrusaSlicer. Elegant _and_ cheerful!
 
 ![/u/DruciferRedBeard](./assets/community-builds/druciferredbeard.jpg)
+
+## Snaglebagle
+
+**Links**: [Imgur album](https://imgur.com/a/QN7gyjP) | [Enclosure model on Thingiverse](https://www.thingiverse.com/thing:4579910)
+
+This bright, red and black design has a neat retro look to it that's further complemented by its sharp corners. It has five sliders and uses the 3D-printed knobs designed by [/u/Aithorn](#u-aithorn).
+
+![Snaglebagle](./assets/community-builds/snaglebagle.jpg)
+
+## [/u/Kawaru86](https://reddit.com/user/Kawaru86)
+
+**Links**: [Imgur album](https://imgur.com/a/q2fENDF)
+
+This unique build is based entirely on a breadboard! Two, to be exact. The author took some great pictures that [show the wiring](https://i.imgur.com/hUHCKup.jpg) for the project in a very clear (and quite satisfying) way. This is a fantastic, [stylish](https://i.imgur.com/2ETrBIE.jpg) choice for people without access to a 3D printer, or those looking for a way to build deej without soldering anything.
+
+![/u/Kawaru86](./assets/community-builds/kawaru86.jpg)
+
+## [/u/HumidLettuce](https://reddit.com/user/HumidLettuce)
+
+**Links**: [Imgur album](https://imgur.com/a/AEpAJYi) | [Enclosure model on Thingiverse](https://www.thingiverse.com/thing:4580787) | [Full Instructable](https://www.instructables.com/id/Deej-Box-5-Sliders/)
+
+This 3D-printed design has a smooth surface finish and features no front-facing screws. It uses magnetic, swappable plates with app icons below each slider, allowing you to easily tell which slider controls which app. In addition, the steep angle of this build lets it occupy slightly less desk space than other, more traditional slider-based designs. /u/HumidLettuce has kindly provided full, step-by-step build instructions for other users wishing to use this design, available on Instructables (link above).
+
+![/u/HumidLettuce](./assets/community-builds/humidlettuce.jpg)
