@@ -308,7 +308,6 @@ func (m *sessionMap) applyTargetTransform(specialTargetName string) []string {
 		}
 
 		// remove dupes
-		m.logger.Infow("Current process names", "names", funk.UniqString(currentWindowProcessNames))
 		return funk.UniqString(currentWindowProcessNames)
 
 	// get currently unmapped sessions
