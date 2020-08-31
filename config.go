@@ -155,83 +155,52 @@ func (cc *CanonicalConfig) SubscribeToChanges() chan bool {
 // WatchConfigFileChanges starts watching for configuration file changes
 // and attempts reloading the config when they happen
 func (cc *CanonicalConfig) WatchConfigFileChanges() {
-	cc.logger.Debugw("Starting to watch config file for changes", "path", userConfigFilepath)
+	cc.logger.Debugw("Starting to watch user config file for changes", "path", userConfigFilepath)
 
-	// set up the watcher
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		cc.logger.Warnw("Failed to create filesystem watcher", "error", err)
-	}
+	const (
+		minTimeBetweenReloadAttempts = time.Millisecond * 500
+		delayBetweenEventAndReload   = time.Millisecond * 50
+	)
 
-	// clean it up when done
-	defer func() {
-		if err := watcher.Close(); err != nil {
-			cc.logger.Warnw("Failed to close filesystem watcher", "error", err)
-		}
-	}()
+	lastAttemptedReload := time.Now()
 
-	// start watcher event loop
-	go func() {
-		const (
-			minTimeBetweenReloadAttempts = time.Millisecond * 500
-			delayBetweenEventAndReload   = time.Millisecond * 50
-		)
+	// establish watch using viper as opposed to doing it ourselves, though our internal cooldown is still required
+	cc.userConfig.WatchConfig()
+	cc.userConfig.OnConfigChange(func(event fsnotify.Event) {
 
-		lastAttemptedReload := time.Now()
+		// when we get a write event...
+		if event.Op&fsnotify.Write == fsnotify.Write {
 
-		// listen for watcher events
-		for {
-			select {
-			case event, ok := <-watcher.Events:
-				if !ok {
-					return
+			now := time.Now()
+
+			// ... check if it's not a duplicate (many editors will write to a file twice)
+			if lastAttemptedReload.Add(minTimeBetweenReloadAttempts).Before(now) {
+
+				// and attempt reload if appropriate
+				cc.logger.Debugw("Config file modified, attempting reload", "event", event)
+
+				// wait a bit to let the editor actually flush the new file contents to disk
+				<-time.After(delayBetweenEventAndReload)
+
+				if err := cc.Load(); err != nil {
+					cc.logger.Warnw("Failed to reload config file", "error", err)
+				} else {
+					cc.logger.Info("Reloaded config successfully")
+					cc.notifier.Notify("Configuration reloaded!", "Your changes have been applied.")
+
+					cc.onConfigReloaded()
 				}
 
-				// when we get a write event...
-				if event.Op&fsnotify.Write == fsnotify.Write {
-
-					now := time.Now()
-
-					// ... check if it's not a duplicate (many editors will write to a file twice)
-					if lastAttemptedReload.Add(minTimeBetweenReloadAttempts).Before(now) {
-
-						// and attempt reload if appropriate
-						cc.logger.Debugw("Config file modified, attempting reload", "event", event)
-
-						// wait a bit to let the editor actually flush the new file contents
-						<-time.After(delayBetweenEventAndReload)
-
-						if err = cc.Load(); err != nil {
-							cc.logger.Warnw("Failed to reload config file", "error", err)
-						} else {
-							cc.logger.Info("Reloaded config successfully")
-							cc.notifier.Notify("Configuration reloaded!", "Your changes have been applied.")
-
-							cc.onConfigReloaded()
-						}
-
-						// don't forget to update the time
-						lastAttemptedReload = now
-					}
-				}
-			case err, ok := <-watcher.Errors:
-				if !ok {
-					return
-				}
-
-				cc.logger.Warnw("Filesystem watcher encountered an error", "error", err)
+				// don't forget to update the time
+				lastAttemptedReload = now
 			}
 		}
-	}()
-
-	// add the config file path
-	if err = watcher.Add(userConfigFilepath); err != nil {
-		cc.logger.Warnw("Failed to add config filepath to fs watcher", "error", err)
-	}
+	})
 
 	// wait till they stop us
 	<-cc.stopWatcherChannel
-	cc.logger.Debug("Stopping filesystem watcher")
+	cc.logger.Debug("Stopping user config file watcher")
+	cc.userConfig.OnConfigChange(nil)
 }
 
 // StopWatchingConfigFile signals our filesystem watcher to stop
