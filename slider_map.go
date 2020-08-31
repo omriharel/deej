@@ -23,8 +23,6 @@ func newSliderMap() *sliderMap {
 func sliderMapFromConfigs(userMapping map[string][]string, internalMapping map[string][]string) *sliderMap {
 	resultMap := newSliderMap()
 
-	// TODO: filter out same-origin duplicates and casing duplicates
-
 	// copy targets from user config, ignoring empty values
 	for sliderIdxString, targets := range userMapping {
 		sliderIdx, _ := strconv.Atoi(sliderIdxString)

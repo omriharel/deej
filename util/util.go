@@ -45,10 +45,11 @@ func SetupCloseHandler() chan os.Signal {
 	return c
 }
 
-// GetCurrentWindowProcessName returns the process name (including extension, if applicable)
-// of the current foreground window. This is currently only implemented for Windows
-func GetCurrentWindowProcessName() (string, error) {
-	return getCurrentWindowProcessName()
+// GetCurrentWindowProcessNames returns the process names (including extension, if applicable)
+// of the current foreground window. This includes child processes belonging to the window.
+// This is currently only implemented for Windows
+func GetCurrentWindowProcessNames() ([]string, error) {
+	return getCurrentWindowProcessNames()
 }
 
 // OpenExternal spawns a detached window with the provided command and argument

@@ -289,17 +289,29 @@ func (m *sessionMap) resolveTarget(target string) []string {
 }
 
 func (m *sessionMap) applyTargetTransform(specialTargetName string) []string {
+
+	// select the transformation based on its name
 	switch specialTargetName {
+
+	// get current active window
 	case specialTargetCurrentWindow:
-		currentWindowProcessName, err := util.GetCurrentWindowProcessName()
+		currentWindowProcessNames, err := util.GetCurrentWindowProcessNames()
 
 		// silently ignore errors here, as this is on deej's "hot path" (and it could just mean the user's running linux)
 		if err != nil {
 			return nil
 		}
 
-		// we could have gotten a non-lowercase name from that, so let's ensure we return one that is lowercase
-		return []string{strings.ToLower(currentWindowProcessName)}
+		// we could have gotten a non-lowercase names from that, so let's ensure we return ones that are lowercase
+		for targetIdx, target := range currentWindowProcessNames {
+			currentWindowProcessNames[targetIdx] = strings.ToLower(target)
+		}
+
+		// remove dupes
+		m.logger.Infow("Current process names", "names", funk.UniqString(currentWindowProcessNames))
+		return funk.UniqString(currentWindowProcessNames)
+
+	// get currently unmapped sessions
 	case specialTargetAllUnmapped:
 		targetKeys := make([]string, len(m.unmappedSessions))
 		for sessionIdx, session := range m.unmappedSessions {

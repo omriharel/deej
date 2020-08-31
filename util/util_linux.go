@@ -4,6 +4,6 @@ import (
 	"errors"
 )
 
-func getCurrentWindowProcessName() (string, error) {
-	return "", errors.New("Not implemented")
+func getCurrentWindowProcessNames() ([]string, error) {
+	return nil, errors.New("Not implemented")
 }
