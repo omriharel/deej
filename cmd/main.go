@@ -37,7 +37,7 @@ func main() {
 		"versionTag", versionTag,
 		"buildType", buildType)
 
-	// provide a fair warning
+	// provide a fair warning if the user's running in verbose mode
 	if verbose {
 		named.Debug("Verbose flag provided, all log messages will be shown")
 	}
@@ -48,7 +48,7 @@ func main() {
 		named.Fatalw("Failed to create deej object", "error", err)
 	}
 
-	// set its version info for the tray to show
+	// if injected by build process, set version info to show up in the tray
 	if buildType != "" && (versionTag != "" || gitCommit != "") {
 		identifier := gitCommit
 		if versionTag != "" {
