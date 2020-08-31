@@ -25,6 +25,8 @@ type CanonicalConfig struct {
 
 	InvertSliders bool
 
+	NoiseReductionLevel string
+
 	logger             *zap.SugaredLogger
 	notifier           Notifier
 	stopWatcherChannel chan bool
@@ -46,10 +48,11 @@ const (
 
 	configType = "yaml"
 
-	configKeySliderMapping = "slider_mapping"
-	configKeyInvertSliders = "invert_sliders"
-	configKeyCOMPort       = "com_port"
-	configKeyBaudRate      = "baud_rate"
+	configKeySliderMapping       = "slider_mapping"
+	configKeyInvertSliders       = "invert_sliders"
+	configKeyCOMPort             = "com_port"
+	configKeyBaudRate            = "baud_rate"
+	configKeyNoiseReductionLevel = "noise_reduction"
 
 	defaultCOMPort  = "COM4"
 	defaultBaudRate = 9600
@@ -233,8 +236,8 @@ func (cc *CanonicalConfig) populateFromVipers() error {
 		cc.ConnectionInfo.BaudRate = defaultBaudRate
 	}
 
-	// if the key isn't found this will default to false, which is what we want
 	cc.InvertSliders = cc.userConfig.GetBool(configKeyInvertSliders)
+	cc.NoiseReductionLevel = cc.userConfig.GetString(configKeyNoiseReductionLevel)
 
 	cc.logger.Debug("Populated config fields from vipers")
 

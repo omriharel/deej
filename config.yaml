@@ -3,6 +3,7 @@
 # you can use 'mic' to control your mic input level (uses the default recording device)
 # windows only - you can use a device's full name, i.e. "Speakers (Realtek High Definition Audio)", to bind it. this works for both output and input devices (experimental)
 # windows only - you can use 'system' to control the "system sounds" volume
+# important: slider indexes start at 0, regardless of which analog pins you're using!
 slider_mapping:
   0: master
   1: chrome.exe
@@ -18,3 +19,7 @@ invert_sliders: false
 # settings for connecting to the arduino board
 com_port: COM4
 baud_rate: 9600
+
+# adjust the amount of signal noise reduction depending on your hardware quality
+# supported values are "low" (excellent hardware), "default" (regular hardware) or "high" (bad, noisy hardware)
+noise_reduction: default

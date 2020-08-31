@@ -75,11 +75,30 @@ func NormalizeScalar(v float32) float32 {
 }
 
 // SignificantlyDifferent returns true if there's a significant enough volume difference between two given values
-func SignificantlyDifferent(old float32, new float32) bool {
+func SignificantlyDifferent(old float32, new float32, noiseReductionLevel string) bool {
 
-	// this threshold is solely responsible for dealing with hardware interference when sliders are producing noisy values
-	// users with amazing hardware could maybe get away with reducing it to 0.015 or even 0.005, but i'm not risking it at the moment
-	const significantDifferenceThreshold = 0.025
+	const (
+		noiseReductionHigh = "high"
+		noiseReductionLow  = "low"
+	)
+
+	// this threshold is solely responsible for dealing with hardware interference when
+	// sliders are producing noisy values. this value should be a median value between two
+	// round percent values. for instance, 0.025 means volume can move at 3% increments
+	var significantDifferenceThreshold float64
+
+	// choose our noise reduction level based on the config-provided value
+	switch noiseReductionLevel {
+	case noiseReductionHigh:
+		significantDifferenceThreshold = 0.035
+		break
+	case noiseReductionLow:
+		significantDifferenceThreshold = 0.015
+		break
+	default:
+		significantDifferenceThreshold = 0.025
+		break
+	}
 
 	if math.Abs(float64(old-new)) >= significantDifferenceThreshold {
 		return true
