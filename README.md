@@ -42,7 +42,9 @@ deej is written in Go and [distributed](https://github.com/omriharel/deej/releas
   - Bind multiple apps per slider (i.e. one slider for all your games)
   - Bind the master channel
   - Bind "system sounds" (on Windows)
-  - **_New:_** Bind specific audio devices by name (on Windows, _experimental_)
+  - Bind specific audio devices by name (on Windows)
+  - **_New:_** Bind currently active app (on Windows, _experimental_)
+  - **_New:_** Bind all other unassigned apps (_experimental_)
 - Control your microphone's input level
 - Lightweight desktop client, consuming around 10MB of memory
 - Runs from your system tray
@@ -99,7 +101,9 @@ noise_reduction: default
 ```
 
 - `master` is a special option to control the master volume of the system _(uses the default playback device)_
-- `mic` is a special option to control your microphone's input level _(uses the default recording device)_.
+- `mic` is a special option to control your microphone's input level _(uses the default recording device)_
+- **_New:_** `deej.unmapped` is a special option to control all apps that aren't bound to any slider ("everything else") (_experimental_)
+- **_New:_** On Windows, `deej.current` is a special option to control whichever app is currently in focus (_experimental_)
 - On Windows, you can specify a device's full name, i.e. `Speakers (Realtek High Definition Audio)`, to bind that device's level to a slider. This doesn't conflict with the default `master` and `mic` options, and works for both input and output devices.
   - Be sure to use the full device name, as seen in the menu that comes up when left-clicking the speaker icon in the tray menu
 - `system` is a special option on Windows to control the "System sounds" volume in the Windows mixer
