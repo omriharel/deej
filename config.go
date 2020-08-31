@@ -18,9 +18,6 @@ import (
 type CanonicalConfig struct {
 	SliderMapping *sliderMap
 
-	// renamed from ProcessRefreshFrequency, key left as is in yaml-config for backwards compatibility
-	SessionRefreshThreshold time.Duration
-
 	ConnectionInfo struct {
 		COMPort  string
 		BaudRate int
@@ -49,15 +46,13 @@ const (
 
 	configType = "yaml"
 
-	configKeySliderMapping           = "slider_mapping"
-	configKeyInvertSliders           = "invert_sliders"
-	configKeyCOMPort                 = "com_port"
-	configKeyBaudRate                = "baud_rate"
-	configKeyProcessRefreshFrequency = "process_refresh_frequency"
+	configKeySliderMapping = "slider_mapping"
+	configKeyInvertSliders = "invert_sliders"
+	configKeyCOMPort       = "com_port"
+	configKeyBaudRate      = "baud_rate"
 
-	defaultProcessRefreshFrequency = 5 * time.Second
-	defaultCOMPort                 = "COM4"
-	defaultBaudRate                = 9600
+	defaultCOMPort  = "COM4"
+	defaultBaudRate = 9600
 )
 
 // has to be defined as a non-constant because we're using path.Join
@@ -147,7 +142,6 @@ func (cc *CanonicalConfig) Load() error {
 	cc.logger.Info("Loaded config successfully")
 	cc.logger.Infow("Config values",
 		"sliderMapping", cc.SliderMapping,
-		"sessionRefreshThreshold", cc.SessionRefreshThreshold,
 		"connectionInfo", cc.ConnectionInfo,
 		"invertSliders", cc.InvertSliders)
 
@@ -227,20 +221,6 @@ func (cc *CanonicalConfig) populateFromVipers() error {
 	)
 
 	// get the rest of the config fields - viper saves us a lot of effort here
-	if cc.userConfig.IsSet(configKeyProcessRefreshFrequency) {
-
-		// ugly but we're removing this config field really soon so it's okay
-		seconds := cc.userConfig.GetInt(configKeyProcessRefreshFrequency)
-		if seconds < 1 || seconds > 10 {
-			seconds = 5
-		}
-
-		cc.SessionRefreshThreshold = time.Second * time.Duration(seconds)
-
-	} else {
-		cc.SessionRefreshThreshold = defaultProcessRefreshFrequency
-	}
-
 	cc.ConnectionInfo.COMPort = cc.userConfig.GetString(configKeyCOMPort)
 
 	cc.ConnectionInfo.BaudRate = cc.userConfig.GetInt(configKeyBaudRate)

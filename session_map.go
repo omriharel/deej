@@ -26,6 +26,11 @@ const (
 	systemSessionName = "system" // system sounds volume
 	inputSessionName  = "mic"    // microphone input level
 
+	// this threshold constant assumes that re-acquiring all sessions is a kind of expensive operation,
+	// and needs to be limited in some manner. this value was previously user-configurable through a config
+	// key "process_refresh_frequency", but exposing this type of implementation detail seems wrong now
+	minTimeBetweenSessionRefreshes = time.Second * 5
+
 	// determines whether the map should be refreshed when a slider moves.
 	// this is a bit greedy but allows us to ensure sessions are always re-acquired, which is
 	// especially important for process groups (because you can have one ongoing session
@@ -121,10 +126,11 @@ func (m *sessionMap) setupOnSliderMove() {
 	}()
 }
 
+// performance: explain why force == true at every such use to avoid unintended forced refresh spams
 func (m *sessionMap) refreshSessions(force bool) {
 
 	// make sure enough time passed since the last refresh, unless force is true in which case always clear
-	if !force && m.lastSessionRefresh.Add(m.deej.config.SessionRefreshThreshold).After(time.Now()) {
+	if !force && m.lastSessionRefresh.Add(minTimeBetweenSessionRefreshes).After(time.Now()) {
 		return
 	}
 
@@ -190,6 +196,10 @@ func (m *sessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
 	if !targetFound {
 		m.refreshSessions(false)
 	} else if adjustmentFailed {
+
+		// performance: the reason that forcing a refresh here is okay is that we'll only get here
+		// when a session's SetVolume call errored, such as in the case of a stale master session
+		// (or another, more catastrophic failure happens)
 		m.refreshSessions(true)
 	}
 }

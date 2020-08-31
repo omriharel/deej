@@ -92,9 +92,6 @@ invert_sliders: false
 # settings for connecting to the arduino board
 com_port: COM4
 baud_rate: 9600
-
-# limits how often deej will look for new processes
-process_refresh_frequency: 5
 ```
 
 - `master` is a special option to control the master volume of the system _(uses the default playback device)_

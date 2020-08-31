@@ -59,6 +59,9 @@ func (d *Deej) initializeTray(onDone func()) {
 				// refresh sessions
 				case <-refreshSessions.ClickedCh:
 					logger.Info("Refresh sessions menu item clicked, triggering session map refresh")
+
+					// performance: the reason that forcing a refresh here is okay is that users can't spam the
+					// right-click -> select-this-option sequence at a rate that's meaningful to performance
 					d.sessions.refreshSessions(true)
 				}
 			}
