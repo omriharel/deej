@@ -2,10 +2,13 @@ package deej
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/omriharel/deej/util"
+	"github.com/thoas/go-funk"
 	"go.uber.org/zap"
 )
 
@@ -19,12 +22,23 @@ type sessionMap struct {
 	sessionFinder SessionFinder
 
 	lastSessionRefresh time.Time
+	unmappedSessions   []Session
 }
 
 const (
 	masterSessionName = "master" // master device volume
 	systemSessionName = "system" // system sounds volume
 	inputSessionName  = "mic"    // microphone input level
+
+	// some targets need to be transformed before their correct audio sessions can be accessed.
+	// this prefix identifies those targets to ensure they don't contradict with another similarly-named process
+	specialTargetTransformPrefix = "deej."
+
+	// targets the currently active window (Windows-only, experimental)
+	specialTargetCurrentWindow = "current"
+
+	// targets all currently unmapped sessions (experimental)
+	specialTargetAllUnmapped = "unmapped"
 
 	// this threshold constant assumes that re-acquiring all sessions is a kind of expensive operation,
 	// and needs to be limited in some manner. this value was previously user-configurable through a config
@@ -39,6 +53,9 @@ const (
 	// whenever a new session is added, but that's too hard to justify for how easy this solution is
 	maxTimeBetweenSessionRefreshes = time.Second * 45
 )
+
+// this matches friendly device names (on Windows), e.g. "Headphones (Realtek Audio)"
+var deviceSessionKeyPattern = regexp.MustCompile(`^.+ \(.+\)$`)
 
 func newSessionMap(deej *Deej, logger *zap.SugaredLogger, sessionFinder SessionFinder) (*sessionMap, error) {
 	logger = logger.Named("sessions")
@@ -83,6 +100,7 @@ func (m *sessionMap) getAndAddSessions() error {
 
 	// mark that we're refreshing before anything else
 	m.lastSessionRefresh = time.Now()
+	m.unmappedSessions = nil
 
 	sessions, err := m.sessionFinder.GetAllSessions()
 	if err != nil {
@@ -92,6 +110,11 @@ func (m *sessionMap) getAndAddSessions() error {
 
 	for _, session := range sessions {
 		m.add(session)
+
+		if !m.sessionMapped(session) {
+			m.logger.Debugw("Tracking unmapped session", "session", session)
+			m.unmappedSessions = append(m.unmappedSessions, session)
+		}
 	}
 
 	m.logger.Infow("Got all audio sessions successfully", "sessionMap", m)
@@ -144,6 +167,45 @@ func (m *sessionMap) refreshSessions(force bool) {
 	}
 }
 
+// returns true if a session is not currently mapped to any slider, false otherwise
+// special sessions (master, system, mic) and device-specific sessions always count as mapped,
+// even when absent from the config. this makes sense for every current feature that uses "unmapped sessions"
+func (m *sessionMap) sessionMapped(session Session) bool {
+
+	// count master/system/mic as mapped
+	if funk.ContainsString([]string{masterSessionName, systemSessionName, inputSessionName}, session.Key()) {
+		return true
+	}
+
+	// count device sessions as mapped
+	if deviceSessionKeyPattern.MatchString(session.Key()) {
+		return true
+	}
+
+	matchFound := false
+
+	// look through the actual mappings
+	m.deej.config.SliderMapping.iterate(func(sliderIdx int, targets []string) {
+		for _, target := range targets {
+
+			// ignore special transforms
+			if m.targetHasSpecialTransform(target) {
+				continue
+			}
+
+			// safe to assume this has a single element because we made sure there's no special transform
+			target = m.resolveTarget(target)[0]
+
+			if target == session.Key() {
+				matchFound = true
+				return
+			}
+		}
+	})
+
+	return matchFound
+}
+
 func (m *sessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
 
 	// first of all, ensure our session map isn't moldy
@@ -166,25 +228,30 @@ func (m *sessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
 	// for each possible target for this slider...
 	for _, target := range targets {
 
-		// normalize the target name to match session keys
-		normalizedTargetName := strings.ToLower(target)
+		// resolve the target name by cleaning it up and applying any special transformations.
+		// depending on the transformation applied, this can result in more than one target name
+		resolvedTargets := m.resolveTarget(target)
 
-		// check the map for matching sessions
-		sessions, ok := m.get(normalizedTargetName)
+		// for each resolved target...
+		for _, resolvedTarget := range resolvedTargets {
 
-		// no sessions matching this target - move on
-		if !ok {
-			continue
-		}
+			// check the map for matching sessions
+			sessions, ok := m.get(resolvedTarget)
 
-		targetFound = true
+			// no sessions matching this target - move on
+			if !ok {
+				continue
+			}
 
-		// iterate sessions and adjust the volume of each one
-		for _, session := range sessions {
-			if session.GetVolume() != event.PercentValue {
-				if err := session.SetVolume(event.PercentValue); err != nil {
-					m.logger.Warnw("Failed to set target session volume", "error", err)
-					adjustmentFailed = true
+			targetFound = true
+
+			// iterate all matching sessions and adjust the volume of each one
+			for _, session := range sessions {
+				if session.GetVolume() != event.PercentValue {
+					if err := session.SetVolume(event.PercentValue); err != nil {
+						m.logger.Warnw("Failed to set target session volume", "error", err)
+						adjustmentFailed = true
+					}
 				}
 			}
 		}
@@ -202,6 +269,47 @@ func (m *sessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
 		// (or another, more catastrophic failure happens)
 		m.refreshSessions(true)
 	}
+}
+
+func (m *sessionMap) targetHasSpecialTransform(target string) bool {
+	return strings.HasPrefix(target, specialTargetTransformPrefix)
+}
+
+func (m *sessionMap) resolveTarget(target string) []string {
+
+	// start by ignoring the case
+	target = strings.ToLower(target)
+
+	// look for any special targets first, by examining the prefix
+	if m.targetHasSpecialTransform(target) {
+		return m.applyTargetTransform(strings.TrimPrefix(target, specialTargetTransformPrefix))
+	}
+
+	return []string{target}
+}
+
+func (m *sessionMap) applyTargetTransform(specialTargetName string) []string {
+	switch specialTargetName {
+	case specialTargetCurrentWindow:
+		currentWindowProcessName, err := util.GetCurrentWindowProcessName()
+
+		// silently ignore errors here, as this is on deej's "hot path" (and it could just mean the user's running linux)
+		if err != nil {
+			return nil
+		}
+
+		// we could have gotten a non-lowercase name from that, so let's ensure we return one that is lowercase
+		return []string{strings.ToLower(currentWindowProcessName)}
+	case specialTargetAllUnmapped:
+		targetKeys := make([]string, len(m.unmappedSessions))
+		for sessionIdx, session := range m.unmappedSessions {
+			targetKeys[sessionIdx] = session.Key()
+		}
+
+		return targetKeys
+	}
+
+	return nil
 }
 
 func (m *sessionMap) add(value Session) {

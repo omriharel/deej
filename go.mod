@@ -12,7 +12,7 @@ require (
 	github.com/jacobsa/go-serial v0.0.0-20180131005756-15cf729a72d4
 	github.com/jfreymuth/pulse v0.0.0-20200608153616-84b2d752b9d4
 	github.com/lxn/walk v0.0.0-20191128110447-55ccb3a9f5c1 // indirect
-	github.com/lxn/win v0.0.0-20191128105842-2da648fda5b4 // indirect
+	github.com/lxn/win v0.0.0-20191128105842-2da648fda5b4
 	github.com/mitchellh/go-ps v1.0.0
 	github.com/moutend/go-wca v0.1.2-0.20190422112502-0fa027b3d89a
 	github.com/spf13/viper v1.7.1
