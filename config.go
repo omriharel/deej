@@ -3,6 +3,7 @@ package deej
 import (
 	"fmt"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
@@ -120,6 +121,15 @@ func (cc *CanonicalConfig) Load() error {
 	// load the user config
 	if err := cc.userConfig.ReadInConfig(); err != nil {
 		cc.logger.Warnw("Viper failed to read user config", "error", err)
+
+		// if the error is yaml-format-related, show a sensible error. otherwise, show 'em to the logs
+		if strings.Contains(err.Error(), "yaml:") {
+			cc.notifier.Notify("Invalid configuration!",
+				fmt.Sprintf("Please make sure %s is in a valid YAML format.", userConfigFilepath))
+		} else {
+			cc.notifier.Notify("Error loading configuration!", "Please check deej's logs for more details.")
+		}
+
 		return fmt.Errorf("read user config: %w", err)
 	}
 
