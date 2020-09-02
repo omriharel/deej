@@ -3,8 +3,9 @@ This release ___________:
 - One awesome thing that happened
 - Another awesome thing
 
-Launch instructions:
+**Launch instructions**
 
+- **First-time users:** download the [Arduino sketch](https://github.com/omriharel/deej/blob/master/arduino/deej-5-sliders-vanilla/deej-5-sliders-vanilla.ino) and upload it to your board ([see full instructions here](https://github.com/omriharel/deej#build-procedure))
 - Download both `config.yaml` and `deej.exe` and place them in the same directory
 - Verify that your config has the correct COM port for your Arduino board
 - Launch `deej.exe`. You can always edit the config while `deej` is running

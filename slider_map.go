@@ -2,7 +2,10 @@ package deej
 
 import (
 	"fmt"
+	"strconv"
 	"sync"
+
+	"github.com/thoas/go-funk"
 )
 
 // SliderMap Holder of the slider map
@@ -18,9 +21,36 @@ func newSliderMap() *SliderMap {
 	}
 }
 
-// Length Returns the Number of Sliders in the ConfigMap
-func (m *SliderMap) Length() int {
-	return len(m.m)
+func sliderMapFromConfigs(userMapping map[string][]string, internalMapping map[string][]string) *SliderMap {
+	resultMap := newSliderMap()
+
+	// copy targets from user config, ignoring empty values
+	for sliderIdxString, targets := range userMapping {
+		sliderIdx, _ := strconv.Atoi(sliderIdxString)
+
+		resultMap.set(sliderIdx, funk.FilterString(targets, func(s string) bool {
+			return s != ""
+		}))
+	}
+
+	// add targets from internal configs, ignoring duplicate or empty values
+	for sliderIdxString, targets := range internalMapping {
+		sliderIdx, _ := strconv.Atoi(sliderIdxString)
+
+		existingTargets, ok := resultMap.Get(sliderIdx)
+		if !ok {
+			existingTargets = []string{}
+		}
+
+		filteredTargets := funk.FilterString(targets, func(s string) bool {
+			return (!funk.ContainsString(existingTargets, s)) && s != ""
+		})
+
+		existingTargets = append(existingTargets, filteredTargets...)
+		resultMap.set(sliderIdx, existingTargets)
+	}
+
+	return resultMap
 }
 
 func (m *SliderMap) iterate(f func(int, []string)) {

@@ -186,7 +186,6 @@ func (d *Deej) Verbose() bool {
 }
 
 func (d *Deej) setupInterruptHandler() {
-
 	interruptChannel := util.SetupCloseHandler()
 
 	go func() {

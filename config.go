@@ -2,13 +2,13 @@ package deej
 
 import (
 	"fmt"
-	"io/ioutil"
-	"sync"
+	"path"
+	"strings"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
-	"gopkg.in/yaml.v3"
 
 	"github.com/jax-b/deej/util"
 )
@@ -18,9 +18,6 @@ import (
 type CanonicalConfig struct {
 	SliderMapping *SliderMap
 
-	// renamed from ProcessRefreshFrequency, key left as is in yaml-config for backwards compatibility
-	SessionRefreshThreshold time.Duration
-
 	ConnectionInfo struct {
 		COMPort  string
 		BaudRate int
@@ -28,37 +25,50 @@ type CanonicalConfig struct {
 
 	InvertSliders bool
 
+	NoiseReductionLevel string
+
 	logger             *zap.SugaredLogger
 	notifier           Notifier
 	stopWatcherChannel chan bool
-	sliderMapMutex     sync.Locker
 
 	reloadConsumers []chan bool
-}
 
-type marshalledConfig struct {
-	SliderMapping           map[int]interface{} `yaml:"slider_mapping"`
-	ProcessRefreshFrequency int                 `yaml:"process_refresh_frequency"`
-	COMPort                 string              `yaml:"com_port"`
-	BaudRate                int                 `yaml:"baud_rate"`
-	InvertSliders           bool                `yaml:"invert_sliders"`
+	userConfig     *viper.Viper
+	internalConfig *viper.Viper
 }
 
 const (
-	configFilepath = "config.yaml"
+	userConfigFilepath     = "config.yaml"
+	internalConfigFilepath = "preferences.yaml"
 
-	defaultProcessRefreshFrequency = 5 * time.Second
-	defaultCOMPort                 = "COM4"
-	defaultBaudRate                = 9600
+	userConfigName     = "config"
+	internalConfigName = "preferences"
+
+	userConfigPath = "."
+
+	configType = "yaml"
+
+	configKeySliderMapping       = "slider_mapping"
+	configKeyInvertSliders       = "invert_sliders"
+	configKeyCOMPort             = "com_port"
+	configKeyBaudRate            = "baud_rate"
+	configKeyNoiseReductionLevel = "noise_reduction"
+
+	defaultCOMPort  = "COM4"
+	defaultBaudRate = 9600
 )
+
+// has to be defined as a non-constant because we're using path.Join
+var internalConfigPath = path.Join(".", logDirectory)
 
 var defaultSliderMapping = func() *SliderMap {
 	emptyMap := newSliderMap()
 	emptyMap.set(0, []string{masterSessionName})
+
 	return emptyMap
 }()
 
-// NewConfig creates a config instance for the deej object
+// NewConfig creates a config instance for the deej object and sets up viper instances for deej's config files
 func NewConfig(logger *zap.SugaredLogger, notifier Notifier) (*CanonicalConfig, error) {
 	logger = logger.Named("config")
 
@@ -69,51 +79,72 @@ func NewConfig(logger *zap.SugaredLogger, notifier Notifier) (*CanonicalConfig, 
 		stopWatcherChannel: make(chan bool),
 	}
 
+	// distinguish between the user-provided config (config.yaml) and the internal config (logs/preferences.yaml)
+	userConfig := viper.New()
+	userConfig.SetConfigName(userConfigName)
+	userConfig.SetConfigType(configType)
+	userConfig.AddConfigPath(userConfigPath)
+
+	userConfig.SetDefault(configKeySliderMapping, map[string][]string{})
+	userConfig.SetDefault(configKeyInvertSliders, false)
+	userConfig.SetDefault(configKeyCOMPort, defaultCOMPort)
+	userConfig.SetDefault(configKeyBaudRate, defaultBaudRate)
+
+	internalConfig := viper.New()
+	internalConfig.SetConfigName(internalConfigName)
+	internalConfig.SetConfigType(configType)
+	internalConfig.AddConfigPath(internalConfigPath)
+
+	cc.userConfig = userConfig
+	cc.internalConfig = internalConfig
+
 	logger.Debug("Created config instance")
 
 	return cc, nil
 }
 
-// Load reads a config file from disk and tries to parse it
+// Load reads deej's config files from disk and tries to parse them
 func (cc *CanonicalConfig) Load() error {
-	cc.logger.Debugw("Loading config", "path", configFilepath)
+	cc.logger.Debugw("Loading config", "path", userConfigFilepath)
 
 	// make sure it exists
-	if !util.FileExists(configFilepath) {
-		cc.logger.Warnw("Config file not found", "path", configFilepath)
+	if !util.FileExists(userConfigFilepath) {
+		cc.logger.Warnw("Config file not found", "path", userConfigFilepath)
 		cc.notifier.Notify("Can't find configuration!",
-			fmt.Sprintf("%s must be in the same directory as deej. Please re-launch", configFilepath))
+			fmt.Sprintf("%s must be in the same directory as deej. Please re-launch", userConfigFilepath))
 
-		return fmt.Errorf("config file doesn't exist: %s", configFilepath)
+		return fmt.Errorf("config file doesn't exist: %s", userConfigFilepath)
 	}
 
-	// open->read->close the file
-	configBytes, err := ioutil.ReadFile(configFilepath)
-	if err != nil {
-		cc.logger.Warnw("Failed to read config file", "error", err)
-		return fmt.Errorf("read config file: %w", err)
+	// load the user config
+	if err := cc.userConfig.ReadInConfig(); err != nil {
+		cc.logger.Warnw("Viper failed to read user config", "error", err)
+
+		// if the error is yaml-format-related, show a sensible error. otherwise, show 'em to the logs
+		if strings.Contains(err.Error(), "yaml:") {
+			cc.notifier.Notify("Invalid configuration!",
+				fmt.Sprintf("Please make sure %s is in a valid YAML format.", userConfigFilepath))
+		} else {
+			cc.notifier.Notify("Error loading configuration!", "Please check deej's logs for more details.")
+		}
+
+		return fmt.Errorf("read user config: %w", err)
 	}
 
-	// unmarshall it into the yaml-aware struct
-	mc := &marshalledConfig{}
-	if err := yaml.Unmarshal(configBytes, mc); err != nil {
-		cc.logger.Warnw("Failed to unmarhsal config into struct", "error", err)
-		cc.notifier.Notify("Invalid configuration!",
-			"Please make sure config.yaml is a valid YAML format.")
-
-		return fmt.Errorf("unmarshall yaml config: %w", err)
+	// load the internal config - this doesn't have to exist, so it can error
+	if err := cc.internalConfig.ReadInConfig(); err != nil {
+		cc.logger.Debugw("Viper failed to read internal config", "error", err, "reminder", "this is fine")
 	}
 
-	// canonize it
-	if err := cc.populateFromMarshalled(mc); err != nil {
-		cc.logger.Warnw("Failed to populate config fields from marshalled struct", "error", err)
+	// canonize the configuration with viper's helpers
+	if err := cc.populateFromVipers(); err != nil {
+		cc.logger.Warnw("Failed to populate config fields", "error", err)
 		return fmt.Errorf("populate config fields: %w", err)
 	}
 
 	cc.logger.Info("Loaded config successfully")
 	cc.logger.Infow("Config values",
 		"sliderMapping", cc.SliderMapping,
-		"sessionRefreshThreshold", cc.SessionRefreshThreshold,
 		"connectionInfo", cc.ConnectionInfo,
 		"invertSliders", cc.InvertSliders)
 
@@ -131,83 +162,52 @@ func (cc *CanonicalConfig) SubscribeToChanges() chan bool {
 // WatchConfigFileChanges starts watching for configuration file changes
 // and attempts reloading the config when they happen
 func (cc *CanonicalConfig) WatchConfigFileChanges() {
-	cc.logger.Debugw("Starting to watch config file for changes", "path", configFilepath)
+	cc.logger.Debugw("Starting to watch user config file for changes", "path", userConfigFilepath)
 
-	// set up the watcher
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		cc.logger.Warnw("Failed to create filesystem watcher", "error", err)
-	}
+	const (
+		minTimeBetweenReloadAttempts = time.Millisecond * 500
+		delayBetweenEventAndReload   = time.Millisecond * 50
+	)
 
-	// clean it up when done
-	defer func() {
-		if err := watcher.Close(); err != nil {
-			cc.logger.Warnw("Failed to close filesystem watcher", "error", err)
-		}
-	}()
+	lastAttemptedReload := time.Now()
 
-	// start watcher event loop
-	go func() {
-		const (
-			minTimeBetweenReloadAttempts = time.Millisecond * 500
-			delayBetweenEventAndReload   = time.Millisecond * 50
-		)
+	// establish watch using viper as opposed to doing it ourselves, though our internal cooldown is still required
+	cc.userConfig.WatchConfig()
+	cc.userConfig.OnConfigChange(func(event fsnotify.Event) {
 
-		lastAttemptedReload := time.Now()
+		// when we get a write event...
+		if event.Op&fsnotify.Write == fsnotify.Write {
 
-		// listen for watcher events
-		for {
-			select {
-			case event, ok := <-watcher.Events:
-				if !ok {
-					return
+			now := time.Now()
+
+			// ... check if it's not a duplicate (many editors will write to a file twice)
+			if lastAttemptedReload.Add(minTimeBetweenReloadAttempts).Before(now) {
+
+				// and attempt reload if appropriate
+				cc.logger.Debugw("Config file modified, attempting reload", "event", event)
+
+				// wait a bit to let the editor actually flush the new file contents to disk
+				<-time.After(delayBetweenEventAndReload)
+
+				if err := cc.Load(); err != nil {
+					cc.logger.Warnw("Failed to reload config file", "error", err)
+				} else {
+					cc.logger.Info("Reloaded config successfully")
+					cc.notifier.Notify("Configuration reloaded!", "Your changes have been applied.")
+
+					cc.onConfigReloaded()
 				}
 
-				// when we get a write event...
-				if event.Op&fsnotify.Write == fsnotify.Write {
-
-					now := time.Now()
-
-					// ... check if it's not a duplicate (many editors will write to a file twice)
-					if lastAttemptedReload.Add(minTimeBetweenReloadAttempts).Before(now) {
-
-						// and attempt reload if appropriate
-						cc.logger.Debugw("Config file modified, attempting reload", "event", event)
-
-						// wait a bit to let the editor actually flush the new file contents
-						<-time.After(delayBetweenEventAndReload)
-
-						if err = cc.Load(); err != nil {
-							cc.logger.Warnw("Failed to reload config file", "error", err)
-						} else {
-							cc.logger.Info("Reloaded config successfully")
-							cc.notifier.Notify("Configuration reloaded!", "Your changes have been applied.")
-
-							cc.onConfigReloaded()
-						}
-
-						// don't forget to update the time
-						lastAttemptedReload = now
-					}
-				}
-			case err, ok := <-watcher.Errors:
-				if !ok {
-					return
-				}
-
-				cc.logger.Warnw("Filesystem watcher encountered an error", "error", err)
+				// don't forget to update the time
+				lastAttemptedReload = now
 			}
 		}
-	}()
-
-	// add the config file path
-	if err = watcher.Add(configFilepath); err != nil {
-		cc.logger.Warnw("Failed to add config filepath to fs watcher", "error", err)
-	}
+	})
 
 	// wait till they stop us
 	<-cc.stopWatcherChannel
-	cc.logger.Debug("Stopping filesystem watcher")
+	cc.logger.Debug("Stopping user config file watcher")
+	cc.userConfig.OnConfigChange(nil)
 }
 
 // StopWatchingConfigFile signals our filesystem watcher to stop
@@ -215,113 +215,31 @@ func (cc *CanonicalConfig) StopWatchingConfigFile() {
 	cc.stopWatcherChannel <- true
 }
 
-func (cc *CanonicalConfig) populateFromMarshalled(mc *marshalledConfig) error {
+func (cc *CanonicalConfig) populateFromVipers() error {
 
-	// start by loading the slider mapping because it's the only failable part for now
-	if mc.SliderMapping == nil {
-		cc.logger.Warnw("Missing key in config, using default value",
-			"key", "slider_mapping",
-			"value", defaultSliderMapping)
+	// merge the slider mappings from the user and internal configs
+	cc.SliderMapping = sliderMapFromConfigs(
+		cc.userConfig.GetStringMapStringSlice(configKeySliderMapping),
+		cc.internalConfig.GetStringMapStringSlice(configKeySliderMapping),
+	)
 
-		cc.SliderMapping = defaultSliderMapping
-	} else {
+	// get the rest of the config fields - viper saves us a lot of effort here
+	cc.ConnectionInfo.COMPort = cc.userConfig.GetString(configKeyCOMPort)
 
-		sliderMapping := newSliderMap()
-
-		// this is where we need to parse out each value (which is an interface{} at this point),
-		// and type-assert it into either a string or a list of strings
-		for key, value := range mc.SliderMapping {
-			switch typedValue := value.(type) {
-			case string:
-				if typedValue == "" {
-					sliderMapping.set(key, []string{})
-				} else {
-					sliderMapping.set(key, []string{typedValue})
-				}
-
-			// silently ignore nil values and treat as no targets
-			case nil:
-				sliderMapping.set(key, []string{})
-
-			// we can't directly type-assert to a []string, so we must check each item. yup, that sucks
-			case []interface{}:
-				sliderItems := []string{}
-
-				for _, listItem := range typedValue {
-
-					// silently ignore nil values
-					if listItem == nil {
-						continue
-					}
-
-					listItemStr, ok := listItem.(string)
-					if !ok {
-						cc.logger.Warnw("Non-string value in slider mapping list",
-							"key", key,
-							"value", listItem,
-							"valueType", fmt.Sprintf("%t", listItem))
-
-						return fmt.Errorf("invalid slider mapping for slider %d: got type %t, need string or []string", key, typedValue)
-					}
-
-					// ignore empty strings
-					if listItemStr != "" {
-						sliderItems = append(sliderItems, listItemStr)
-					}
-				}
-
-				sliderMapping.set(key, sliderItems)
-			default:
-				cc.logger.Warnw("Invalid value for slider mapping key",
-					"key", key,
-					"value", typedValue,
-					"valueType", fmt.Sprintf("%t", typedValue))
-
-				return fmt.Errorf("invalid slider mapping for slider %d: got type %t, need string or []string", key, typedValue)
-			}
-		}
-
-		cc.SliderMapping = sliderMapping
-	}
-
-	// for each config field, check if non-zero and populate its equivalent in our canonical config
-	// for zero-value fields, log and use the default constant defined above
-	// silently ignore invalid amount of seconds
-	if mc.ProcessRefreshFrequency <= 0 {
-		cc.logger.Warnw("Missing key in config, using default value",
-			"key", "process_refresh_frequency",
-			"value", defaultProcessRefreshFrequency)
-
-		cc.SessionRefreshThreshold = defaultProcessRefreshFrequency
-	} else {
-		cc.SessionRefreshThreshold = time.Duration(mc.ProcessRefreshFrequency) * time.Second
-	}
-
-	if mc.COMPort == "" {
-		cc.logger.Warnw("Missing key in config, using default value",
-			"key", "com_port",
-			"value", defaultCOMPort)
-
-		cc.ConnectionInfo.COMPort = defaultCOMPort
-	} else {
-		cc.ConnectionInfo.COMPort = mc.COMPort
-	}
-
-	// silently ignore invalid baud rates
-	if mc.BaudRate <= 0 {
-		cc.logger.Warnw("Missing key in config, using default value",
-			"key", "baud_rate",
-			"value", defaultBaudRate)
+	cc.ConnectionInfo.BaudRate = cc.userConfig.GetInt(configKeyBaudRate)
+	if cc.ConnectionInfo.BaudRate <= 0 {
+		cc.logger.Warnw("Invalid baud rate specified, using default value",
+			"key", configKeyBaudRate,
+			"invalidValue", cc.ConnectionInfo.BaudRate,
+			"defaultValue", defaultBaudRate)
 
 		cc.ConnectionInfo.BaudRate = defaultBaudRate
-	} else {
-		cc.ConnectionInfo.BaudRate = mc.BaudRate
 	}
 
-	// if the key isn't found this will default to false, which is what we want
-	cc.InvertSliders = mc.InvertSliders
+	cc.InvertSliders = cc.userConfig.GetBool(configKeyInvertSliders)
+	cc.NoiseReductionLevel = cc.userConfig.GetString(configKeyNoiseReductionLevel)
 
-	cc.logger.Debug("Populated config fields from marshalled config object")
+	cc.logger.Debug("Populated config fields from vipers")
 
 	return nil
 }

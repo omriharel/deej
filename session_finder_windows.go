@@ -464,8 +464,8 @@ func (sf *wcaSessionFinder) enumerateAndAddProcessSessions(
 				return fmt.Errorf("query session %d pid: %w", sessionIdx, err)
 			}
 
-			// make sure to indicate that this is a system sounds session
-			pid = 0
+			// update 2020/08/31: this is also the exact case for UWP applications, so we should no longer override the PID.
+			// it will successfully update whenever we call GetProcessId for e.g. Video.UI.exe, despite the error being non-nil.
 		}
 
 		// get its ISimpleAudioVolume
