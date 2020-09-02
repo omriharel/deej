@@ -7,6 +7,13 @@ import (
 	"github.com/jax-b/deej/util"
 )
 
+var (
+	externalTrayText    []string
+	externalTrayTooltip []string
+	externalTrayItems   []chan *systray.MenuItem
+	externalItems       bool = false
+)
+
 func (d *Deej) initializeTray(onDone func()) {
 	logger := d.logger.Named("tray")
 
@@ -16,6 +23,14 @@ func (d *Deej) initializeTray(onDone func()) {
 		systray.SetTemplateIcon(icon.DeejLogo, icon.DeejLogo)
 		systray.SetTitle("deej")
 		systray.SetTooltip("deej")
+
+		if externalItems {
+			for i, v := range externalTrayItems {
+				newitem := systray.AddMenuItem(externalTrayText[i], externalTrayTooltip[i])
+				v <- newitem
+			}
+			systray.AddSeparator()
+		}
 
 		editConfig := systray.AddMenuItem("Edit configuration", "Open config file with notepad")
 		editConfig.SetIcon(icon.EditConfig)
@@ -34,6 +49,7 @@ func (d *Deej) initializeTray(onDone func()) {
 
 		// wait on things to happen
 		go func() {
+
 			for {
 				select {
 
@@ -67,6 +83,10 @@ func (d *Deej) initializeTray(onDone func()) {
 			}
 		}()
 
+		// for _, consumer := range externalTraySubscribers {
+		// 	consumer <- true
+		// }
+
 		// actually start the main runtime
 		onDone()
 	}
@@ -78,6 +98,20 @@ func (d *Deej) initializeTray(onDone func()) {
 	// start the tray icon
 	logger.Debug("Running in tray")
 	systray.Run(onReady, onExit)
+
+}
+
+// AddMenuItem addes a menu item to the tray
+func (d *Deej) AddMenuItem(text string, tooltip string) chan *systray.MenuItem {
+	externalTrayText = append(externalTrayText, text)
+	externalTrayTooltip = append(externalTrayTooltip, text)
+
+	externalItems = true
+
+	c := make(chan *systray.MenuItem)
+	externalTrayItems = append(externalTrayItems, c)
+
+	return c
 }
 
 func (d *Deej) stopTray() {

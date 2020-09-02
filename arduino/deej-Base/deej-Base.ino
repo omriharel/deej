@@ -1,6 +1,10 @@
 #include "arduino.h"
 #include <avr/wdt.h>
 
+//Microcontroller type
+//#define MCU32U4 1
+#define MCUA328P 1
+
 //You must Hard Code in the number of Sliders in
 #define NUM_SLIDERS 6
 #define SERIALSPEED 9600
@@ -13,6 +17,8 @@ uint16_t analogSliderValues[NUM_SLIDERS];
 
 // Constend Send
 bool pushSliderValuesToPC = false;
+
+string outboundCommands = "";
 
 void setup() { 
   Serial.begin(SERIALSPEED);
@@ -39,9 +45,13 @@ void loop() {
 }
 
 void reboot() {
+#if MCU32U4
   wdt_disable();
   wdt_enable(WDTO_30MS);
   while (1) {}
+#elif MCUA328P
+  asm volatile ("  jmp 0");  
+#endif
 }
 
 void updateSliderValues() {
@@ -51,17 +61,27 @@ void updateSliderValues() {
 }
 
 void sendSliderValues() {
-  String builtString = String("");
-
   for (uint8_t i = 0; i < NUM_SLIDERS; i++) {
-    builtString += String((int)analogSliderValues[i]);
+    Serial.print(analogSliderValues[i]);
 
     if (i < NUM_SLIDERS - 1) {
-      builtString += String("|");
+      Serial.print("|");
     }
   }
-  
-  Serial.println(builtString);
+  if outboundCommands != "" {
+    serial.print(":");
+    serial.print(outboundCommands);
+    outboundCommands = "";
+  }
+
+  Serial.println();
+}
+
+void addCommand(String cmd) {
+  if outboundCommands != "" {
+    outboundCommands += "|"
+  }
+  outboundCommands += cmd;
 }
 
 void printSliderValues() {
