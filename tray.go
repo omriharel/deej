@@ -47,13 +47,21 @@ func (d *Deej) initializeTray(onDone func()) {
 				case <-editConfig.ClickedCh:
 					logger.Info("Edit config menu item clicked, opening config for editing")
 
-					if err := util.OpenExternal(logger, "notepad.exe", configFilepath); err != nil {
+					editor := "notepad.exe"
+					if util.Linux() {
+						editor = "gedit"
+					}
+
+					if err := util.OpenExternal(logger, editor, userConfigFilepath); err != nil {
 						logger.Warnw("Failed to open config file for editing", "error", err)
 					}
 
 				// refresh sessions
 				case <-refreshSessions.ClickedCh:
 					logger.Info("Refresh sessions menu item clicked, triggering session map refresh")
+
+					// performance: the reason that forcing a refresh here is okay is that users can't spam the
+					// right-click -> select-this-option sequence at a rate that's meaningful to performance
 					d.sessions.refreshSessions(true)
 				}
 			}

@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"runtime"
 	"syscall"
 
 	"go.uber.org/zap"
@@ -30,6 +31,11 @@ func FileExists(filename string) bool {
 	return !info.IsDir()
 }
 
+// Linux returns true if we're running on Linux
+func Linux() bool {
+	return runtime.GOOS == "linux"
+}
+
 // SetupCloseHandler creates a 'listener' on a new goroutine which will notify the
 // program if it receives an interrupt from the OS
 func SetupCloseHandler() chan os.Signal {
@@ -39,9 +45,23 @@ func SetupCloseHandler() chan os.Signal {
 	return c
 }
 
+// GetCurrentWindowProcessNames returns the process names (including extension, if applicable)
+// of the current foreground window. This includes child processes belonging to the window.
+// This is currently only implemented for Windows
+func GetCurrentWindowProcessNames() ([]string, error) {
+	return getCurrentWindowProcessNames()
+}
+
 // OpenExternal spawns a detached window with the provided command and argument
 func OpenExternal(logger *zap.SugaredLogger, cmd string, arg string) error {
-	command := exec.Command("cmd.exe", "/C", "start", "/b", cmd, arg)
+
+	// use cmd for windows, bash for linux
+	execCommandArgs := []string{"cmd.exe", "/C", "start", "/b", cmd, arg}
+	if Linux() {
+		execCommandArgs = []string{"/bin/bash", "-c", fmt.Sprintf("%s %s", cmd, arg)}
+	}
+
+	command := exec.Command(execCommandArgs[0], execCommandArgs[1:]...)
 
 	if err := command.Run(); err != nil {
 		logger.Warnw("Failed to spawn detached process",
@@ -62,11 +82,30 @@ func NormalizeScalar(v float32) float32 {
 }
 
 // SignificantlyDifferent returns true if there's a significant enough volume difference between two given values
-func SignificantlyDifferent(old float32, new float32) bool {
+func SignificantlyDifferent(old float32, new float32, noiseReductionLevel string) bool {
 
-	// this threshold is solely responsible for dealing with hardware interference when sliders are producing noisy values
-	// users with amazing hardware could maybe get away with reducing it to 0.015 or even 0.005, but i'm not risking it at the moment
-	const significantDifferenceThreshold = 0.025
+	const (
+		noiseReductionHigh = "high"
+		noiseReductionLow  = "low"
+	)
+
+	// this threshold is solely responsible for dealing with hardware interference when
+	// sliders are producing noisy values. this value should be a median value between two
+	// round percent values. for instance, 0.025 means volume can move at 3% increments
+	var significantDifferenceThreshold float64
+
+	// choose our noise reduction level based on the config-provided value
+	switch noiseReductionLevel {
+	case noiseReductionHigh:
+		significantDifferenceThreshold = 0.035
+		break
+	case noiseReductionLow:
+		significantDifferenceThreshold = 0.015
+		break
+	default:
+		significantDifferenceThreshold = 0.025
+		break
+	}
 
 	if math.Abs(float64(old-new)) >= significantDifferenceThreshold {
 		return true

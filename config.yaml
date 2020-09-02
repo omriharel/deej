@@ -1,6 +1,11 @@
 # process names are case-insensitive
 # you can use 'master' to indicate the master channel, or a list of process names to create a group
-# you can also use 'system' on windows to control the "system sounds" volume
+# you can use 'mic' to control your mic input level (uses the default recording device)
+# you can use 'deej.unmapped' to control all apps that aren't bound to any slider (this ignores master, system, mic and device-targeting sessions) (experimental)
+# windows only - you can use 'deej.current' to control the currently active app (whether full-screen or not) (experimental)
+# windows only - you can use a device's full name, i.e. "Speakers (Realtek High Definition Audio)", to bind it. this works for both output and input devices
+# windows only - you can use 'system' to control the "system sounds" volume
+# important: slider indexes start at 0, regardless of which analog pins you're using!
 slider_mapping:
   0: master
   1: # Media 
@@ -41,3 +46,7 @@ baud_rate: 115200
 # limits how often deej will look for new processes
 # it's recommended to leave this setting at its default value
 process_refresh_frequency: 5
+
+# adjust the amount of signal noise reduction depending on your hardware quality
+# supported values are "low" (excellent hardware), "default" (regular hardware) or "high" (bad, noisy hardware)
+noise_reduction: default

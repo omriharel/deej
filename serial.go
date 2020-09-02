@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"regexp"
-	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -84,7 +83,7 @@ func (sio *SerialIO) Initialize() error {
 	// this prevents a rare bug on windows where serial reads get congested,
 	// resulting in significant lag
 	minimumReadSize := 0
-	if runtime.GOOS == "linux" {
+	if util.Linux() {
 		minimumReadSize = 1
 	}
 
@@ -428,7 +427,7 @@ func (sio *SerialIO) handleLine(logger *zap.SugaredLogger, line string) {
 		}
 
 		// check if it changes the desired state (could just be a jumpy raw slider value)
-		if util.SignificantlyDifferent(sio.currentSliderPercentValues[sliderIdx], normalizedScalar) {
+		if util.SignificantlyDifferent(sio.currentSliderPercentValues[sliderIdx], normalizedScalar, sio.deej.config.NoiseReductionLevel) {
 
 			// if it does, update the saved value and create a move event
 			sio.currentSliderPercentValues[sliderIdx] = normalizedScalar

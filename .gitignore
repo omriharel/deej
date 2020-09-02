@@ -9,3 +9,6 @@ venv/
 deej-dev
 deej-release
 releases/
+*.bin
+logs/
+preferences.yaml
