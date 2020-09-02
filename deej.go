@@ -24,7 +24,7 @@ type Deej struct {
 	notifier Notifier
 	config   *CanonicalConfig
 	serial   *SerialIO
-	sessions *sessionMap
+	sessions *SessionMap
 
 	stopChannel chan bool
 	version     string
@@ -163,6 +163,21 @@ func (d *Deej) SetVersion(version string) {
 // SubscribeToChanges allows external components to receive updates when the config is reloaded
 func (d *Deej) SubscribeToChanges() chan bool {
 	return d.config.SubscribeToChanges()
+}
+
+// GetSessionMap returns a pointer to the session Map
+func (d *Deej) GetSessionMap() *SessionMap {
+	return d.sessions
+}
+
+// SubscribeToSessionReload allows an external component to receive updates when the sessions are reloaded
+func (d *Deej) SubscribeToSessionReload() chan bool {
+	return d.sessions.SubscribeToSessionReload()
+}
+
+// GetSliderMap returns a pointer to the slider map
+func (d *Deej) GetSliderMap() *SliderMap {
+	return d.config.SliderMapping
 }
 
 // Verbose returns a boolean indicating whether deej is running in verbose mode

@@ -17,6 +17,7 @@ type Session interface {
 
 	Key() string
 	Release()
+	GetIconPath() string
 }
 
 const (

@@ -9,7 +9,8 @@ import (
 	"go.uber.org/zap"
 )
 
-type sessionMap struct {
+// SessionMap contains the helper functions and sessions for audio managment
+type SessionMap struct {
 	deej   *Deej
 	logger *zap.SugaredLogger
 
@@ -19,6 +20,8 @@ type sessionMap struct {
 	sessionFinder SessionFinder
 
 	lastSessionRefresh time.Time
+
+	returnSessionConsumers []chan bool
 }
 
 const (
@@ -35,10 +38,10 @@ const (
 	maxTimeBetweenSessionRefreshes = time.Second * 45
 )
 
-func newSessionMap(deej *Deej, logger *zap.SugaredLogger, sessionFinder SessionFinder) (*sessionMap, error) {
+func newSessionMap(deej *Deej, logger *zap.SugaredLogger, sessionFinder SessionFinder) (*SessionMap, error) {
 	logger = logger.Named("sessions")
 
-	m := &sessionMap{
+	m := &SessionMap{
 		deej:          deej,
 		logger:        logger,
 		m:             make(map[string][]Session),
@@ -51,7 +54,15 @@ func newSessionMap(deej *Deej, logger *zap.SugaredLogger, sessionFinder SessionF
 	return m, nil
 }
 
-func (m *sessionMap) initialize() error {
+// SubscribeToSessionReload allows external components to receive updates when a Session is reloaded
+func (m *SessionMap) SubscribeToSessionReload() chan bool {
+	c := make(chan bool)
+	m.returnSessionConsumers = append(m.returnSessionConsumers, c)
+
+	return c
+}
+
+func (m *SessionMap) initialize() error {
 	if err := m.getAndAddSessions(); err != nil {
 		m.logger.Warnw("Failed to get all sessions during session map initialization", "error", err)
 		return fmt.Errorf("get all sessions during init: %w", err)
@@ -63,7 +74,7 @@ func (m *sessionMap) initialize() error {
 	return nil
 }
 
-func (m *sessionMap) release() error {
+func (m *SessionMap) release() error {
 	if err := m.sessionFinder.Release(); err != nil {
 		m.logger.Warnw("Failed to release session finder during session map release", "error", err)
 		return fmt.Errorf("release session finder during release: %w", err)
@@ -74,7 +85,7 @@ func (m *sessionMap) release() error {
 
 // assumes the session map is clean!
 // only call on a new session map or as part of refreshSessions which calls reset
-func (m *sessionMap) getAndAddSessions() error {
+func (m *SessionMap) getAndAddSessions() error {
 
 	// mark that we're refreshing before anything else
 	m.lastSessionRefresh = time.Now()
@@ -89,12 +100,12 @@ func (m *sessionMap) getAndAddSessions() error {
 		m.add(session)
 	}
 
-	m.logger.Infow("Got all audio sessions successfully", "sessionMap", m)
+	m.logger.Infow("Got all audio sessions successfully", "SessionMap", m)
 
 	return nil
 }
 
-func (m *sessionMap) setupOnConfigReload() {
+func (m *SessionMap) setupOnConfigReload() {
 	configReloadedChannel := m.deej.config.SubscribeToChanges()
 
 	go func() {
@@ -108,7 +119,7 @@ func (m *sessionMap) setupOnConfigReload() {
 	}()
 }
 
-func (m *sessionMap) setupOnSliderMove() {
+func (m *SessionMap) setupOnSliderMove() {
 	sliderEventsChannel := m.deej.serial.SubscribeToSliderMoveEvents()
 
 	go func() {
@@ -121,7 +132,7 @@ func (m *sessionMap) setupOnSliderMove() {
 	}()
 }
 
-func (m *sessionMap) refreshSessions(force bool) {
+func (m *SessionMap) refreshSessions(force bool) {
 
 	// make sure enough time passed since the last refresh, unless force is true in which case always clear
 	if !force && m.lastSessionRefresh.Add(m.deej.config.SessionRefreshThreshold).After(time.Now()) {
@@ -136,9 +147,16 @@ func (m *sessionMap) refreshSessions(force bool) {
 	} else {
 		m.logger.Debug("Re-acquired sessions successfully")
 	}
+
+	fmt.Println(m.m)
+	go func() {
+		for index := range m.returnSessionConsumers {
+			m.returnSessionConsumers[index] <- true
+		}
+	}()
 }
 
-func (m *sessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
+func (m *SessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
 
 	// first of all, ensure our session map isn't moldy
 	if m.lastSessionRefresh.Add(maxTimeBetweenSessionRefreshes).Before(time.Now()) {
@@ -147,7 +165,7 @@ func (m *sessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
 	}
 
 	// get the targets mapped to this slider from the config
-	targets, ok := m.deej.config.SliderMapping.get(event.SliderID)
+	targets, ok := m.deej.config.SliderMapping.Get(event.SliderID)
 
 	// if slider not found in config, silently ignore
 	if !ok {
@@ -164,7 +182,7 @@ func (m *sessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
 		normalizedTargetName := strings.ToLower(target)
 
 		// check the map for matching sessions
-		sessions, ok := m.get(normalizedTargetName)
+		sessions, ok := m.Get(normalizedTargetName)
 
 		// no sessions matching this target - move on
 		if !ok {
@@ -194,7 +212,7 @@ func (m *sessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
 	}
 }
 
-func (m *sessionMap) add(value Session) {
+func (m *SessionMap) add(value Session) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -208,7 +226,8 @@ func (m *sessionMap) add(value Session) {
 	}
 }
 
-func (m *sessionMap) get(key string) ([]Session, bool) {
+// Get returns a slice of sessions
+func (m *SessionMap) Get(key string) ([]Session, bool) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -216,7 +235,7 @@ func (m *sessionMap) get(key string) ([]Session, bool) {
 	return value, ok
 }
 
-func (m *sessionMap) clear() {
+func (m *SessionMap) clear() {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -233,7 +252,7 @@ func (m *sessionMap) clear() {
 	m.logger.Debug("Session map cleared")
 }
 
-func (m *sessionMap) String() string {
+func (m *SessionMap) String() string {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 

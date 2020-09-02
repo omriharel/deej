@@ -5,19 +5,25 @@ import (
 	"sync"
 )
 
-type sliderMap struct {
+// SliderMap Holder of the slider map
+type SliderMap struct {
 	m    map[int][]string
 	lock sync.Locker
 }
 
-func newSliderMap() *sliderMap {
-	return &sliderMap{
+func newSliderMap() *SliderMap {
+	return &SliderMap{
 		m:    make(map[int][]string),
 		lock: &sync.Mutex{},
 	}
 }
 
-func (m *sliderMap) iterate(f func(int, []string)) {
+// Length Returns the Number of Sliders in the ConfigMap
+func (m *SliderMap) Length() int {
+	return len(m.m)
+}
+
+func (m *SliderMap) iterate(f func(int, []string)) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -26,7 +32,8 @@ func (m *sliderMap) iterate(f func(int, []string)) {
 	}
 }
 
-func (m *sliderMap) get(key int) ([]string, bool) {
+// Get Returns a Key at a certin Index
+func (m *SliderMap) Get(key int) ([]string, bool) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -34,14 +41,14 @@ func (m *sliderMap) get(key int) ([]string, bool) {
 	return value, ok
 }
 
-func (m *sliderMap) set(key int, value []string) {
+func (m *SliderMap) set(key int, value []string) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
 	m.m[key] = value
 }
 
-func (m *sliderMap) String() string {
+func (m *SliderMap) String() string {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 

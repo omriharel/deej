@@ -16,7 +16,7 @@ import (
 // CanonicalConfig provides application-wide access to configuration fields,
 // as well as loading/file watching logic for deej's configuration file
 type CanonicalConfig struct {
-	SliderMapping *sliderMap
+	SliderMapping *SliderMap
 
 	// renamed from ProcessRefreshFrequency, key left as is in yaml-config for backwards compatibility
 	SessionRefreshThreshold time.Duration
@@ -52,7 +52,7 @@ const (
 	defaultBaudRate                = 9600
 )
 
-var defaultSliderMapping = func() *sliderMap {
+var defaultSliderMapping = func() *SliderMap {
 	emptyMap := newSliderMap()
 	emptyMap.set(0, []string{masterSessionName})
 	return emptyMap
