@@ -202,7 +202,7 @@ func (m *SessionMap) sessionMapped(session Session) bool {
 	matchFound := false
 
 	// look through the actual mappings
-	m.deej.config.SliderMapping.iterate(func(sliderIdx int, targets []string) {
+	m.deej.config.SliderMapping.Iterate(func(sliderIdx int, targets []string) {
 		for _, target := range targets {
 
 			// ignore special transforms

@@ -53,7 +53,8 @@ func sliderMapFromConfigs(userMapping map[string][]string, internalMapping map[s
 	return resultMap
 }
 
-func (m *SliderMap) iterate(f func(int, []string)) {
+//Iterate through each value in the map
+func (m *SliderMap) Iterate(f func(int, []string)) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
