@@ -12,7 +12,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [windows-latest, ubuntu-latest]
         mode: [release, dev]
         go: ["1.14"]
 
@@ -36,6 +36,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Build deej
-        run: scripts/${{ matrix.BUILD_SCRIPT_DIR }}/build-${{ matrix.mode }}.${{ matrix.BUILD_SCRIPT_EXT }}
-        shell: ${{ matrix.SHELL }}
+      # - name: Build deej
+      #   run: echo scripts/${{ matrix.BUILD_SCRIPT_DIR }}/build-${{ matrix.mode }}.${{ matrix.BUILD_SCRIPT_EXT }}
+      #   shell: ${{ matrix.SHELL }}
+
+      - name: Dump matrix context
+        env:
+          MATRIX_CTX: ${{ toJson(matrix) }}
+        run: echo "$MATRIX_CONTEXT"
