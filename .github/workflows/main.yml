@@ -21,11 +21,11 @@ jobs:
           - os: windows-latest
             BUILD_SCRIPT_DIR: windows
             BUILD_SCRIPT_EXT: bat
-            SHELL: cmd
+            BUILD_SHELL: cmd
           - os: ubuntu-latest
             BUILD_SCRIPT_DIR: linux
             BUILD_SCRIPT_EXT: sh
-            SHELL: bash
+            BUILD_SHELL: bash
 
     steps:
       - name: Setup Go
@@ -36,11 +36,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      # - name: Build deej
-      #   run: echo scripts/${{ matrix.BUILD_SCRIPT_DIR }}/build-${{ matrix.mode }}.${{ matrix.BUILD_SCRIPT_EXT }}
-      #   shell: ${{ matrix.SHELL }}
-
-      - name: Dump matrix context
-        env:
-          MATRIX_CTX: ${{ toJson(matrix) }}
-        run: echo "$MATRIX_CONTEXT"
+      - name: Build deej
+        run: echo scripts/${{ matrix.BUILD_SCRIPT_DIR }}/build-${{ matrix.mode }}.${{ matrix.BUILD_SCRIPT_EXT }}
+        shell: ${{ matrix.BUILD_SHELL }}
