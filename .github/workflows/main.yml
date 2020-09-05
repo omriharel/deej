@@ -16,17 +16,6 @@ jobs:
         mode: [release, dev]
         go: ["1.14"]
 
-        # reference the build script depending on OS
-        include:
-          - os: windows-latest
-            BUILD_SCRIPT_DIR: windows
-            BUILD_SCRIPT_EXT: bat
-            BUILD_SHELL: cmd
-          - os: ubuntu-latest
-            BUILD_SCRIPT_DIR: linux
-            BUILD_SCRIPT_EXT: sh
-            BUILD_SHELL: bash
-
     steps:
       - name: Setup Go
         uses: actions/setup-go@v2
@@ -37,5 +26,10 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Build deej
-        run: echo scripts/${{ matrix.BUILD_SCRIPT_DIR }}/build-${{ matrix.mode }}.${{ matrix.BUILD_SCRIPT_EXT }}
-        shell: ${{ matrix.BUILD_SHELL }}
+        if: runner.os == Windows
+        run: scripts/windows/build-${{ matrix.mode }}.bat
+        shell: cmd
+
+      - name: Build deej
+        if: runner.os == Linux
+        run: scripts/linux/build-${{ matrix.mode }}.sh
