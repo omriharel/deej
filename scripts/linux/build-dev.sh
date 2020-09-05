@@ -16,4 +16,5 @@ if [ $? -eq 0 ]; then
     echo 'Done.'
 else
     echo 'Error: "go build" exited with a non-zero code. Are you running this script from the deej directory?'
+    exit 1
 fi

@@ -1,0 +1,41 @@
+name: Build
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build:
+    name: Build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        mode: [release, dev]
+        go: ["1.14"]
+
+        # reference the build script depending on OS
+        include:
+          - os: windows-latest
+            BUILD_SCRIPT_DIR: windows
+            BUILD_SCRIPT_EXT: bat
+            SHELL: cmd
+          - os: ubuntu-latest
+            BUILD_SCRIPT_DIR: linux
+            BUILD_SCRIPT_EXT: sh
+            SHELL: bash
+
+    steps:
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go }}
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Build deej
+        run: scripts/${{ matrix.BUILD_SCRIPT_DIR }}/build-${{ matrix.mode }}.${{ matrix.BUILD_SCRIPT_EXT }}
+        shell: ${{ matrix.SHELL }}

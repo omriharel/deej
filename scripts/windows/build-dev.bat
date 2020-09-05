@@ -17,11 +17,16 @@ ECHO - versionTag %VERSION_TAG%
 ECHO - buildType %BUILD_TYPE%
 
 go build -o "%DEEJ_ROOT%\deej-dev.exe" -ldflags "-X main.gitCommit=%GIT_COMMIT% -X main.versionTag=%VERSION_TAG% -X main.buildType=%BUILD_TYPE%" "%DEEJ_ROOT%\cmd"
+if %ERRORLEVEL% NEQ 0 GOTO BUILDERROR
 ECHO Done.
 GOTO DONE
 
 :NOGO
 ECHO GOPATH environment variable not set
 GOTO DONE
+
+:BUILDERROR
+ECHO Failed to build deej in development mode! See above output for details.
+EXIT /B 1
 
 :DONE
