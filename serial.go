@@ -280,6 +280,18 @@ func (sio *SerialIO) WaitFor(logger *zap.SugaredLogger, cmdKey string) (success 
 	return
 }
 
+// Flush clears out the buffers of the serial port
+func (sio *SerialIO) Flush(logger *zap.SugaredLogger) {
+	var bytesRead int = 1
+	var err error
+	for bytesRead > 0 {
+		bytesRead, err = sio.conn.Read(make([]byte, 1))
+		if err != nil {
+			break
+		}
+	}
+}
+
 // ReadLine read's a line into a channel
 func (sio *SerialIO) ReadLine(logger *zap.SugaredLogger) chan string {
 	ch := make(chan string)
