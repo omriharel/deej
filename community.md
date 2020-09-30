@@ -203,3 +203,27 @@ This unique build is based entirely on a breadboard! Two, to be exact. The autho
 This 3D-printed design has a smooth surface finish and features no front-facing screws. It uses magnetic, swappable plates with app icons below each slider, allowing you to easily tell which slider controls which app. In addition, the steep angle of this build lets it occupy slightly less desk space than other, more traditional slider-based designs. /u/HumidLettuce has kindly provided full, step-by-step build instructions for other users wishing to use this design, available on Instructables (link above).
 
 ![/u/HumidLettuce](./assets/community-builds/humidlettuce.jpg)
+
+## [Snow](https://reddit.com/user/NoU_14)
+
+**Links**: [Imgur album](https://imgur.com/a/3XYqhJk)
+
+This compact design uses a single rotary encoder (with a modified version of deej's Arduino code) that acts as several "virtual" knobs. Clicking the encoder toggles the control between them, with the active channel (and current volume level) being indicated by the OLED screen. It also incorporates an LED ring to act as a secondary volume level indicator, adding some visual flair to the build. The 3D-printed enclosure wraps everything up with a professional look, that (unintentionally!) somewhat resembles a classic iPod. The bottom side of the enclosure is filled with some plaster, giving it additional weight and allowing it to remain sturdy despite its small (8x4.5x2.3 cm) size.
+
+![Snow](./assets/community-builds/snow.jpg)
+
+## YaMoef
+
+**Links**: [Imgur album](https://imgur.com/a/3zxhjxF) | [Modified code on GitHub](https://github.com/YaMoef/deej)
+
+This build presents a second, angled variation on the single rotary encoder approach, using a single component to control multiple "virtual sliders". It uses a heavily modified version of both Arduino code and the deej client (both of which the author has kindly made available in their GitHub fork, alongside detailed instructions - link above). It features an LCD display to indicate the active channel as well as the current volume level. Its 3D-printed exterior is finished off with a shiny, metallic volume knob to wrap up its sleek appearance.
+
+![YaMoef](./assets/community-builds/yamoef.jpg)
+
+## StalkyMuffin
+
+**Links**: [Imgur album](https://imgur.com/a/zmfc3ft) | [Enclosure model on Thingiverse](https://www.thingiverse.com/thing:4595058)
+
+This one is a traditional-looking slider-based build with some unique properties. It was designed with multi-material capabilities in mind, most notably apparent by the laser-cut wooden app glued to the top. These provide an interesting contrast to the multi-layered faceplate, printed with two different filaments to give the sliders their own highlight. It's also the first deej build to include a [cord strain relief](https://i.imgur.com/lK6twPm.jpg) instead of a USB port, which adds to its highly professional look and feel.
+
+![StalkyMuffin](./assets/community-builds/stalkymuffin.jpg)
