@@ -110,15 +110,6 @@ func newMasterSession(
 	return s, nil
 }
 
-// GetIconPath returns the icon path for the session
-func (s *WcaSession) GetIconPath() string {
-	var iconPath string
-	if err := s.control.GetIconPath(&iconPath); err != nil {
-		s.logger.Warnw("Failed to get sessiom icon", "error", err)
-	}
-	return iconPath
-}
-
 // GetVolume returns the volume of the session
 func (s *WcaSession) GetVolume() float32 {
 	var level float32
@@ -165,11 +156,6 @@ func (s *WcaSession) Release() {
 
 func (s *WcaSession) String() string {
 	return fmt.Sprintf(sessionStringFormat, s.humanReadableDesc, s.GetVolume())
-}
-
-// GetIconPath returns the icon path since there its a master session there is nothing
-func (s *MasterSession) GetIconPath() string {
-	return ""
 }
 
 // GetVolume returns the volume of the master session
