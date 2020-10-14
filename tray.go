@@ -1,6 +1,9 @@
 package deej
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/getlantern/systray"
 
 	"github.com/jax-b/deej/icon"
@@ -24,14 +27,6 @@ func (d *Deej) initializeTray(onDone func()) {
 		systray.SetTitle("deej")
 		systray.SetTooltip("deej")
 
-		if externalItems {
-			for i, v := range externalTrayItems {
-				newitem := systray.AddMenuItem(externalTrayText[i], externalTrayTooltip[i])
-				v <- newitem
-			}
-			systray.AddSeparator()
-		}
-
 		editConfig := systray.AddMenuItem("Edit configuration", "Open config file with notepad")
 		editConfig.SetIcon(icon.EditConfig)
 
@@ -42,6 +37,17 @@ func (d *Deej) initializeTray(onDone func()) {
 			systray.AddSeparator()
 			versionInfo := systray.AddMenuItem(d.version, "")
 			versionInfo.Disable()
+		}
+
+		if externalItems {
+			systray.AddSeparator()
+			fmt.Println(externalTrayText)
+			fmt.Println(externalTrayTooltip)
+			for i, v := range externalTrayItems {
+				newitem := systray.AddMenuItem(externalTrayText[i], externalTrayTooltip[i])
+				v <- newitem
+				time.Sleep(1 * time.Millisecond)
+			}
 		}
 
 		systray.AddSeparator()
@@ -104,7 +110,7 @@ func (d *Deej) initializeTray(onDone func()) {
 // AddMenuItem addes a menu item to the tray
 func (d *Deej) AddMenuItem(text string, tooltip string) chan *systray.MenuItem {
 	externalTrayText = append(externalTrayText, text)
-	externalTrayTooltip = append(externalTrayTooltip, text)
+	externalTrayTooltip = append(externalTrayTooltip, tooltip)
 
 	externalItems = true
 

@@ -37,10 +37,10 @@ slider_mapping:
   5:
 
 # set this to true if you want the controls inverted (i.e. top is 0%, bottom is 100%)
-invert_sliders: false
+invert_sliders: true
 
 # settings for connecting to the arduino board
-com_port: COM6
+com_port: COM4
 baud_rate: 115200
 
 # limits how often deej will look for new processes
