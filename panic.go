@@ -58,7 +58,7 @@ func (d *Deej) recoverFromPanic() {
 		"crashlogPath", crashlogPath,
 		"error", r)
 
-	d.notifier.Notify("Unexpected crash occurred...",
+	d.Notifier.Notify("Unexpected crash occurred...",
 		fmt.Sprintf("More details in %s", crashlogPath))
 
 	// bye :(

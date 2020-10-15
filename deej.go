@@ -21,7 +21,7 @@ const (
 // Deej is the main entity managing access to all sub-components
 type Deej struct {
 	logger   *zap.SugaredLogger
-	notifier Notifier
+	Notifier Notifier
 	config   *CanonicalConfig
 	serial   *SerialIO
 	sessions *SessionMap
@@ -49,7 +49,7 @@ func NewDeej(logger *zap.SugaredLogger, verbose bool) (*Deej, error) {
 
 	d := &Deej{
 		logger:      logger,
-		notifier:    notifier,
+		Notifier:    notifier,
 		config:      config,
 		stopChannel: make(chan bool),
 		verbose:     verbose,
@@ -106,7 +106,7 @@ func (d *Deej) Initialize() error {
 			d.logger.Warnw("Serial port seems busy, notifying user and closing",
 				"comPort", d.config.ConnectionInfo.COMPort)
 
-			d.notifier.Notify(fmt.Sprintf("Can't connect to %s!", d.config.ConnectionInfo.COMPort),
+			d.Notifier.Notify(fmt.Sprintf("Can't connect to %s!", d.config.ConnectionInfo.COMPort),
 				"This serial port is busy, make sure to close any serial monitor or other deej instance.")
 
 			d.signalStop()
@@ -116,7 +116,7 @@ func (d *Deej) Initialize() error {
 			d.logger.Warnw("Provided COM port seems wrong, notifying user and closing",
 				"comPort", d.config.ConnectionInfo.COMPort)
 
-			d.notifier.Notify(fmt.Sprintf("Can't connect to %s!", d.config.ConnectionInfo.COMPort),
+			d.Notifier.Notify(fmt.Sprintf("Can't connect to %s!", d.config.ConnectionInfo.COMPort),
 				"This serial port doesn't exist, check your configuration and make sure it's set correctly.")
 
 			d.signalStop()
