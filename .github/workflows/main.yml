@@ -1,0 +1,39 @@
+name: Build
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build:
+    name: Build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+        mode: [release, dev]
+        go: ["1.14"]
+
+    steps:
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go }}
+
+      - name: Install prerequisites (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Build deej (Windows)
+        if: runner.os == 'Windows'
+        run: scripts/windows/build-${{ matrix.mode }}.bat
+        shell: cmd
+
+      - name: Build deej (Linux)
+        if: runner.os == 'Linux'
+        run: scripts/linux/build-${{ matrix.mode }}.sh
