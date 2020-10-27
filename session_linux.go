@@ -6,7 +6,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/jax-b/deej/util"
+	//"github.com/jax-b/deej/util"
 	"github.com/jfreymuth/pulse/proto"
 )
 
