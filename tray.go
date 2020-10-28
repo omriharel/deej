@@ -1,7 +1,6 @@
 package deej
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/getlantern/systray"
@@ -41,8 +40,8 @@ func (d *Deej) initializeTray(onDone func()) {
 
 		if externalItems {
 			systray.AddSeparator()
-			fmt.Println(externalTrayText)
-			fmt.Println(externalTrayTooltip)
+			// fmt.Println(externalTrayText)
+			// fmt.Println(externalTrayTooltip)
 			for i, v := range externalTrayItems {
 				newitem := systray.AddMenuItem(externalTrayText[i], externalTrayTooltip[i])
 				v <- newitem
