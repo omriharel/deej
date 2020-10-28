@@ -124,6 +124,17 @@ func (sio *SerialIO) Start() error {
 	go func() {
 		lineChannel := sio.ReadLine(sio.namedLogger)
 		sio.running = true
+
+		// Ensue proper lines befor affecting the users volume
+		for i := 0; i < 2; i++ {
+			sio.WriteStringLine(sio.namedLogger, "deej.core.values")
+			select {
+			case _ = <-lineChannel:
+			case <-time.After(1 * time.Second):
+				break
+			}
+		}
+
 		for {
 			select {
 			case <-sio.stopChannel:
