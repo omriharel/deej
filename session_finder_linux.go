@@ -97,7 +97,7 @@ func (sf *paSessionFinder) getMasterSinkSession() (Session, error) {
 	}
 
 	// create the master sink session
-	sink := newMasterSession(sf.sessionLogger, sf.client, reply.SinkIndex, reply.Channels, true)
+	sink := newPaDevice(sf.sessionLogger, sf.client, reply.SinkIndex, reply.Channels, true, true, "")
 
 	return sink, nil
 }
@@ -114,21 +114,29 @@ func (sf *paSessionFinder) getMasterSourceSession() (Session, error) {
 	}
 
 	// create the master source session
-	source := newMasterSession(sf.sessionLogger, sf.client, reply.SourceIndex, reply.Channels, false)
+	source := newPaDevice(sf.sessionLogger, sf.client, reply.SourceIndex, reply.Channels, false, true, "")
 
 	return source, nil
 }
 
 func (sf *paSessionFinder) enumerateAndAddSessions(sessions *[]Session) error {
-	request := proto.GetSinkInputInfoList{}
-	reply := proto.GetSinkInputInfoListReply{}
+	requestSinkInputs := proto.GetSinkInputInfoList{}
+	replySinkInputs := proto.GetSinkInputInfoListReply{}
 
-	if err := sf.client.Request(&request, &reply); err != nil {
+	requestSinks := proto.GetSinkInfoList{}
+	replySinks := proto.GetSinkInfoListReply{}
+
+	if err := sf.client.Request(&requestSinkInputs, &replySinkInputs); err != nil {
 		sf.logger.Warnw("Failed to get sink input list", "error", err)
 		return fmt.Errorf("get sink input list: %w", err)
 	}
 
-	for _, info := range reply {
+	if err := sf.client.Request(&requestSinks, &replySinks); err != nil {
+		sf.logger.Warnw("Failed to get sink list", "error", err)
+		return fmt.Errorf("get sink list: %w", err)
+	}
+
+	for _, info := range replySinkInputs {
 		name, ok := info.Properties["application.process.binary"]
 
 		if !ok {
@@ -144,6 +152,23 @@ func (sf *paSessionFinder) enumerateAndAddSessions(sessions *[]Session) error {
 		// add it to our slice
 		*sessions = append(*sessions, newSession)
 
+	}
+
+	for _, info := range replySinks {
+		name, ok := info.Properties["device.description"]
+
+		if !ok {
+			sf.logger.Warnw("Failed to get sink name",
+				"sinkIndex", info.SinkIndex)
+
+			continue
+		}
+
+		// Create new session
+		newSession := newPaDevice(sf.sessionLogger, sf.client, info.SinkIndex, info.Channels, true, false, name.String())
+
+		// add it to session list
+		*sessions = append(*sessions, newSession)
 	}
 
 	return nil
