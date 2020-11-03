@@ -14,7 +14,8 @@ const maxVolume = 0x10000
 
 var errNoSuchProcess = errors.New("No such process")
 
-type paSession struct {
+// Session for a Sink input, (individual programs/processes)
+type paProcessSession struct {
 	baseSession
 
 	processName string
@@ -25,6 +26,7 @@ type paSession struct {
 	sinkInputChannels byte
 }
 
+// Session for audio device (Can be either Sink or Source)
 type paDeviceSession struct {
 	baseSession
 
@@ -35,15 +37,15 @@ type paDeviceSession struct {
 	isOutput       bool
 }
 
-func newPASession(
+func newPAProcessSession(
 	logger *zap.SugaredLogger,
 	client *proto.Client,
 	sinkInputIndex uint32,
 	sinkInputChannels byte,
 	processName string,
-) *paSession {
+) *paProcessSession {
 
-	s := &paSession{
+	s := &paProcessSession{
 		client:            client,
 		sinkInputIndex:    sinkInputIndex,
 		sinkInputChannels: sinkInputChannels,
@@ -79,8 +81,6 @@ func newPADeviceSession(
 
 	var key string
 
-	// If device is the master, check if its the mic or speaker and give apporpriate default name
-	// Else give the session the parameter supplied name
 	if isMaster {
 		if isOutput {
 			key = masterSessionName
@@ -101,7 +101,7 @@ func newPADeviceSession(
 	return s
 }
 
-func (s *paSession) GetVolume() float32 {
+func (s *paProcessSession) GetVolume() float32 {
 	request := proto.GetSinkInputInfo{
 		SinkInputIndex: s.sinkInputIndex,
 	}
@@ -116,7 +116,7 @@ func (s *paSession) GetVolume() float32 {
 	return level
 }
 
-func (s *paSession) SetVolume(v float32) error {
+func (s *paProcessSession) SetVolume(v float32) error {
 	volumes := createChannelVolumes(s.sinkInputChannels, v)
 	request := proto.SetSinkInputVolume{
 		SinkInputIndex: s.sinkInputIndex,
@@ -133,11 +133,11 @@ func (s *paSession) SetVolume(v float32) error {
 	return nil
 }
 
-func (s *paSession) Release() {
+func (s *paProcessSession) Release() {
 	s.logger.Debug("Releasing audio session")
 }
 
-func (s *paSession) String() string {
+func (s *paProcessSession) String() string {
 	return fmt.Sprintf(sessionStringFormat, s.humanReadableDesc, s.GetVolume())
 }
 

@@ -147,7 +147,7 @@ func (sf *paSessionFinder) enumerateAndAddSessions(sessions *[]Session) error {
 		}
 
 		// create the deej session object
-		newSession := newPASession(sf.sessionLogger, sf.client, info.SinkInputIndex, info.Channels, name.String())
+		newSession := newPAProcessSession(sf.sessionLogger, sf.client, info.SinkInputIndex, info.Channels, name.String())
 
 		// add it to our slice
 		*sessions = append(*sessions, newSession)

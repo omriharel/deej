@@ -41,7 +41,7 @@ deej is written in Go and [distributed](https://github.com/omriharel/deej/releas
 - Bind apps to different sliders
   - Bind multiple apps per slider (i.e. one slider for all your games)
   - Bind the master channel
-  - Bind specific audio devices by name (on Windows and Linux (_expirimental_))
+  - Bind specific audio devices by name (on Windows and Linux (_experimental_))
   - Bind "system sounds" (on Windows)
   - **_New:_** Bind currently active app (on Windows, _experimental_)
   - **_New:_** Bind all other unassigned apps (_experimental_)
@@ -106,7 +106,7 @@ noise_reduction: default
 - **_New:_** On Windows, `deej.current` is a special option to control whichever app is currently in focus (_experimental_)
 - You can specify a device's full name, i.e. `Speakers (Realtek High Definition Audio)`, to bind that device's level to a slider. This doesn't conflict with the default `master` and `mic` options, and works for both input and output devices.
   - Windows: Use the full device name, as seen in the menu that comes up when left-clicking the speaker icon in the tray menu
-  - Linux (_expirimental_): Use the full device name, as seen in the `Output Devices` tab in `pavucontrol` or the description when running `pactl list sinks`
+  - Linux (_experimental_): Use the device's description as seen in the PulseAudio Volume Control output devices tab (or by running `pactl list sinks`)
 - `system` is a special option on Windows to control the "System sounds" volume in the Windows mixer
 - All names are case-**in**sensitive, meaning both `chrome.exe` and `CHROME.exe` will work
 - You can create groups of process names (using a list) to either:
