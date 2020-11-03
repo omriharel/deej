@@ -97,7 +97,7 @@ func (sf *paSessionFinder) getMasterSinkSession() (Session, error) {
 	}
 
 	// create the master sink session
-	sink := newPaDevice(sf.sessionLogger, sf.client, reply.SinkIndex, reply.Channels, true, true, "")
+	sink := newPADeviceSession(sf.sessionLogger, sf.client, reply.SinkIndex, reply.Channels, true, true, "")
 
 	return sink, nil
 }
@@ -114,7 +114,7 @@ func (sf *paSessionFinder) getMasterSourceSession() (Session, error) {
 	}
 
 	// create the master source session
-	source := newPaDevice(sf.sessionLogger, sf.client, reply.SourceIndex, reply.Channels, false, true, "")
+	source := newPADeviceSession(sf.sessionLogger, sf.client, reply.SourceIndex, reply.Channels, false, true, "")
 
 	return source, nil
 }
@@ -165,7 +165,7 @@ func (sf *paSessionFinder) enumerateAndAddSessions(sessions *[]Session) error {
 		}
 
 		// Create new session
-		newSession := newPaDevice(sf.sessionLogger, sf.client, info.SinkIndex, info.Channels, true, false, name.String())
+		newSession := newPADeviceSession(sf.sessionLogger, sf.client, info.SinkIndex, info.Channels, true, false, name.String())
 
 		// add it to session list
 		*sessions = append(*sessions, newSession)

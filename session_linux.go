@@ -25,7 +25,7 @@ type paSession struct {
 	sinkInputChannels byte
 }
 
-type paDevice struct {
+type paDeviceSession struct {
 	baseSession
 
 	client *proto.Client
@@ -60,7 +60,7 @@ func newPASession(
 	return s
 }
 
-func newPaDevice(
+func newPADeviceSession(
 	logger *zap.SugaredLogger,
 	client *proto.Client,
 	streamIndex uint32,
@@ -68,9 +68,9 @@ func newPaDevice(
 	isOutput bool,
 	isMaster bool,
 	name string,
-) *paDevice {
+) *paDeviceSession {
 
-	s := &paDevice{
+	s := &paDeviceSession{
 		client:         client,
 		streamIndex:    streamIndex,
 		streamChannels: streamChannels,
@@ -79,18 +79,16 @@ func newPaDevice(
 
 	var key string
 
-	if isOutput {
-		if isMaster {
+	// If device is the master, check if its the mic or speaker and give apporpriate default name
+	// Else give the session the parameter supplied name
+	if isMaster {
+		if isOutput {
 			key = masterSessionName
 		} else {
-			key = name
+			key = inputSessionName
 		}
 	} else {
-		if isMaster {
-			key = inputSessionName
-		} else {
-			key = name
-		}
+		key = name
 	}
 
 	s.logger = logger.Named(key)
@@ -143,7 +141,7 @@ func (s *paSession) String() string {
 	return fmt.Sprintf(sessionStringFormat, s.humanReadableDesc, s.GetVolume())
 }
 
-func (s *paDevice) GetVolume() float32 {
+func (s *paDeviceSession) GetVolume() float32 {
 	var level float32
 
 	if s.isOutput {
@@ -175,7 +173,7 @@ func (s *paDevice) GetVolume() float32 {
 	return level
 }
 
-func (s *paDevice) SetVolume(v float32) error {
+func (s *paDeviceSession) SetVolume(v float32) error {
 	var request proto.RequestArgs
 
 	volumes := createChannelVolumes(s.streamChannels, v)
@@ -205,11 +203,11 @@ func (s *paDevice) SetVolume(v float32) error {
 	return nil
 }
 
-func (s *paDevice) Release() {
+func (s *paDeviceSession) Release() {
 	s.logger.Debug("Releasing audio session")
 }
 
-func (s *paDevice) String() string {
+func (s *paDeviceSession) String() string {
 	return fmt.Sprintf(sessionStringFormat, s.humanReadableDesc, s.GetVolume())
 }
 
