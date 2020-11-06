@@ -16,9 +16,9 @@ This build features a very neat 3D-printed enclosure to fit the sliders, and use
 
 ## [Bupher](https://github.com/Bupher)
 
-**Links**: [Imgur album](https://imgur.com/a/ZZ4I8AK) | [Enclosure model on Thingiverse](https://www.thingiverse.com/thing:4580420) | [GitHub fork](https://github.com/Bupher/deej)
+**Links**: [Imgur album](https://imgur.com/a/5uHYhxW) | [Enclosure model on Thingiverse](https://www.thingiverse.com/thing:4641048) | [GitHub fork](https://github.com/Bupher/deej) | [Video 1](https://youtu.be/O2UJv-sJEjA) | [Video 2](https://youtu.be/psEt-rckr8U)
 
-This recently-updated build uses circular knobs instead of sliders, and adds a 7-segment display showing the volume of the last adjusted knob. The five buttons are used to trigger various macros that the author configured separately. This build also adds software functionality to allow designating a knob to control the volume of whichever application is currently in focus. Those changes are available in Bupher's fork (link above). Very cool!
+This updated build uses circular knobs instead of sliders, and adds a 7-segment display showing the volume of the last adjusted knob. The five buttons are used to trigger various macros that the author configured separately. Most recently this build was augmented to include built-in support for Corsair's iCUE RGB control. This allows using Corsair's desktop software to control the lighting on this deej design similarly to an RGB keyboard. The required Arduino-side code modifications are available in Bupher's fork (link above). Very cool!
 
 ![Bupher](./assets/community-builds/bupher.jpg)
 
@@ -138,7 +138,7 @@ This compact 3D-printed build makes clever use of vertical space by having sligh
 
 **Links**: [Imgur album](https://imgur.com/a/KWONZ5A) | [Build VOD on Twitch](https://www.twitch.tv/videos/704168677)
 
-This is a pink-and-black rendition of (/u/Aithorn)[#u-aithorn]'s above build, built by the author for one of their friends. Its primary use will be to control different audio sources while live-streaming on Twitch, which highlights deej's usefulness as a cheap DIY alternative to GoXLR and other similar products.
+This is a pink-and-black rendition of [/u/Aithorn](#uaithorn)'s above build, built by the author for one of their friends. Its primary use will be to control different audio sources while live-streaming on Twitch, which highlights deej's usefulness as a cheap DIY alternative to GoXLR and other similar products.
 
 ![wshaf](./assets/community-builds/wshaf.jpg)
 
@@ -184,7 +184,7 @@ This wonderfully colorful build was made [twice](https://i.imgur.com/v3FQXkF.jpg
 
 **Links**: [Imgur album](https://imgur.com/a/QN7gyjP) | [Enclosure model on Thingiverse](https://www.thingiverse.com/thing:4579910)
 
-This bright, red and black design has a neat retro look to it that's further complemented by its sharp corners. It has five sliders and uses the 3D-printed knobs designed by [/u/Aithorn](#u-aithorn).
+This bright, red and black design has a neat retro look to it that's further complemented by its sharp corners. It has five sliders and uses the 3D-printed knobs designed by [/u/Aithorn](#uaithorn).
 
 ![Snaglebagle](./assets/community-builds/snaglebagle.jpg)
 
@@ -227,3 +227,67 @@ This build presents a second, angled variation on the single rotary encoder appr
 This one is a traditional-looking slider-based build with some unique properties. It was designed with multi-material capabilities in mind, most notably apparent by the laser-cut wooden app glued to the top. These provide an interesting contrast to the multi-layered faceplate, printed with two different filaments to give the sliders their own highlight. It's also the first deej build to include a [cord strain relief](https://i.imgur.com/lK6twPm.jpg) instead of a USB port, which adds to its highly professional look and feel.
 
 ![StalkyMuffin](./assets/community-builds/stalkymuffin.jpg)
+
+## [ocyrus99](https://www.thingiverse.com/ocyrus99)
+
+**Links**: [Imgur album](https://imgur.com/a/g5X6OSw) | [Enclosure model on Thingiverse](https://www.thingiverse.com/thing:4599505)
+
+This build blends together a few different features to achieve a uniquely colorful look. It is remixed from the above build by [Optagon](#optagon) but has a lower profile. The app icons have been redesigned to include a thin 3D-printed base which acts as a light diffuser for LEDs mounted beneath each icon. These RGB LEDs are then controlled by the Arduino to transition their color as their corresponding knob is rotated. Finally, the round aluminum knobs provide a nice contrast to the plastic body, while also emitting some of the glow from the colored LEDs. If you're interested, ocyrus99 has kindly made their code available in the design's Thingiverse entry (link above). Great execution!
+
+![ocyrus99](./assets/community-builds/ocyrus99.jpg)
+
+## bgrier
+
+**Links**: [Imgur album](https://imgur.com/a/2LFaeVV) | [Full Instructable](https://www.instructables.com/Arduino-Keyboard-Joystick-Extender-Box-and-Sound-C/)
+
+This particularly special build will appeal to those who love analog controls (so everyone, yes?). It is a hybrid of deej together with a fully functional joystick controller! The creator is using it as a keyboard extender that can control certain interface elements, or certain things in games and simulators - but really, sky's the limit. The 3D-printed body has been designed and fabricated to match the color aesthetic of the creator's keyboard, and looks like a natural extension of its frame. As a bonus, bgrier has prepared a fully detailed Instructable for any of you who want to follow along and build it (link above). Oh, and even if you don't need a joystick, the fidget value is just incredible!
+
+![bgrier](./assets/community-builds/bgrier.jpg)
+
+## marcioasf
+
+**Links**: [Imgur album](https://imgur.com/a/J6UNBDB)
+
+This design is based on the above build by [Optagon](#optagon). The author chose to use 3D-printed knobs, and also printed the bottom part of the case with a translucent filament which lets the LED inside add a pleasant, diffused glow to its exterior.
+
+![marcioasf](./assets/community-builds/marcioasf.jpg)
+
+## Bao
+
+**Links**: [Imgur album](https://imgur.com/a/hrw3TvZ)
+
+This incredibly creative design brings deej to life on a tiny Mentos can. Novelties aside, this build ends up with a very compact footprint and can be a fantastic idea for anyone without access to a 3D printer. Looks tough to wire up, but if you're building with a Mentos can you _clearly_ know what you're doing.
+
+![Bao](./assets/community-builds/bao.jpg)
+
+## AbbyTheGryphon
+
+**Links**: [Imgur album](https://imgur.com/a/USUAesF) | [Enclosure model on MyMiniFactory](https://www.myminifactory.com/object/3d-print-139957)
+
+This design incorporates an amp-style appearance with a personalized touch. The five rotary potentiometers use plastic dials with a shiny metallic top, which adds a lot to that look. Additionally, tiny markings underneath each knob indicate the travel range for the pot. Crank it up to 11 with this one!
+
+![AbbyTheGryphon](./assets/community-builds/abbythegryphon.jpg)
+
+## T-po
+
+**Links**: [Imgur album](https://imgur.com/a/OuYZDQk)
+
+This elegant build achieves its polished, professional look by using a project case to mount its top-facing components. It uses five identical rotary potentiometers, with the shiny aluminum knobs differentiating between the master knob and the other channels. It also features a mini USB to micro USB adapter (which makes up for the Nano's most glaring downside). The creator included some descriptions and part names in their Imgur album (link above).
+
+![T-po](./assets/community-builds/tpo.jpg)
+
+## [Imagine Fabrication Lab](https://www.instagram.com/imaginefabricationlab/)
+
+**Links**: [Imgur album](https://imgur.com/a/o8nZHDc) | [Enclosure model on Thingiverse](https://www.thingiverse.com/thing:4639592)
+
+This design was made with power users in mind, incorporating no less than 12 buttons to trigger custom functionality with the Arduino Pro Micro's keyboard emulation capabilities (this requires a modified deej firmware). The 3D-printed buttons are mounted with a press fit, and can be swapped out as desired. Finally, these 45mm sliders offer a good amount of precision without taking up much space, resulting in a build that's fairly compact for the amount of firepower it packs.
+
+![Imagine Fabrication Lab](./assets/community-builds/imaginefabricationlab.jpg)
+
+## [omnisai](https://relivesight.com/)
+
+**Links**: [Imgur album](https://imgur.com/a/Z5luqwl) | [Blog entry!](https://relivesight.com/projects/encoder/) | [One more build by the author](https://relivesight.com/projects/deejx2/)
+
+Another entry in the list of power-user oriented builds, this one-of-a-kind design was made from the case of a Behringer audio interface that its owner was willing to sacrifice. They added a fresh coat of paint, replaced the original components and made it into a thing of beauty. This build features no less than 9 potentiometers and 18 buttons, taking full advantage of everything the Arduino Pro Micro has to offer. The creator wrote a highly detailed blog post about the process on their website, I recommend giving it a read (link above)!
+
+![omnisai](./assets/community-builds/omnisai.jpg)
