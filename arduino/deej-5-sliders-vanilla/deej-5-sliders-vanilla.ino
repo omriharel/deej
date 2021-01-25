@@ -3,6 +3,7 @@ const int analogInputs[NUM_SLIDERS] = {A0, A1, A2, A3, A4};
 
 int analogSliderValues[NUM_SLIDERS];
 
+const int JITTER = 3;
 int oldSliderValues[NUM_SLIDERS];
 bool changed = false;
 
@@ -32,9 +33,9 @@ void loop() {
 void updateSliderValues() {
   for (int i = 0; i < NUM_SLIDERS; i++){
     analogSliderValues[i] = analogRead(analogInputs[i]);
-
+    
     //compare for changes
-    if (abs(analogSliderValues[i] - oldSliderValues[i]) > 3){
+    if (abs(analogSliderValues[i] - oldSliderValues[i]) > JITTER){
       changed = true;
     }
   }
