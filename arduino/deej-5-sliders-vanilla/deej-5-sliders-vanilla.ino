@@ -3,6 +3,9 @@ const int analogInputs[NUM_SLIDERS] = {A0, A1, A2, A3, A4};
 
 int analogSliderValues[NUM_SLIDERS];
 
+int oldSliderValues[NUM_SLIDERS];
+bool changed = false;
+
 void setup() { 
   for (int i = 0; i < NUM_SLIDERS; i++) {
     pinMode(analogInputs[i], INPUT);
@@ -13,14 +16,27 @@ void setup() {
 
 void loop() {
   updateSliderValues();
-  sendSliderValues(); // Actually send data (all the time)
+  if (changed == true) {
+    sendSliderValues(); // Actually send data (all the time)  
+
+    //reset values
+    for(int i = 0; i < NUM_SLIDERS; i++) {
+      oldSliderValues[i] = analogSliderValues[i];
+    }
+    changed = false;
+  }
   // printSliderValues(); // For debug
   delay(10);
 }
 
 void updateSliderValues() {
-  for (int i = 0; i < NUM_SLIDERS; i++) {
-     analogSliderValues[i] = analogRead(analogInputs[i]);
+  for (int i = 0; i < NUM_SLIDERS; i++){
+    analogSliderValues[i] = analogRead(analogInputs[i]);
+
+    //compare for changes
+    if (abs(analogSliderValues[i] - oldSliderValues[i]) > 3){
+      changed = true;
+    }
   }
 }
 
