@@ -5,7 +5,7 @@ int analogSliderValues[NUM_SLIDERS];
 
 const int JITTER = 3;
 int oldSliderValues[NUM_SLIDERS];
-bool changed = false;
+bool changed = true; //send values first time
 
 void setup() { 
   for (int i = 0; i < NUM_SLIDERS; i++) {
@@ -33,7 +33,7 @@ void loop() {
 void updateSliderValues() {
   for (int i = 0; i < NUM_SLIDERS; i++){
     analogSliderValues[i] = analogRead(analogInputs[i]);
-    
+
     //compare for changes
     if (abs(analogSliderValues[i] - oldSliderValues[i]) > JITTER){
       changed = true;
