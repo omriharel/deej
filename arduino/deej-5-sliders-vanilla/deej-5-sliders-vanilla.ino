@@ -32,7 +32,11 @@ void loop() {
 void updateSliderValues() {
   for (int i = 0; i < NUM_SLIDERS; i++){
     analogSliderValues[i] = analogRead(analogInputs[i]);
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 9747dcfb3807cd45495550cbd2930911085a1b16
     //compare for changes
     if (abs(analogSliderValues[i] - oldSliderValues[i]) > 3){
       changed = true;
