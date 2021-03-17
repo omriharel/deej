@@ -6,6 +6,8 @@ deej is an **open-source hardware volume mixer** for Windows and Linux PCs. It l
 
 [![Discord](https://img.shields.io/discord/702940502038937667?logo=discord)](https://discord.gg/nf88NJu)
 
+> **_New:_** [work-in-progress deej FAQ](https://faq.deej.rocks)!
+
 deej consists of a [lightweight desktop client](#features) written in Go, and an Arduino-based hardware setup that's simple and cheap to build. [**Check out some versions built by members of our community!**](./community.md)
 
 **[Download the latest release](https://github.com/omriharel/deej/releases/latest) | [Video demonstration](https://youtu.be/VoByJ4USMr8) | [Build video by Tech Always](https://youtu.be/x2yXbFiiAeI)**
@@ -22,6 +24,7 @@ deej consists of a [lightweight desktop client](#features) written in Go, and an
   - [Software](#software)
 - [Slider mapping (configuration)](#slider-mapping-configuration)
 - [Build your own!](#build-your-own)
+  - [FAQ](#faq)
   - [Build video](#build-video)
   - [Bill of Materials](#bill-of-materials)
   - [Thingiverse collection](#thingiverse-collection)
@@ -117,6 +120,14 @@ noise_reduction: default
 Building `deej` is very simple. You only need a few relatively cheap parts - it's an excellent starter project (and my first Arduino project, personally). Remember that if you need any help or have a question that's not answered here, you can always [join the deej Discord server](https://discord.gg/nf88NJu).
 
 Build `deej` for yourself, or as an awesome gift for your gaming buddies!
+
+### FAQ
+
+I've started a highly focused effort of writing a proper FAQ page for deej, covering many basic and advanced topics.
+
+It is still _very much a work-in-progress_, but I'm happy to [share it in its current state](https://faq.deej.rocks) in hopes that it at least covers some questions you might have.
+
+> FAQ feedback in our community Discord is strongly encouraged, thank you!
 
 ### Build video
 
