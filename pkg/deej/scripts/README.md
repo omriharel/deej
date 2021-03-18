@@ -2,7 +2,7 @@
 
 This document lists the various scripts in the project and their purposes.
 
-> Note: All scripts are meant to be run from the root of the repository, i.e. from the `deej` directory: `scripts\...\whatever.bat`. They're not guaranteed to work correctly if run from another directory.
+> Note: All scripts are meant to be run from the root of the repository, i.e. from the _root_ `deej` directory: `.\pkg\deej\scripts\...\whatever.bat`. They're not guaranteed to work correctly if run from another directory.
 
 ### Windows
 
