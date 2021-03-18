@@ -6,7 +6,7 @@ deej is an **open-source hardware volume mixer** for Windows and Linux PCs. It l
 
 [![Discord](https://img.shields.io/discord/702940502038937667?logo=discord)](https://discord.gg/nf88NJu)
 
-> **_New:_** [work-in-progress deej FAQ](https://faq.deej.rocks)!
+> **_New:_** [work-in-progress deej FAQ](./docs/faq/faq.md)!
 
 deej consists of a [lightweight desktop client](#features) written in Go, and an Arduino-based hardware setup that's simple and cheap to build. [**Check out some versions built by members of our community!**](./community.md)
 
@@ -46,8 +46,8 @@ deej is written in Go and [distributed](https://github.com/omriharel/deej/releas
   - Bind the master channel
   - Bind "system sounds" (on Windows)
   - Bind specific audio devices by name (on Windows)
-  - **_New:_** Bind currently active app (on Windows, _experimental_)
-  - **_New:_** Bind all other unassigned apps (_experimental_)
+  - Bind currently active app (on Windows)
+  - Bind all other unassigned apps
 - Control your microphone's input level
 - Lightweight desktop client, consuming around 10MB of memory
 - Runs from your system tray
@@ -73,11 +73,11 @@ deej is written in Go and [distributed](https://github.com/omriharel/deej/releas
 
 ## Slider mapping (configuration)
 
-`deej` uses a simple YAML-formatted configuration file named [`config.yaml`](./config.yaml), placed alongside the deej executable.
+deej uses a simple YAML-formatted configuration file named [`config.yaml`](./config.yaml), placed alongside the deej executable.
 
 The config file determines which applications (and devices) are mapped to which sliders, and which parameters to use for the connection to the Arduino board, as well as other user preferences.
 
-**This file auto-reloads when its contents are changed, so you can change application mappings on-the-fly without restarting `deej`.**
+**This file auto-reloads when its contents are changed, so you can change application mappings on-the-fly without restarting deej.**
 
 It looks like this:
 
@@ -105,8 +105,8 @@ noise_reduction: default
 
 - `master` is a special option to control the master volume of the system _(uses the default playback device)_
 - `mic` is a special option to control your microphone's input level _(uses the default recording device)_
-- **_New:_** `deej.unmapped` is a special option to control all apps that aren't bound to any slider ("everything else") (_experimental_)
-- **_New:_** On Windows, `deej.current` is a special option to control whichever app is currently in focus (_experimental_)
+- `deej.unmapped` is a special option to control all apps that aren't bound to any slider ("everything else")
+- On Windows, `deej.current` is a special option to control whichever app is currently in focus
 - On Windows, you can specify a device's full name, i.e. `Speakers (Realtek High Definition Audio)`, to bind that device's level to a slider. This doesn't conflict with the default `master` and `mic` options, and works for both input and output devices.
   - Be sure to use the full device name, as seen in the menu that comes up when left-clicking the speaker icon in the tray menu
 - `system` is a special option on Windows to control the "System sounds" volume in the Windows mixer
@@ -117,17 +117,17 @@ noise_reduction: default
 
 ## Build your own!
 
-Building `deej` is very simple. You only need a few relatively cheap parts - it's an excellent starter project (and my first Arduino project, personally). Remember that if you need any help or have a question that's not answered here, you can always [join the deej Discord server](https://discord.gg/nf88NJu).
+Building deej is very simple. You only need a few relatively cheap parts - it's an excellent starter project (and my first Arduino project, personally). Remember that if you need any help or have a question that's not answered here, you can always [join the deej Discord server](https://discord.gg/nf88NJu).
 
-Build `deej` for yourself, or as an awesome gift for your gaming buddies!
+Build deej for yourself, or as an awesome gift for your gaming buddies!
 
 ### FAQ
 
 I've started a highly focused effort of writing a proper FAQ page for deej, covering many basic and advanced topics.
 
-It is still _very much a work-in-progress_, but I'm happy to [share it in its current state](https://faq.deej.rocks) in hopes that it at least covers some questions you might have.
+It is still _very much a work-in-progress_, but I'm happy to [share it in its current state](./docs/faq/faq.md) in hopes that it at least covers some questions you might have.
 
-> FAQ feedback in our community Discord is strongly encouraged, thank you!
+FAQ feedback in our [community Discord](https://discord.gg/nf88NJu) is strongly encouraged :)
 
 ### Build video
 
@@ -161,7 +161,7 @@ With many different 3D-printed designs being added to our [community showcase](.
   - _Important:_ If you have more or less than 5 sliders, you must edit the sketch to match what you have
 - After flashing, check the serial monitor. You should see a constant stream of values separated by a pipe (`|`) character, e.g. `0|240|1023|0|483`
   - When you move a slider, its corresponding value should move between 0 and 1023
-- Congratulations, you're now ready to run the `deej` executable!
+- Congratulations, you're now ready to run the deej executable!
 
 ## How to run
 
@@ -173,17 +173,17 @@ With many different 3D-printed designs being added to our [community showcase](.
 
 #### Linux
 
-- Install `libgtk-3-dev`, `libappindicator3-dev` and `libwebkit2gtk-4.0-dev` for system tray support
+- Install `libgtk-3-dev`, `libappindicator3-dev` and `libwebkit2gtk-4.0-dev` for system tray support. Pre-built Linux binaries aren't currently released, so you'll need to [build from source](#building-from-source). If there's demand for pre-built binaries, please [let me know](https://discord.gg/nf88NJu)!
 
 ### Download and installation
 
 - Head over to the [releases page](https://github.com/omriharel/deej/releases) and download the [latest version](https://github.com/omriharel/deej/releases/latest)'s executable and configuration file (`deej.exe` and `config.yaml`)
 - Place them in the same directory anywhere on your machine
-- (Optional, on Windows) Create a shortcut to `deej.exe` and copy it to `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup` to have `deej` run on boot
+- (Optional, on Windows) Create a shortcut to `deej.exe` and copy it to `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup` to have deej run on boot
 
 ### Building from source
 
-If you'd rather not download a compiled executable, or want to extend `deej` or modify it to your needs, feel free to clone the repository and build it yourself. All you need is a Go 1.14 (or above) environment on your machine. If you go this route, make sure to check out the [developer scripts](./scripts).
+If you'd rather not download a compiled executable, or want to extend deej or modify it to your needs, feel free to clone the repository and build it yourself. All you need is a Go 1.14 (or above) environment on your machine. If you go this route, make sure to check out the [developer scripts](./scripts).
 
 Like other Go packages, you can also use the `go get` tool: `go get -u github.com/omriharel/deej`.
 
@@ -193,7 +193,7 @@ If you need any help with this, please [join our Discord server](https://discord
 
 [![Discord](https://img.shields.io/discord/702940502038937667?logo=discord)](https://discord.gg/nf88NJu)
 
-While `deej` is still a very new project, a vibrant community has already started to grow around it. Come hang out with us in the [deej Discord server](https://discord.gg/nf88NJu), or check out awesome builds made by our members in the [community showcase](./community.md).
+deej is a relatively new project, but a vibrant and awesome community is rapidly growing around it. Come hang out with us in the [deej Discord server](https://discord.gg/nf88NJu), or check out a whole bunch of cool and creative builds made by our members in the [community showcase](./community.md).
 
 The server is also a great place to ask questions, suggest features or report bugs (but of course, feel free to use GitHub if you prefer).
 
@@ -211,4 +211,4 @@ If you love deej and want to show your support for this project, you can do so u
 
 ## License
 
-`deej` is released under the [MIT license](./LICENSE).
+deej is released under the [MIT license](./LICENSE).
