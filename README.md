@@ -69,7 +69,7 @@ deej is written in Go and [distributed](https://github.com/omriharel/deej/releas
 ### Software
 
 - The code running on the Arduino board is a [C program](./arduino/deej-5-sliders-vanilla/deej-5-sliders-vanilla.ino) constantly writing current slider values over its serial interface
-- The PC runs a lightweight Go client [`cmd/main.go`](./cmd/main.go) in the background. This client reads the serial stream and adjusts app volumes according to the given configuration file
+- The PC runs a lightweight [Go client](./pkg/deej/cmd/main.go) in the background. This client reads the serial stream and adjusts app volumes according to the given configuration file
 
 ## Slider mapping (configuration)
 
@@ -185,7 +185,7 @@ With many different 3D-printed designs being added to our [community showcase](.
 
 If you'd rather not download a compiled executable, or want to extend deej or modify it to your needs, feel free to clone the repository and build it yourself. All you need is a Go 1.14 (or above) environment on your machine. If you go this route, make sure to check out the [developer scripts](./scripts).
 
-Like other Go packages, you can also use the `go get` tool: `go get -u github.com/omriharel/deej`.
+Like other Go packages, you can also use the `go get` tool: `go get -u github.com/omriharel/deej`. Please note that the package code now resides in the `pkg/deej` directory, and needs to be imported from there if used inside another project.
 
 If you need any help with this, please [join our Discord server](https://discord.gg/nf88NJu).
 
