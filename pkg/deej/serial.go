@@ -42,6 +42,7 @@ type SliderMoveEvent struct {
 }
 
 var expectedLinePattern = regexp.MustCompile(`^\d{1,4}(\|\d{1,4})*\r\n$`)
+var maxRetryDelay = 100 * time.Second
 
 // NewSerialIO creates a SerialIO instance that uses the provided deej
 // instance's connection info to establish communications with the arduino chip
@@ -96,7 +97,20 @@ func (sio *SerialIO) Start() error {
 		"minReadSize", minimumReadSize)
 
 	var err error
-	sio.conn, err = serial.Open(sio.connOptions)
+	delay := 1 * time.Second
+	for i := int64(1); ; i++ {
+		sio.conn, err = serial.Open(sio.connOptions)
+		if err == nil {
+			break
+		}
+		sio.logger.Warnw("Failed to open serial connection", "error", err)
+		time.Sleep(delay)
+		// Exponentially back off retries up to a max
+		if delay < maxRetryDelay {
+			delay = time.Duration(int64(delay) * i)
+		}
+	}
+
 	if err != nil {
 
 		// might need a user notification here, TBD
@@ -118,8 +132,13 @@ func (sio *SerialIO) Start() error {
 			select {
 			case <-sio.stopChannel:
 				sio.close(namedLogger)
-			case line := <-lineChannel:
+			case line, ok := <-lineChannel:
 				sio.handleLine(namedLogger, line)
+				if !ok {
+					sio.connected = false
+					sio.Start()
+					return
+				}
 			}
 		}
 	}()
@@ -211,6 +230,7 @@ func (sio *SerialIO) readLine(logger *zap.SugaredLogger, reader *bufio.Reader) c
 				}
 
 				// just ignore the line, the read loop will stop after this
+				close(ch)
 				return
 			}
 
