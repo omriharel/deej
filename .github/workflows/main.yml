@@ -31,9 +31,9 @@ jobs:
 
       - name: Build deej (Windows)
         if: runner.os == 'Windows'
-        run: scripts/windows/build-${{ matrix.mode }}.bat
+        run: pkg/deej/scripts/windows/build-${{ matrix.mode }}.bat
         shell: cmd
 
       - name: Build deej (Linux)
         if: runner.os == 'Linux'
-        run: scripts/linux/build-${{ matrix.mode }}.sh
+        run: pkg/deej/scripts/linux/build-${{ matrix.mode }}.sh
