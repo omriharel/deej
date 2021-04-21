@@ -35,13 +35,7 @@ type SerialIO struct {
 	sliderMoveConsumers []chan SliderMoveEvent
 }
 
-// SliderMoveEvent represents a single slider move captured by deej
-type SliderMoveEvent struct {
-	SliderID     int
-	PercentValue float32
-}
-
-var expectedLinePattern = regexp.MustCompile(`^\d{1,4}(\|\d{1,4})*\r\n$`)
+var expectedSerialLinePattern = regexp.MustCompile(`^\d{1,4}(\|\d{1,4})*\r\n$`)
 
 // NewSerialIO creates a SerialIO instance that uses the provided deej
 // instance's connection info to establish communications with the arduino chip
@@ -83,8 +77,8 @@ func (sio *SerialIO) Start() error {
 	}
 
 	sio.connOptions = serial.OpenOptions{
-		PortName:        sio.deej.config.ConnectionInfo.COMPort,
-		BaudRate:        uint(sio.deej.config.ConnectionInfo.BaudRate),
+		PortName:        sio.deej.config.SerialConnectionInfo.COMPort,
+		BaudRate:        uint(sio.deej.config.SerialConnectionInfo.BaudRate),
 		DataBits:        8,
 		StopBits:        1,
 		MinimumReadSize: uint(minimumReadSize),
@@ -167,8 +161,8 @@ func (sio *SerialIO) setupOnConfigReload() {
 				}()
 
 				// if connection params have changed, attempt to stop and start the connection
-				if sio.deej.config.ConnectionInfo.COMPort != sio.connOptions.PortName ||
-					uint(sio.deej.config.ConnectionInfo.BaudRate) != sio.connOptions.BaudRate {
+				if sio.deej.config.SerialConnectionInfo.COMPort != sio.connOptions.PortName ||
+					uint(sio.deej.config.SerialConnectionInfo.BaudRate) != sio.connOptions.BaudRate {
 
 					sio.logger.Info("Detected change in connection parameters, attempting to renew connection")
 					sio.Stop()
@@ -231,7 +225,7 @@ func (sio *SerialIO) handleLine(logger *zap.SugaredLogger, line string) {
 	// this function receives an unsanitized line which is guaranteed to end with LF,
 	// but most lines will end with CRLF. it may also have garbage instead of
 	// deej-formatted values, so we must check for that! just ignore bad ones
-	if !expectedLinePattern.MatchString(line) {
+	if !expectedSerialLinePattern.MatchString(line) {
 		return
 	}
 

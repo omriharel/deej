@@ -18,9 +18,15 @@ import (
 type CanonicalConfig struct {
 	SliderMapping *sliderMap
 
-	ConnectionInfo struct {
+	ControllerType string
+
+	SerialConnectionInfo struct {
 		COMPort  string
 		BaudRate int
+	}
+
+	UdpConnectionInfo struct {
+		UdpPort int
 	}
 
 	InvertSliders bool
@@ -53,9 +59,15 @@ const (
 	configKeyCOMPort             = "com_port"
 	configKeyBaudRate            = "baud_rate"
 	configKeyNoiseReductionLevel = "noise_reduction"
+	configKeyUdpPort             = "udp_port"
+	configKeyControllerType      = "controller_type"
+
+	defaultControllerType = "serial"
 
 	defaultCOMPort  = "COM4"
 	defaultBaudRate = 9600
+
+	defaultUdpPort = 16990
 )
 
 // has to be defined as a non-constant because we're using path.Join
@@ -89,6 +101,10 @@ func NewConfig(logger *zap.SugaredLogger, notifier Notifier) (*CanonicalConfig, 
 	userConfig.SetDefault(configKeyInvertSliders, false)
 	userConfig.SetDefault(configKeyCOMPort, defaultCOMPort)
 	userConfig.SetDefault(configKeyBaudRate, defaultBaudRate)
+
+	userConfig.SetDefault(configKeyUdpPort, defaultUdpPort)
+
+	userConfig.SetDefault(configKeyControllerType, defaultControllerType)
 
 	internalConfig := viper.New()
 	internalConfig.SetConfigName(internalConfigName)
@@ -145,7 +161,9 @@ func (cc *CanonicalConfig) Load() error {
 	cc.logger.Info("Loaded config successfully")
 	cc.logger.Infow("Config values",
 		"sliderMapping", cc.SliderMapping,
-		"connectionInfo", cc.ConnectionInfo,
+		"controllerType", cc.ControllerType,
+		"serialConnectionInfo", cc.SerialConnectionInfo,
+		"udpConnectionInfo", cc.UdpConnectionInfo,
 		"invertSliders", cc.InvertSliders)
 
 	return nil
@@ -224,16 +242,37 @@ func (cc *CanonicalConfig) populateFromVipers() error {
 	)
 
 	// get the rest of the config fields - viper saves us a lot of effort here
-	cc.ConnectionInfo.COMPort = cc.userConfig.GetString(configKeyCOMPort)
+	switch cc.userConfig.GetString(configKeyControllerType) {
+	case "serial", "udp":
+		cc.ControllerType = cc.userConfig.GetString(configKeyControllerType)
+	default:
+		cc.logger.Warnw("Invalid controller type specified, using default value",
+			"key", configKeyControllerType,
+			"invalidValue", cc.userConfig.GetString(configKeyControllerType),
+			"defaultValue", defaultControllerType)
+	}
+	cc.logger.Info("Added controller type: ", cc.ControllerType)
 
-	cc.ConnectionInfo.BaudRate = cc.userConfig.GetInt(configKeyBaudRate)
-	if cc.ConnectionInfo.BaudRate <= 0 {
+	cc.SerialConnectionInfo.COMPort = cc.userConfig.GetString(configKeyCOMPort)
+
+	cc.SerialConnectionInfo.BaudRate = cc.userConfig.GetInt(configKeyBaudRate)
+	if cc.SerialConnectionInfo.BaudRate <= 0 {
 		cc.logger.Warnw("Invalid baud rate specified, using default value",
 			"key", configKeyBaudRate,
-			"invalidValue", cc.ConnectionInfo.BaudRate,
+			"invalidValue", cc.SerialConnectionInfo.BaudRate,
 			"defaultValue", defaultBaudRate)
 
-		cc.ConnectionInfo.BaudRate = defaultBaudRate
+		cc.SerialConnectionInfo.BaudRate = defaultBaudRate
+	}
+
+	cc.UdpConnectionInfo.UdpPort = cc.userConfig.GetInt(configKeyUdpPort)
+	if (cc.UdpConnectionInfo.UdpPort <= 0) || (cc.UdpConnectionInfo.UdpPort >= 65536) {
+		cc.logger.Warnw("Invalid UDP port specified, using default value",
+			"key", configKeyUdpPort,
+			"invalidValue", cc.UdpConnectionInfo.UdpPort,
+			"defaultValue", defaultUdpPort)
+
+		cc.UdpConnectionInfo.UdpPort = defaultUdpPort
 	}
 
 	cc.InvertSliders = cc.userConfig.GetBool(configKeyInvertSliders)

@@ -8,7 +8,7 @@ deej is an **open-source hardware volume mixer** for Windows and Linux PCs. It l
 
 > **_New:_** [work-in-progress deej FAQ](./docs/faq/faq.md)!
 
-deej consists of a [lightweight desktop client](#features) written in Go, and an Arduino-based hardware setup that's simple and cheap to build. [**Check out some versions built by members of our community!**](./community.md)
+deej consists of a [lightweight desktop client](#features) written in Go, and an Arduino or ESP-based hardware setup that's simple and cheap to build. [**Check out some versions built by members of our community!**](./community.md)
 
 **[Download the latest release](https://github.com/omriharel/deej/releases/latest) | [Video demonstration](https://youtu.be/VoByJ4USMr8) | [Build video by Tech Always](https://youtu.be/x2yXbFiiAeI)**
 
@@ -59,8 +59,11 @@ deej is written in Go and [distributed](https://github.com/omriharel/deej/releas
 
 ### Hardware
 
+### Arduino boards
+
 - The sliders are connected to 5 (or as many as you like) analog pins on an Arduino Nano/Uno board. They're powered from the board's 5V output (see schematic)
 - The board connects via a USB cable to the PC
+- For more advanced users, if you have a Wi-Fi enabled board like an ESP8266 or an ESP32 you can also control deej through a network connection
 
 #### Schematic
 
@@ -101,6 +104,13 @@ baud_rate: 9600
 # adjust the amount of signal noise reduction depending on your hardware quality
 # supported values are "low" (excellent hardware), "default" (regular hardware) or "high" (bad, noisy hardware)
 noise_reduction: default
+
+# set this to "serial" to use deej with an arduino board connected via a serial port
+# set this to "udp" to listen for slider movements via a UDP network connection
+controller_type: serial
+
+# settings for the UDP connection
+udp_port: 16990
 ```
 
 - `master` is a special option to control the master volume of the system _(uses the default playback device)_

@@ -20,11 +20,11 @@ const (
 
 // Deej is the main entity managing access to all sub-components
 type Deej struct {
-	logger   *zap.SugaredLogger
-	notifier Notifier
-	config   *CanonicalConfig
-	serial   *SerialIO
-	sessions *sessionMap
+	logger           *zap.SugaredLogger
+	notifier         Notifier
+	config           *CanonicalConfig
+	sliderController SliderController
+	sessions         *sessionMap
 
 	stopChannel chan bool
 	version     string
@@ -55,14 +55,6 @@ func NewDeej(logger *zap.SugaredLogger, verbose bool) (*Deej, error) {
 		verbose:     verbose,
 	}
 
-	serial, err := NewSerialIO(d, logger)
-	if err != nil {
-		logger.Errorw("Failed to create SerialIO", "error", err)
-		return nil, fmt.Errorf("create new SerialIO: %w", err)
-	}
-
-	d.serial = serial
-
 	sessionFinder, err := newSessionFinder(logger)
 	if err != nil {
 		logger.Errorw("Failed to create SessionFinder", "error", err)
@@ -90,6 +82,27 @@ func (d *Deej) Initialize() error {
 	if err := d.config.Load(); err != nil {
 		d.logger.Errorw("Failed to load config during initialization", "error", err)
 		return fmt.Errorf("load config during init: %w", err)
+	}
+
+	if d.config.ControllerType == "serial" {
+		serial, err := NewSerialIO(d, d.logger)
+		if err != nil {
+			d.logger.Errorw("Failed to create SerialIO", "error", err)
+			return fmt.Errorf("create new SerialIO: %w", err)
+		}
+
+		d.sliderController = serial
+
+		d.logger.Info("Created serial SliderController")
+	} else if d.config.ControllerType == "udp" {
+		udp, err := NewUdpIO(d, d.logger)
+		if err != nil {
+			d.logger.Errorw("Failed to create UdpIO", "error", err)
+			return fmt.Errorf("create new UdpIO: %w", err)
+		}
+
+		d.sliderController = udp
+		d.logger.Info("Created UDP SliderController")
 	}
 
 	// initialize the session map
@@ -143,29 +156,37 @@ func (d *Deej) run() {
 
 	// connect to the arduino for the first time
 	go func() {
-		if err := d.serial.Start(); err != nil {
-			d.logger.Warnw("Failed to start first-time serial connection", "error", err)
+		if err := d.sliderController.Start(); err != nil {
+			d.logger.Warnw("Failed to start first-time slider connection", "error", err)
 
-			// If the port is busy, that's because something else is connected - notify and quit
-			if errors.Is(err, os.ErrPermission) {
-				d.logger.Warnw("Serial port seems busy, notifying user and closing",
-					"comPort", d.config.ConnectionInfo.COMPort)
+			if d.config.ControllerType == "serial" {
+				// If the port is busy, that's because something else is connected - notify and quit
+				if errors.Is(err, os.ErrPermission) {
+					d.logger.Warnw("Serial port seems busy, notifying user and closing",
+						"comPort", d.config.SerialConnectionInfo.COMPort)
 
-				d.notifier.Notify(fmt.Sprintf("Can't connect to %s!", d.config.ConnectionInfo.COMPort),
-					"This serial port is busy, make sure to close any serial monitor or other deej instance.")
+					d.notifier.Notify(fmt.Sprintf("Can't connect to %s!", d.config.SerialConnectionInfo.COMPort),
+						"This slider port is busy, make sure to close any slider monitor or other deej instance.")
 
-				d.signalStop()
+					d.signalStop()
 
-				// also notify if the COM port they gave isn't found, maybe their config is wrong
-			} else if errors.Is(err, os.ErrNotExist) {
-				d.logger.Warnw("Provided COM port seems wrong, notifying user and closing",
-					"comPort", d.config.ConnectionInfo.COMPort)
+					// also notify if the COM port they gave isn't found, maybe their config is wrong
+				} else if errors.Is(err, os.ErrNotExist) {
+					d.logger.Warnw("Provided COM port seems wrong, notifying user and closing",
+						"comPort", d.config.SerialConnectionInfo.COMPort)
 
-				d.notifier.Notify(fmt.Sprintf("Can't connect to %s!", d.config.ConnectionInfo.COMPort),
-					"This serial port doesn't exist, check your configuration and make sure it's set correctly.")
+					d.notifier.Notify(fmt.Sprintf("Can't connect to %s!", d.config.SerialConnectionInfo.COMPort),
+						"This slider port doesn't exist, check your configuration and make sure it's set correctly.")
+
+					d.signalStop()
+				}
+			} else if d.config.ControllerType == "udp" {
+				d.notifier.Notify(fmt.Sprintf("Could not start UDP listener on port %d!", d.config.UdpConnectionInfo.UdpPort),
+					"This UDP port is busy, make sure to close any slider monitor or other deej instance.")
 
 				d.signalStop()
 			}
+
 		}
 	}()
 
@@ -191,7 +212,7 @@ func (d *Deej) stop() error {
 	d.logger.Info("Stopping")
 
 	d.config.StopWatchingConfigFile()
-	d.serial.Stop()
+	d.sliderController.Stop()
 
 	// release the session map
 	if err := d.sessions.release(); err != nil {

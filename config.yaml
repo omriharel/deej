@@ -25,3 +25,10 @@ baud_rate: 9600
 # adjust the amount of signal noise reduction depending on your hardware quality
 # supported values are "low" (excellent hardware), "default" (regular hardware) or "high" (bad, noisy hardware)
 noise_reduction: default
+
+# set this to "serial" to use deej with an arduino board connected via a serial port
+# set this to "udp" to listen for slider movements via a UDP network connection
+controller_type: serial
+
+# settings for the UDP connection
+udp_port: 16990
