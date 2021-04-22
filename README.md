@@ -35,7 +35,6 @@ deej consists of a [lightweight desktop client](#features) written in Go, and an
   - [Download and installation](#download-and-installation)
   - [Building from source](#building-from-source)
 - [Community](#community)
-- [Long-ish term roadmap](#long-ish-term-roadmap)
 - [License](#license)
 
 ## Features
@@ -184,7 +183,7 @@ With many different 3D-printed designs being added to our [community showcase](.
 
 ### Building from source
 
-If you'd rather not download a compiled executable, or want to extend deej or modify it to your needs, feel free to clone the repository and build it yourself. All you need is a Go 1.14 (or above) environment on your machine. If you go this route, make sure to check out the [developer scripts](./scripts).
+If you'd rather not download a compiled executable, or want to extend deej or modify it to your needs, feel free to clone the repository and build it yourself. All you need is a Go 1.14 (or above) environment on your machine. If you go this route, make sure to check out the [developer scripts](./pkg/deej/scripts).
 
 Like other Go packages, you can also use the `go get` tool: `go get -u github.com/omriharel/deej`. Please note that the package code now resides in the `pkg/deej` directory, and needs to be imported from there if used inside another project.
 
@@ -204,11 +203,9 @@ If you love deej and want to show your support for this project, you can do so u
 
 [![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/omriharel)
 
-## Long-ish term roadmap
+### Contributing
 
-- Serial communications rework to support two-way data flows for better extensibility
-- Basic GUI to replace manual configuration editing
-- Feel free to open an issue if you feel like something else is missing
+Please see [`docs/CONTRIBUTING.md`](./docs/CONTRIBUTING.md).
 
 ## License
 
