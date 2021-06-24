@@ -15,6 +15,9 @@ slider_mapping:
     - rocketleague.exe
   4: discord.exe
 
+button_mapping:
+  0: VK_VOLUME_MUTE
+
 # set this to true if you want the controls inverted (i.e. top is 0%, bottom is 100%)
 invert_sliders: false
 
