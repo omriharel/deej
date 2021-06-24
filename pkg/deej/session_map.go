@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/omriharel/deej/pkg/deej/util"
+	"github.com/micmonay/keybd_event"
 	"github.com/thoas/go-funk"
 	"go.uber.org/zap"
 )
@@ -81,6 +82,7 @@ func (m *sessionMap) initialize() error {
 
 	m.setupOnConfigReload()
 	m.setupOnSliderMove()
+	m.setupOnButtonEvent()
 
 	return nil
 }
@@ -144,6 +146,19 @@ func (m *sessionMap) setupOnSliderMove() {
 			select {
 			case event := <-sliderEventsChannel:
 				m.handleSliderMoveEvent(event)
+			}
+		}
+	}()
+}
+
+func (m *sessionMap) setupOnButtonEvent() {
+	buttonEventsChannel := m.deej.serial.SubscribeToButtonEvents()
+
+	go func() {
+		for {
+			select {
+			case event := <-buttonEventsChannel:
+				m.handleButtonEvent(event)
 			}
 		}
 	}()
@@ -268,6 +283,19 @@ func (m *sessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
 		// when a session's SetVolume call errored, such as in the case of a stale master session
 		// (or another, more catastrophic failure happens)
 		m.refreshSessions(true)
+	}
+}
+
+
+func (m *sessionMap) handleButtonEvent(event ButtonEvent) {
+	m.logger.Debug("Handling button event")
+	if event.Value == 1 {
+		kb, err := keybd_event.NewKeyBonding()
+		kb.SetKeys(keybd_event.VK_VOLUME_MUTE)
+		err = kb.Launching() 
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 
