@@ -31,8 +31,11 @@ type SerialIO struct {
 
 	lastKnownNumSliders        int
 	currentSliderPercentValues []float32
+	lastKnownNumButtons        int
+	currentButtonValues 			 []int
 
 	sliderMoveConsumers []chan SliderMoveEvent
+	buttonEventConsumers []chan ButtonEvent
 }
 
 // SliderMoveEvent represents a single slider move captured by deej
@@ -41,7 +44,13 @@ type SliderMoveEvent struct {
 	PercentValue float32
 }
 
-var expectedLinePattern = regexp.MustCompile(`^\d{1,4}(\|\d{1,4})*\r\n$`)
+// SliderMoveEvent represents a single slider move captured by deej
+type ButtonEvent struct {
+	ButtonID     int
+	Value 			 int
+}
+
+var expectedLinePattern = regexp.MustCompile(`^\w{1}\d{1,4}(\|\w{1}\d{1,4})*\r\n$`)
 
 // NewSerialIO creates a SerialIO instance that uses the provided deej
 // instance's connection info to establish communications with the arduino chip
@@ -55,6 +64,7 @@ func NewSerialIO(deej *Deej, logger *zap.SugaredLogger) (*SerialIO, error) {
 		connected:           false,
 		conn:                nil,
 		sliderMoveConsumers: []chan SliderMoveEvent{},
+		buttonEventConsumers: []chan ButtonEvent{},
 	}
 
 	logger.Debug("Created serial i/o instance")
@@ -142,6 +152,13 @@ func (sio *SerialIO) Stop() {
 func (sio *SerialIO) SubscribeToSliderMoveEvents() chan SliderMoveEvent {
 	ch := make(chan SliderMoveEvent)
 	sio.sliderMoveConsumers = append(sio.sliderMoveConsumers, ch)
+
+	return ch
+}
+
+func (sio *SerialIO) SubscribeToButtonEvents() chan ButtonEvent {
+	ch := make(chan ButtonEvent)
+	sio.buttonEventConsumers = append(sio.buttonEventConsumers, ch)
 
 	return ch
 }
@@ -240,7 +257,20 @@ func (sio *SerialIO) handleLine(logger *zap.SugaredLogger, line string) {
 
 	// split on pipe (|), this gives a slice of numerical strings between "0" and "1023"
 	splitLine := strings.Split(line, "|")
-	numSliders := len(splitLine)
+
+	splitLineSliders := []string{}
+	splitLineButtons := []string{}
+
+	for _, splitValue := range splitLine {
+		if splitValue[0] == 's' {
+			splitLineSliders = append(splitLineSliders, strings.Replace(splitValue, "s", "", -1))
+		}else if splitValue[0] == 'b' {
+			splitLineButtons = append(splitLineButtons, strings.Replace(splitValue, "b", "", -1))
+		}
+	}
+
+	numSliders := len(splitLineSliders)
+	numButtons := len(splitLineButtons)
 
 	// update our slider count, if needed - this will send slider move events for all
 	if numSliders != sio.lastKnownNumSliders {
@@ -254,46 +284,88 @@ func (sio *SerialIO) handleLine(logger *zap.SugaredLogger, line string) {
 		}
 	}
 
+	if numButtons != sio.lastKnownNumButtons {
+		logger.Infow("Detected buttons", "amount", numButtons)
+		sio.lastKnownNumButtons = numButtons
+		sio.currentButtonValues = make([]int, numButtons)
+
+		// reset everything to be an impossible value to force the slider move event later
+		for idx := range sio.currentButtonValues {
+			sio.currentButtonValues[idx] = -1.0
+		}
+	}
+
 	// for each slider:
 	moveEvents := []SliderMoveEvent{}
-	for sliderIdx, stringValue := range splitLine {
+	for sliderIdx, stringValue := range splitLineSliders {
 
-		// convert string values to integers ("1023" -> 1023)
-		number, _ := strconv.Atoi(stringValue)
+		// logger.Debug(stringValue);
 
-		// turns out the first line could come out dirty sometimes (i.e. "4558|925|41|643|220")
-		// so let's check the first number for correctness just in case
-		if sliderIdx == 0 && number > 1023 {
-			sio.logger.Debugw("Got malformed line from serial, ignoring", "line", line)
-			return
-		}
 
-		// map the value from raw to a "dirty" float between 0 and 1 (e.g. 0.15451...)
-		dirtyFloat := float32(number) / 1023.0
+			// convert string values to integers ("1023" -> 1023)
+			number, _ := strconv.Atoi(stringValue)
 
-		// normalize it to an actual volume scalar between 0.0 and 1.0 with 2 points of precision
-		normalizedScalar := util.NormalizeScalar(dirtyFloat)
-
-		// if sliders are inverted, take the complement of 1.0
-		if sio.deej.config.InvertSliders {
-			normalizedScalar = 1 - normalizedScalar
-		}
-
-		// check if it changes the desired state (could just be a jumpy raw slider value)
-		if util.SignificantlyDifferent(sio.currentSliderPercentValues[sliderIdx], normalizedScalar, sio.deej.config.NoiseReductionLevel) {
-
-			// if it does, update the saved value and create a move event
-			sio.currentSliderPercentValues[sliderIdx] = normalizedScalar
-
-			moveEvents = append(moveEvents, SliderMoveEvent{
-				SliderID:     sliderIdx,
-				PercentValue: normalizedScalar,
-			})
-
-			if sio.deej.Verbose() {
-				logger.Debugw("Slider moved", "event", moveEvents[len(moveEvents)-1])
+			// turns out the first line could come out dirty sometimes (i.e. "4558|925|41|643|220")
+			// so let's check the first number for correctness just in case
+			if sliderIdx == 0 && number > 1023 {
+				sio.logger.Debugw("Got malformed line from serial, ignoring", "line", line)
+				return
 			}
-		}
+
+			// map the value from raw to a "dirty" float between 0 and 1 (e.g. 0.15451...)
+			dirtyFloat := float32(number) / 1023.0
+
+			// normalize it to an actual volume scalar between 0.0 and 1.0 with 2 points of precision
+			normalizedScalar := util.NormalizeScalar(dirtyFloat)
+
+			// if sliders are inverted, take the complement of 1.0
+			if sio.deej.config.InvertSliders {
+				normalizedScalar = 1 - normalizedScalar
+			}
+
+			// check if it changes the desired state (could just be a jumpy raw slider value)
+			if util.SignificantlyDifferent(sio.currentSliderPercentValues[sliderIdx], normalizedScalar, sio.deej.config.NoiseReductionLevel) {
+
+				// if it does, update the saved value and create a move event
+				sio.currentSliderPercentValues[sliderIdx] = normalizedScalar
+
+				moveEvents = append(moveEvents, SliderMoveEvent{
+					SliderID:     sliderIdx,
+					PercentValue: normalizedScalar,
+				})
+
+				if sio.deej.Verbose() {
+					logger.Debugw("Slider moved", "event", moveEvents[len(moveEvents)-1])
+				}
+			}
+
+
+	}
+
+	buttonEvents := []ButtonEvent{}
+	for buttonId, stringValue := range splitLineButtons {
+
+		
+			//button handler
+			stringValue = strings.Replace(stringValue, "b", "", -1)
+			number, _ := strconv.Atoi(stringValue)
+			
+			if sio.currentButtonValues[buttonId] != number {
+
+				sio.currentButtonValues[buttonId] = number
+
+				buttonEvents = append(buttonEvents, ButtonEvent{
+					ButtonID:     buttonId,
+					Value: 				number,
+				})
+
+				// if sio.deej.Verbose() {
+					logger.Debugw("Button changed", "event", buttonEvents[len(buttonEvents)-1])
+				// }
+
+			}
+
+
 	}
 
 	// deliver move events if there are any, towards all potential consumers
@@ -301,6 +373,14 @@ func (sio *SerialIO) handleLine(logger *zap.SugaredLogger, line string) {
 		for _, consumer := range sio.sliderMoveConsumers {
 			for _, moveEvent := range moveEvents {
 				consumer <- moveEvent
+			}
+		}
+	}
+
+	if len(buttonEvents) > 0 {
+		for _, consumer := range sio.buttonEventConsumers {
+			for _, buttonEvent := range buttonEvents {
+				consumer <- buttonEvent
 			}
 		}
 	}
