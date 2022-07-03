@@ -85,7 +85,7 @@ It looks like this:
 slider_mapping:
   0: master
   1: chrome.exe
-  2: spotify.exe
+  2: deej.custom_match # will include anything that matches the `custom_directory_match_regex` regex
   3:
     - pathofexile_x64.exe
     - rocketleague.exe
@@ -98,6 +98,9 @@ invert_sliders: false
 com_port: COM4
 baud_rate: 9600
 
+# define a regex pattern to match game directories containing processes to be controlled with `deej.custom_match` 
+custom_directory_match_regex: steamapps|Epic Games|EA Games
+
 # adjust the amount of signal noise reduction depending on your hardware quality
 # supported values are "low" (excellent hardware), "default" (regular hardware) or "high" (bad, noisy hardware)
 noise_reduction: default
@@ -107,6 +110,7 @@ noise_reduction: default
 - `mic` is a special option to control your microphone's input level _(uses the default recording device)_
 - `deej.unmapped` is a special option to control all apps that aren't bound to any slider ("everything else")
 - On Windows, `deej.current` is a special option to control whichever app is currently in focus
+- On Windows, `deej.custom_match` is a special option to control any process where their path matches the defined regex in `custom_directory_match_regex`
 - On Windows, you can specify a device's full name, i.e. `Speakers (Realtek High Definition Audio)`, to bind that device's level to a slider. This doesn't conflict with the default `master` and `mic` options, and works for both input and output devices.
   - Be sure to use the full device name, as seen in the menu that comes up when left-clicking the speaker icon in the tray menu
 - `system` is a special option on Windows to control the "System sounds" volume in the Windows mixer
