@@ -41,7 +41,7 @@ const (
 	// targets all currently unmapped sessions (experimental)
 	specialTargetAllUnmapped = "unmapped"
 
-	// targets all processes from the gamer dir (experimental)
+	// targets all processes from any paths that match the given regex
 	specialTargetCustomDirectoryMatches = "custom_match"
 
 	// this threshold constant assumes that re-acquiring all sessions is a kind of expensive operation,
