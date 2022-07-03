@@ -42,7 +42,7 @@ const (
 	specialTargetAllUnmapped = "unmapped"
 
 	// targets all processes from any paths that match the given regex
-	specialTargetCustomDirectoryMatches = "custom_match"
+	specialTargetCustomMatchedDirectories = "custom_match"
 
 	// this threshold constant assumes that re-acquiring all sessions is a kind of expensive operation,
 	// and needs to be limited in some manner. this value was previously user-configurable through a config
@@ -343,7 +343,7 @@ func (m *sessionMap) applyTargetTransform(specialTargetName string) []string {
 		return targetKeys
 
 	// get sessions which have paths that match given regex in `custom_directory_match_regex`
-	case specialTargetCustomDirectoryMatches:
+	case specialTargetCustomMatchedDirectories:
 		if (m.deej.config.CustomDirectoryRegex != "") {
 			targetKeys := make([]string, len(m.customDirectoryMatchedSessions))
 			for sessionIdx, session := range m.customDirectoryMatchedSessions {
