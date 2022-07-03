@@ -2,16 +2,17 @@
 # you can use 'master' to indicate the master channel, or a list of process names to create a group
 # you can use 'mic' to control your mic input level (uses the default recording device)
 # you can use 'deej.unmapped' to control all apps that aren't bound to any slider (this ignores master, system, mic and device-targeting sessions)
+# you can use 'deej.custom_match' to control all processes from a matching specified folder pattern, declared with 'custom_directory_match_regex'
 # windows only - you can use 'deej.current' to control the currently active app (whether full-screen or not)
 # windows only - you can use a device's full name, i.e. "Speakers (Realtek High Definition Audio)", to bind it. this works for both output and input devices
 # windows only - you can use 'system' to control the "system sounds" volume
 # important: slider indexes start at 0, regardless of which analog pins you're using!
 slider_mapping:
-  0: firefox.exe
-  1: chrome.exe
+  0: master
+  1: deej.custom_match
   2: discord.exe
   3: Spotify.exe
-  4: master
+  4: firefox.exe
 
 # set this to true if you want the controls inverted (i.e. top is 0%, bottom is 100%)
 invert_sliders: true
@@ -20,9 +21,8 @@ invert_sliders: true
 com_port: COM10
 baud_rate: 9600
 
-# limits how often deej will look for new processes
-# it's recommended to leave this setting at its default value
-process_refresh_frequency: 5
+# define a regex pattern to match game directories containing processes to be controlled with `deej.custom_match` 
+custom_directory_match_regex: steamapps|Epic Games|EA Games
 
 # adjust the amount of signal noise reduction depending on your hardware quality
 # supported values are "low" (excellent hardware), "default" (regular hardware) or "high" (bad, noisy hardware)

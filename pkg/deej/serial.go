@@ -14,7 +14,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/omriharel/deej/pkg/deej/util"
-	"github.com/omriharel/deej/util"
 	"github.com/micmonay/keybd_event"
 )
 

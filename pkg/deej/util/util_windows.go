@@ -7,7 +7,7 @@ import (
 	"unsafe"
 
 	"github.com/lxn/win"
-	"github.com/mitchellh/go-ps"
+	"github.com/keybase/go-ps"
 )
 
 const (

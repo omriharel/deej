@@ -23,6 +23,7 @@ type sessionMap struct {
 
 	lastSessionRefresh time.Time
 	unmappedSessions   []Session
+	customDirectoryMatchedSessions   []Session
 }
 
 const (
@@ -39,6 +40,9 @@ const (
 
 	// targets all currently unmapped sessions (experimental)
 	specialTargetAllUnmapped = "unmapped"
+
+	// targets all processes from the gamer dir (experimental)
+	specialTargetCustomDirectoryMatches = "custom_match"
 
 	// this threshold constant assumes that re-acquiring all sessions is a kind of expensive operation,
 	// and needs to be limited in some manner. this value was previously user-configurable through a config
@@ -109,6 +113,25 @@ func (m *sessionMap) getAndAddSessions() error {
 	}
 
 	for _, session := range sessions {
+		var path string = session.Path()
+		if (path != "") {
+			m.logger.Debugw("Session Key path", "path", session.Path())
+
+			// If the current session's path matches the regex provided in 
+			// custom_directory_regex, then we'll append them to the `deej.custom_match` slider mapping
+			if (m.deej.config.CustomDirectoryRegex != "") {
+				var r, err = regexp.Compile(m.deej.config.CustomDirectoryRegex)
+				if (err != nil) {
+					m.logger.Warnw("Couldn't compile given regex pattern for option custom_directory_match_regex", "error", err)
+					return fmt.Errorf("Couldn't compile given regex pattern for option custom_directory_match_regex")
+				}
+				if r.MatchString(path) {
+					m.logger.Debugw("Process path matches custom directory regex")
+					m.customDirectoryMatchedSessions = append(m.customDirectoryMatchedSessions, session);
+				}
+			}
+		}
+		
 		m.add(session)
 
 		if !m.sessionMapped(session) {
@@ -318,6 +341,19 @@ func (m *sessionMap) applyTargetTransform(specialTargetName string) []string {
 		}
 
 		return targetKeys
+
+	// get currently unmapped sessions
+	case specialTargetCustomDirectoryMatches:
+		if (m.deej.config.CustomDirectoryRegex != "") {
+			targetKeys := make([]string, len(m.customDirectoryMatchedSessions))
+			for sessionIdx, session := range m.customDirectoryMatchedSessions {
+				targetKeys[sessionIdx] = session.Key()
+			}
+
+			return targetKeys
+		} else {
+			m.logger.Warnw("deej.custom_match was used but no custom_directory_match_regex was given")
+		}
 	}
 
 	return nil

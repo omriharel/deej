@@ -79,7 +79,7 @@ func newWCASession(
 
 		path, err := process.Path()
 		if err != nil {
-			logger.Warnw("Uh oh couldn't get the path for PID", pid)
+			logger.Warnw("Unable to get path for pid", "pid", pid)
 		}
 
 		s.path = path
@@ -159,7 +159,11 @@ func (s *wcaSession) Release() {
 }
 
 func (s *wcaSession) String() string {
-	return fmt.Sprintf(sessionStringFormat, s.humanReadableDesc, s.GetVolume())
+	return fmt.Sprintf(sessionStringFormat, s.humanReadableDesc, s.GetVolume(), s.path)
+}
+
+func (s *wcaSession) Path() string {
+	return s.path
 }
 
 func (s *masterSession) GetVolume() float32 {
@@ -198,7 +202,7 @@ func (s *masterSession) Release() {
 }
 
 func (s *masterSession) String() string {
-	return fmt.Sprintf(sessionStringFormat, s.humanReadableDesc, s.GetVolume())
+	return fmt.Sprintf(sessionStringFormat, s.humanReadableDesc, s.GetVolume(), s.path)
 }
 
 func (s *masterSession) markAsStale() {
