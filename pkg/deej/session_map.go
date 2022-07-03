@@ -342,7 +342,7 @@ func (m *sessionMap) applyTargetTransform(specialTargetName string) []string {
 
 		return targetKeys
 
-	// get currently unmapped sessions
+	// get sessions which have paths that match given regex in `custom_directory_match_regex`
 	case specialTargetCustomDirectoryMatches:
 		if (m.deej.config.CustomDirectoryRegex != "") {
 			targetKeys := make([]string, len(m.customDirectoryMatchedSessions))
