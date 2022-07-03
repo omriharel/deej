@@ -468,6 +468,8 @@ func (sf *wcaSessionFinder) enumerateAndAddProcessSessions(
 			// it will successfully update whenever we call GetProcessId for e.g. Video.UI.exe, despite the error being non-nil.
 		}
 
+		sf.logger.Debug("ProcessId:", pid)
+
 		// get its ISimpleAudioVolume
 		dispatch, err = audioSessionControl2.QueryInterface(wca.IID_ISimpleAudioVolume)
 		if err != nil {

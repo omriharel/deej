@@ -14,6 +14,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/omriharel/deej/pkg/deej/util"
+	"github.com/omriharel/deej/util"
+	"github.com/micmonay/keybd_event"
 )
 
 // SerialIO provides a deej-aware abstraction layer to managing serial I/O
@@ -42,6 +44,7 @@ type SliderMoveEvent struct {
 }
 
 var expectedLinePattern = regexp.MustCompile(`^\d{1,4}(\|\d{1,4})*\r\n$`)
+var toggleMutePattern = regexp.MustCompile(`^BUTTON_PRESSED\r\n$`)
 
 // NewSerialIO creates a SerialIO instance that uses the provided deej
 // instance's connection info to establish communications with the arduino chip
@@ -227,6 +230,23 @@ func (sio *SerialIO) readLine(logger *zap.SugaredLogger, reader *bufio.Reader) c
 }
 
 func (sio *SerialIO) handleLine(logger *zap.SugaredLogger, line string) {
+
+	if toggleMutePattern.MatchString(line) {
+		logger.Infow("Button Pressed! Triggering Key F24");
+
+		kb, err := keybd_event.NewKeyBonding()
+		if err != nil {
+			panic(err)
+		}
+		kb.SetKeys(0x87 + 0xFFF) // F24
+		kb.Press()
+		time.Sleep(10 * time.Millisecond)
+		kb.Release()
+
+		logger.Infow("Pressed F24");
+
+		return
+	}
 
 	// this function receives an unsanitized line which is guaranteed to end with LF,
 	// but most lines will end with CRLF. it may also have garbage instead of

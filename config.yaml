@@ -7,20 +7,22 @@
 # windows only - you can use 'system' to control the "system sounds" volume
 # important: slider indexes start at 0, regardless of which analog pins you're using!
 slider_mapping:
-  0: master
+  0: firefox.exe
   1: chrome.exe
-  2: spotify.exe
-  3:
-    - pathofexile_x64.exe
-    - rocketleague.exe
-  4: discord.exe
+  2: discord.exe
+  3: Spotify.exe
+  4: master
 
 # set this to true if you want the controls inverted (i.e. top is 0%, bottom is 100%)
-invert_sliders: false
+invert_sliders: true
 
 # settings for connecting to the arduino board
-com_port: COM4
+com_port: COM10
 baud_rate: 9600
+
+# limits how often deej will look for new processes
+# it's recommended to leave this setting at its default value
+process_refresh_frequency: 5
 
 # adjust the amount of signal noise reduction depending on your hardware quality
 # supported values are "low" (excellent hardware), "default" (regular hardware) or "high" (bad, noisy hardware)
