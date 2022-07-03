@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	ole "github.com/go-ole/go-ole"
-	ps "github.com/mitchellh/go-ps"
+	ps "github.com/keybase/go-ps"
 	wca "github.com/moutend/go-wca"
 	"go.uber.org/zap"
 )
@@ -19,6 +19,7 @@ type wcaSession struct {
 
 	pid         uint32
 	processName string
+	path		string
 
 	control *wca.IAudioSessionControl2
 	volume  *wca.ISimpleAudioVolume
@@ -75,6 +76,13 @@ func newWCASession(
 		}
 
 		s.processName = process.Executable()
+
+		path, err := process.Path()
+		if err != nil {
+			logger.Warnw("Unable to get path for pid", "pid", pid)
+		}
+
+		s.path = path
 		s.name = s.processName
 		s.humanReadableDesc = fmt.Sprintf("%s (pid %d)", s.processName, s.pid)
 	}
@@ -151,7 +159,11 @@ func (s *wcaSession) Release() {
 }
 
 func (s *wcaSession) String() string {
-	return fmt.Sprintf(sessionStringFormat, s.humanReadableDesc, s.GetVolume())
+	return fmt.Sprintf(sessionStringFormat, s.humanReadableDesc, s.GetVolume(), s.path)
+}
+
+func (s *wcaSession) Path() string {
+	return s.path
 }
 
 func (s *masterSession) GetVolume() float32 {
@@ -190,7 +202,7 @@ func (s *masterSession) Release() {
 }
 
 func (s *masterSession) String() string {
-	return fmt.Sprintf(sessionStringFormat, s.humanReadableDesc, s.GetVolume())
+	return fmt.Sprintf(sessionStringFormat, s.humanReadableDesc, s.GetVolume(), s.path)
 }
 
 func (s *masterSession) markAsStale() {

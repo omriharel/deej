@@ -11,12 +11,15 @@ require (
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/jacobsa/go-serial v0.0.0-20180131005756-15cf729a72d4
 	github.com/jfreymuth/pulse v0.0.0-20200608153616-84b2d752b9d4
-	github.com/lxn/walk v0.0.0-20191128110447-55ccb3a9f5c1 // indirect
+	github.com/keybase/go-ps v0.0.0-20190827175125-91aafc93ba19
+	github.com/lxn/walk v0.0.0-20201209144500-98655d01b2f1 // indirect
 	github.com/lxn/win v0.0.0-20191128105842-2da648fda5b4
+	github.com/micmonay/keybd_event v1.1.1
 	github.com/mitchellh/go-ps v1.0.0
 	github.com/moutend/go-wca v0.1.2-0.20190422112502-0fa027b3d89a
 	github.com/spf13/viper v1.7.1
 	github.com/thoas/go-funk v0.7.0
 	go.uber.org/zap v1.15.0
-	golang.org/x/sys v0.0.0-20200501145240-bc7a7d42d5c3 // indirect
+	golang.org/x/sys v0.0.0-20201119102817-f84b799fce68 // indirect
+	golang.org/x/text v0.3.3 // indirect
 )

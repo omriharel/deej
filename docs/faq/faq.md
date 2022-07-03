@@ -1,4 +1,4 @@
-# deej FAQ
+ # deej FAQ
 
 This document tries to cover all of the most commonly asked questions in our [community Discord server](https://discord.gg/nf88NJu), as well as provide basic troubleshooting for frequently-encountered problems by new deej users.
 
@@ -318,6 +318,7 @@ Other than defining groups of apps, you can use other powerful options in your `
 
 - `deej.current` will change the volume for the currently active window
 - `deej.unmapped` will group together all apps that aren't bound to a slider. This is perfect for a slider to control all your games!
+- `deej.custom_match` will group together any apps whos path matches the given regex in `custom_directory_match_regex`
 - `mic` can be used to control the _input_ volume of your microphone.
 
 > You can check out a complete list of configuration file options [here](https://github.com/omriharel/deej#slider-mapping-configuration).
