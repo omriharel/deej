@@ -1,7 +1,9 @@
 const int NUM_SLIDERS = 5;
+const int MIN_DELTA = 2;
 const int analogInputs[NUM_SLIDERS] = {A0, A1, A2, A3, A4};
 
 int analogSliderValues[NUM_SLIDERS];
+bool doUpdate = false;
 
 void setup() { 
   for (int i = 0; i < NUM_SLIDERS; i++) {
@@ -13,14 +15,29 @@ void setup() {
 
 void loop() {
   updateSliderValues();
-  sendSliderValues(); // Actually send data (all the time)
+  if(doUpdate)
+  {
+    sendSliderValues();
+    doUpdate = false;
+  }
+
   // printSliderValues(); // For debug
   delay(10);
 }
 
 void updateSliderValues() {
-  for (int i = 0; i < NUM_SLIDERS; i++) {
-     analogSliderValues[i] = analogRead(analogInputs[i]);
+  int newVal = 0;
+
+  for (int i = 0; i < NUM_SLIDERS; i++)
+  {
+    newVal = analogRead(analogInputs[i]);
+
+    // Debounce serial comms
+    if(abs(newVal - analogSliderValues[i]) >= MIN_DELTA)
+    {
+      analogSliderValues[i] = newVal;
+      doUpdate = true;
+    }
   }
 }
 
