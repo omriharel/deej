@@ -9,12 +9,12 @@ GOTO DONE
 
 :INSTALL
 ECHO Installing rsrc...
-go get  github.com/akavel/rsrc
+go install  github.com/akavel/rsrc
 IF ERRORLEVEL 1 GOTO GETFAIL
 GOTO POSTINSTALL
 
 :GETFAIL
-ECHO Failure running go get  github.com/akavel/rsrc.  Ensure that go and git are in PATH
+ECHO Failure running go install  github.com/akavel/rsrc.  Ensure that go and git are in PATH
 GOTO DONE
 
 :NOGO

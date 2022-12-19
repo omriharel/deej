@@ -15,12 +15,12 @@ GOTO DONE
 
 :INSTALL
 ECHO Installing 2goarray...
-go get github.com/cratonica/2goarray
+go install github.com/cratonica/2goarray
 IF ERRORLEVEL 1 GOTO GETFAIL
 GOTO POSTINSTALL
 
 :GETFAIL
-ECHO Failure running go get github.com/cratonica/2goarray.  Ensure that go and git are in PATH
+ECHO Failure running go install github.com/cratonica/2goarray.  Ensure that go and git are in PATH
 GOTO DONE
 
 :NOGO
