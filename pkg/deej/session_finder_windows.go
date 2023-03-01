@@ -8,8 +8,8 @@ import (
 	"time"
 	"unsafe"
 
+	wca "github.com/Jodinandas/go-wca/pkg/wca"
 	ole "github.com/go-ole/go-ole"
-	wca "github.com/moutend/go-wca"
 	"go.uber.org/zap"
 )
 
@@ -199,19 +199,21 @@ func (sf *wcaSessionFinder) getDefaultAudioEndpoints() (*wca.IMMDevice, *wca.IMM
 }
 
 func (sf *wcaSessionFinder) registerDefaultDeviceChangeCallback() error {
-	sf.mmNotificationClient = &wca.IMMNotificationClient{}
-	sf.mmNotificationClient.VTable = &wca.IMMNotificationClientVtbl{}
+	vTable := &wca.IMMNotificationClientVtbl{}
 
 	// fill the VTable with noops, except for OnDefaultDeviceChanged. that one's gold
-	sf.mmNotificationClient.VTable.QueryInterface = syscall.NewCallback(sf.noopCallback)
-	sf.mmNotificationClient.VTable.AddRef = syscall.NewCallback(sf.noopCallback)
-	sf.mmNotificationClient.VTable.Release = syscall.NewCallback(sf.noopCallback)
-	sf.mmNotificationClient.VTable.OnDeviceStateChanged = syscall.NewCallback(sf.noopCallback)
-	sf.mmNotificationClient.VTable.OnDeviceAdded = syscall.NewCallback(sf.noopCallback)
-	sf.mmNotificationClient.VTable.OnDeviceRemoved = syscall.NewCallback(sf.noopCallback)
-	sf.mmNotificationClient.VTable.OnPropertyValueChanged = syscall.NewCallback(sf.noopCallback)
+	vTable.QueryInterface = syscall.NewCallback(sf.noopCallback)
+	vTable.AddRef = syscall.NewCallback(sf.noopCallback)
+	vTable.Release = syscall.NewCallback(sf.noopCallback)
+	vTable.OnDeviceStateChanged = syscall.NewCallback(sf.noopCallback)
+	vTable.OnDeviceAdded = syscall.NewCallback(sf.noopCallback)
+	vTable.OnDeviceRemoved = syscall.NewCallback(sf.noopCallback)
+	vTable.OnPropertyValueChanged = syscall.NewCallback(sf.noopCallback)
+	vTable.OnDefaultDeviceChanged = syscall.NewCallback(sf.defaultDeviceChangedCallback)
 
-	sf.mmNotificationClient.VTable.OnDefaultDeviceChanged = syscall.NewCallback(sf.defaultDeviceChangedCallback)
+	mmNotificationClient := &wca.IMMNotificationClient{}
+	sf.mmNotificationClient = mmNotificationClient
+	sf.mmNotificationClient.VTable = vTable
 
 	if err := sf.mmDeviceEnumerator.RegisterEndpointNotificationCallback(sf.mmNotificationClient); err != nil {
 		sf.logger.Warnw("Failed to call RegisterEndpointNotificationCallback", "error", err)

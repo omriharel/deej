@@ -7,7 +7,7 @@ import (
 
 	ole "github.com/go-ole/go-ole"
 	ps "github.com/mitchellh/go-ps"
-	wca "github.com/moutend/go-wca"
+	wca "github.com/Jodinandas/go-wca/pkg/wca"
 	"go.uber.org/zap"
 )
 

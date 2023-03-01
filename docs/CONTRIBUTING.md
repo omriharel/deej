@@ -22,7 +22,7 @@ Many of deej's users aren't necessarily tech-savvy, and for some of them this is
 
 ## Pull requests and alternate forks
 
-The nature of how I currently choose to maintain deej means that **I'm not likely to accept and incorporate PRs** into deej's main fork ([omriharel/deej](https://github.com/omriharel/deej)).
+The nature of how I currently choose to maintain deej means that **I'm not likely to accept and incorporate PRs** into deej's main fork ([omriharel/deej](https://github.com/Jodinandas/deej)).
 
 Despite the above, **deej is still a fully open-source project**. I don't want my occasional lack of energy to stand in the way of anyone looking to make something awesome - you have my blessing to fork the project, maintain your copy of it separately, and tell the world (_including_ our community Discord server) about it!
 

@@ -1,3 +1,6 @@
+# Dev notes
+install go-wca with
+go get github.com/Jodinandas/go-wca@d136f2093d392f4ae025b0015b7be8f60b36b905
 # deej
 
 deej is an **open-source hardware volume mixer** for Windows and Linux PCs. It lets you use real-life sliders (like a DJ!) to **seamlessly control the volumes of different apps** (such as your music player, the game you're playing and your voice chat session) without having to stop what you're doing.
@@ -10,7 +13,7 @@ deej is an **open-source hardware volume mixer** for Windows and Linux PCs. It l
 
 deej consists of a [lightweight desktop client](#features) written in Go, and an Arduino-based hardware setup that's simple and cheap to build. [**Check out some versions built by members of our community!**](./community.md)
 
-**[Download the latest release](https://github.com/omriharel/deej/releases/latest) | [Video demonstration](https://youtu.be/VoByJ4USMr8) | [Build video by Tech Always](https://youtu.be/x2yXbFiiAeI)**
+**[Download the latest release](https://github.com/Jodinandas/deej/releases/latest) | [Video demonstration](https://youtu.be/VoByJ4USMr8) | [Build video by Tech Always](https://youtu.be/x2yXbFiiAeI)**
 
 ![deej](assets/build-3d-annotated.png)
 
@@ -39,7 +42,7 @@ deej consists of a [lightweight desktop client](#features) written in Go, and an
 
 ## Features
 
-deej is written in Go and [distributed](https://github.com/omriharel/deej/releases/latest) as a portable (no installer needed) executable.
+deej is written in Go and [distributed](https://github.com/Jodinandas/deej/releases/latest) as a portable (no installer needed) executable.
 
 - Bind apps to different sliders
   - Bind multiple apps per slider (i.e. one slider for all your games)
@@ -53,7 +56,7 @@ deej is written in Go and [distributed](https://github.com/omriharel/deej/releas
 - Runs from your system tray
 - Helpful notifications to let you know if something isn't working
 
-> **Looking for the older Python version?** It's no longer maintained, but you can always find it in the [`legacy-python` branch](https://github.com/omriharel/deej/tree/legacy-python).
+> **Looking for the older Python version?** It's no longer maintained, but you can always find it in the [`legacy-python` branch](https://github.com/Jodinandas/deej/tree/legacy-python).
 
 ## How it works
 
@@ -177,7 +180,7 @@ With many different 3D-printed designs being added to our [community showcase](.
 
 ### Download and installation
 
-- Head over to the [releases page](https://github.com/omriharel/deej/releases) and download the [latest version](https://github.com/omriharel/deej/releases/latest)'s executable and configuration file (`deej.exe` and `config.yaml`)
+- Head over to the [releases page](https://github.com/Jodinandas/deej/releases) and download the [latest version](https://github.com/Jodinandas/deej/releases/latest)'s executable and configuration file (`deej.exe` and `config.yaml`)
 - Place them in the same directory anywhere on your machine
 - (Optional, on Windows) Create a shortcut to `deej.exe` and copy it to `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup` to have deej run on boot
 
@@ -185,7 +188,7 @@ With many different 3D-printed designs being added to our [community showcase](.
 
 If you'd rather not download a compiled executable, or want to extend deej or modify it to your needs, feel free to clone the repository and build it yourself. All you need is a Go 1.14 (or above) environment on your machine. If you go this route, make sure to check out the [developer scripts](./pkg/deej/scripts).
 
-Like other Go packages, you can also use the `go get` tool: `go get -u github.com/omriharel/deej`. Please note that the package code now resides in the `pkg/deej` directory, and needs to be imported from there if used inside another project.
+Like other Go packages, you can also use the `go get` tool: `go get -u github.com/Jodinandas/deej`. Please note that the package code now resides in the `pkg/deej` directory, and needs to be imported from there if used inside another project.
 
 If you need any help with this, please [join our Discord server](https://discord.gg/nf88NJu).
 

@@ -131,7 +131,7 @@ First off, know that you're in the right place. This project is excellent for a 
 - Determine what type of deej build you want to go for (3D-printed or not, knobs or sliders, how many of them, etc.), according to your preferences
   - If this is your first electronics project, I wholeheartedly recommend to keep things simple and not add additional custom functionality. You can always add these later on (or build a second, third and fourth deej!)
 - Get some inspiration from our [community showcase](https://showcase.deej.rocks) and [Thingiverse design collection](https://thingiverse.com/omriharel/collections/deej)
-- Become somewhat familiar with how deej works. A great way to do this is to read the [how it works](https://github.com/omriharel/deej#how-it-works) section in the main README, or to simply read through most of this FAQ :)
+- Become somewhat familiar with how deej works. A great way to do this is to read the [how it works](https://github.com/Jodinandas/deej#how-it-works) section in the main README, or to simply read through most of this FAQ :)
 - Once you feel like you have a decent grasp over how deej works and what components you need, get shopping!
   - If you're doing things for the first time, it's a good idea to get a spare or two (at least for things like your board and pots) in case you mess something up. It's unlikely, but who wants to wait for a part twice as long?
 - When your parts arrive, take some time to brush up and make sure you understand how you should wire everything together. You can always undo some of it, but taking a brief refresher at this point might save you some time
@@ -201,7 +201,7 @@ There are several things you want to note here:
 - Analog values from pots are slightly different between lines, even when the pot isn't being moved. **This is normal!** Since this is an analog signal, it is subject to some noise and interference. deej internally manages that to ensure that volume only changes when you mean to change it.
   - If your analog values are "jumping" by a significantly larger margin than shown here, you may have miswired your potentiometers.
 
-If your serial monitor appears to be similar to this, and behaves correctly when you move all of your pots, you're good to go! Close the serial monitor, and proceed to [download and set up](https://github.com/omriharel/deej/releases/latest) deej's desktop client and its config.yaml file.
+If your serial monitor appears to be similar to this, and behaves correctly when you move all of your pots, you're good to go! Close the serial monitor, and proceed to [download and set up](https://github.com/Jodinandas/deej/releases/latest) deej's desktop client and its config.yaml file.
 
 <sub>_Tags: #arduino, #arduinoide, #sketch, #flash, #upload, #board, #verify_</sub>
 
@@ -320,7 +320,7 @@ Other than defining groups of apps, you can use other powerful options in your `
 - `deej.unmapped` will group together all apps that aren't bound to a slider. This is perfect for a slider to control all your games!
 - `mic` can be used to control the _input_ volume of your microphone.
 
-> You can check out a complete list of configuration file options [here](https://github.com/omriharel/deej#slider-mapping-configuration).
+> You can check out a complete list of configuration file options [here](https://github.com/Jodinandas/deej#slider-mapping-configuration).
 
 <sub>_Tags: #app, #config, #configuration, #add, #set_</sub>
 
@@ -343,7 +343,7 @@ In some cases, the app you're chasing is playing audio from a secondary process 
 
 **Option 2: Run deej in debug mode**
 
-Keep in mind that this is a bit more complicated. You'll need to start by grabbing the debug executable of deej (`deej-debug.exe`) from the [releases page](https://github.com/omriharel/deej/releases) and downloading it to the same location where your deej.exe and config.yaml are:
+Keep in mind that this is a bit more complicated. You'll need to start by grabbing the debug executable of deej (`deej-debug.exe`) from the [releases page](https://github.com/Jodinandas/deej/releases) and downloading it to the same location where your deej.exe and config.yaml are:
 
 ![deej-debug.exe](./assets/deej-debug/explorer.png)
 
