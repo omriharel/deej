@@ -27,6 +27,9 @@ type wcaSessionFinder struct {
 	// our master input and output sessions
 	masterOut *masterSession
 	masterIn  *masterSession
+	
+	// channel to trigger reload of sessions
+	SessionReloadEvent chan bool
 }
 
 const (
@@ -43,15 +46,21 @@ const (
 )
 
 func newSessionFinder(logger *zap.SugaredLogger) (SessionFinder, error) {
+	sre := make(chan bool)
 	sf := &wcaSessionFinder{
 		logger:        logger.Named("session_finder"),
 		sessionLogger: logger.Named("sessions"),
 		eventCtx:      ole.NewGUID(myteriousGUID),
+		SessionReloadEvent: sre,
 	}
 
 	sf.logger.Debug("Created WCA session finder instance")
 
 	return sf, nil
+}
+
+func (sf *wcaSessionFinder) GetSessionReloadEvent() (chan bool){
+	return sf.SessionReloadEvent
 }
 
 func (sf *wcaSessionFinder) GetAllSessions() ([]Session, error) {
@@ -147,6 +156,28 @@ func (sf *wcaSessionFinder) GetAllSessions() ([]Session, error) {
 	return sessions, nil
 }
 
+func (sf *wcaSessionFinder) GetLevelMeterChannel() (chan string){
+	ch := make(chan string)
+	go func(){
+		for{
+		    in, out := float32(0.0), float32(0.0)
+		    if sf.masterIn != nil {
+		    in = sf.masterIn.GetPeakValue()
+		    }
+		    if sf.masterOut != nil{
+		    out = sf.masterOut.GetPeakValue()
+		    }
+			ch <- fmt.Sprintf("%v", int(100*in)) + "|" + fmt.Sprintf("%v", int(100*out))
+			if sf.masterOut.stale || sf.masterIn.stale {
+				sf.SessionReloadEvent <- true
+			}
+			time.Sleep(25* time.Millisecond)
+		}
+	}()
+	return ch
+}
+
+
 func (sf *wcaSessionFinder) Release() error {
 
 	// skip unregistering the mmnotificationclient, as it's not implemented in go-wca
@@ -226,14 +257,20 @@ func (sf *wcaSessionFinder) registerDefaultDeviceChangeCallback() error {
 func (sf *wcaSessionFinder) getMasterSession(mmDevice *wca.IMMDevice, key string, loggerKey string) (*masterSession, error) {
 
 	var audioEndpointVolume *wca.IAudioEndpointVolume
+	var audioLevelMeter *wca.IAudioMeterInformation
 
 	if err := mmDevice.Activate(wca.IID_IAudioEndpointVolume, wca.CLSCTX_ALL, nil, &audioEndpointVolume); err != nil {
 		sf.logger.Warnw("Failed to activate AudioEndpointVolume for master session", "error", err)
 		return nil, fmt.Errorf("activate master session: %w", err)
 	}
 
+	if err := mmDevice.Activate(wca.IID_IAudioMeterInformation , wca.CLSCTX_ALL, nil, &audioLevelMeter); err != nil {
+		sf.logger.Warnw("Failed to activate AudioLevelMeter for master session", "error", err)
+		return nil, fmt.Errorf("activate master session: %w", err)
+	}
+
 	// create the master session
-	master, err := newMasterSession(sf.sessionLogger, audioEndpointVolume, sf.eventCtx, key, loggerKey)
+	master, err := newMasterSession(sf.sessionLogger, audioEndpointVolume, audioLevelMeter, sf.eventCtx, key, loggerKey)
 	if err != nil {
 		sf.logger.Warnw("Failed to create master session instance", "error", err)
 		return nil, fmt.Errorf("create master session: %w", err)

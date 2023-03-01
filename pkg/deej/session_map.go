@@ -23,6 +23,7 @@ type sessionMap struct {
 
 	lastSessionRefresh time.Time
 	unmappedSessions   []Session
+	SessionReloadEvent chan bool
 }
 
 const (
@@ -57,7 +58,7 @@ const (
 // this matches friendly device names (on Windows), e.g. "Headphones (Realtek Audio)"
 var deviceSessionKeyPattern = regexp.MustCompile(`^.+ \(.+\)$`)
 
-func newSessionMap(deej *Deej, logger *zap.SugaredLogger, sessionFinder SessionFinder) (*sessionMap, error) {
+func newSessionMap(deej *Deej, logger *zap.SugaredLogger, sessionFinder SessionFinder, SessionReloadEvent chan bool) (*sessionMap, error) {
 	logger = logger.Named("sessions")
 
 	m := &sessionMap{
@@ -66,6 +67,7 @@ func newSessionMap(deej *Deej, logger *zap.SugaredLogger, sessionFinder SessionF
 		m:             make(map[string][]Session),
 		lock:          &sync.Mutex{},
 		sessionFinder: sessionFinder,
+		SessionReloadEvent: SessionReloadEvent,
 	}
 
 	logger.Debug("Created session map instance")
@@ -81,6 +83,7 @@ func (m *sessionMap) initialize() error {
 
 	m.setupOnConfigReload()
 	m.setupOnSliderMove()
+	m.setupOnSessionReloadEvent()
 
 	return nil
 }
@@ -144,6 +147,18 @@ func (m *sessionMap) setupOnSliderMove() {
 			select {
 			case event := <-sliderEventsChannel:
 				m.handleSliderMoveEvent(event)
+			}
+		}
+	}()
+}
+
+func (m *sessionMap) setupOnSessionReloadEvent() {
+	go func(){
+		for{
+			select {
+			case <- m.SessionReloadEvent:
+				fmt.Println("Refreshing sessions....")
+				m.refreshSessions(true)
 			}
 		}
 	}()

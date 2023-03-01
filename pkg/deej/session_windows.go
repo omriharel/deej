@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
+	wca "github.com/Jodinandas/go-wca/pkg/wca"
 	ole "github.com/go-ole/go-ole"
 	ps "github.com/mitchellh/go-ps"
-	wca "github.com/Jodinandas/go-wca/pkg/wca"
 	"go.uber.org/zap"
 )
 
@@ -32,6 +32,8 @@ type masterSession struct {
 	volume *wca.IAudioEndpointVolume
 
 	eventCtx *ole.GUID
+
+	VolumeMeter *wca.IAudioMeterInformation
 
 	stale bool // when set to true, we should refresh sessions on the next call to SetVolume
 }
@@ -89,6 +91,7 @@ func newWCASession(
 func newMasterSession(
 	logger *zap.SugaredLogger,
 	volume *wca.IAudioEndpointVolume,
+	audioMeterInformation *wca.IAudioMeterInformation,
 	eventCtx *ole.GUID,
 	key string,
 	loggerKey string,
@@ -97,6 +100,7 @@ func newMasterSession(
 	s := &masterSession{
 		volume:   volume,
 		eventCtx: eventCtx,
+		VolumeMeter: audioMeterInformation,
 	}
 
 	s.logger = logger.Named(loggerKey)
@@ -162,6 +166,12 @@ func (s *masterSession) GetVolume() float32 {
 	}
 
 	return level
+}
+
+func (s *masterSession) GetPeakValue() float32 {
+	peak := float32(0.0)
+	s.VolumeMeter.GetPeakValue(&peak)
+	return peak
 }
 
 func (s *masterSession) SetVolume(v float32) error {

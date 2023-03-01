@@ -55,7 +55,13 @@ func NewDeej(logger *zap.SugaredLogger, verbose bool) (*Deej, error) {
 		verbose:     verbose,
 	}
 
-	serial, err := NewSerialIO(d, logger)
+	sessionFinder, err := newSessionFinder(logger)
+	if err != nil {
+		logger.Errorw("Failed to create SessionFinder", "error", err)
+		return nil, fmt.Errorf("create new SessionFinder: %w", err)
+	}
+
+	serial, err := NewSerialIO(d, logger, sessionFinder.GetLevelMeterChannel())
 	if err != nil {
 		logger.Errorw("Failed to create SerialIO", "error", err)
 		return nil, fmt.Errorf("create new SerialIO: %w", err)
@@ -63,13 +69,7 @@ func NewDeej(logger *zap.SugaredLogger, verbose bool) (*Deej, error) {
 
 	d.serial = serial
 
-	sessionFinder, err := newSessionFinder(logger)
-	if err != nil {
-		logger.Errorw("Failed to create SessionFinder", "error", err)
-		return nil, fmt.Errorf("create new SessionFinder: %w", err)
-	}
-
-	sessions, err := newSessionMap(d, logger, sessionFinder)
+	sessions, err := newSessionMap(d, logger, sessionFinder, sessionFinder.GetSessionReloadEvent())
 	if err != nil {
 		logger.Errorw("Failed to create sessionMap", "error", err)
 		return nil, fmt.Errorf("create new sessionMap: %w", err)

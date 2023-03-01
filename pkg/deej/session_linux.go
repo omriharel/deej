@@ -165,6 +165,11 @@ func (s *masterSession) GetVolume() float32 {
 	return level
 }
 
+func (s *masterSession) GetPeakValue() float32 {
+	s.logger.error("Level Meter is not supported on linux currently")
+	return 0.0
+}
+
 func (s *masterSession) SetVolume(v float32) error {
 	var request proto.RequestArgs
 

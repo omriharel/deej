@@ -33,6 +33,7 @@ type SerialIO struct {
 	currentSliderPercentValues []float32
 
 	sliderMoveConsumers []chan SliderMoveEvent
+	LevelMeterChannel chan string
 }
 
 // SliderMoveEvent represents a single slider move captured by deej
@@ -45,7 +46,7 @@ var expectedLinePattern = regexp.MustCompile(`^\d{1,4}(\|\d{1,4})*\r\n$`)
 
 // NewSerialIO creates a SerialIO instance that uses the provided deej
 // instance's connection info to establish communications with the arduino chip
-func NewSerialIO(deej *Deej, logger *zap.SugaredLogger) (*SerialIO, error) {
+func NewSerialIO(deej *Deej, logger *zap.SugaredLogger, LevelMeterChannel chan string) (*SerialIO, error) {
 	logger = logger.Named("serial")
 
 	sio := &SerialIO{
@@ -55,6 +56,7 @@ func NewSerialIO(deej *Deej, logger *zap.SugaredLogger) (*SerialIO, error) {
 		connected:           false,
 		conn:                nil,
 		sliderMoveConsumers: []chan SliderMoveEvent{},
+		LevelMeterChannel: LevelMeterChannel,
 	}
 
 	logger.Debug("Created serial i/o instance")
@@ -112,6 +114,7 @@ func (sio *SerialIO) Start() error {
 	// read lines or await a stop
 	go func() {
 		connReader := bufio.NewReader(sio.conn)
+		connWriter := bufio.NewWriter(sio.conn)
 		lineChannel := sio.readLine(namedLogger, connReader)
 
 		for {
@@ -119,7 +122,11 @@ func (sio *SerialIO) Start() error {
 			case <-sio.stopChannel:
 				sio.close(namedLogger)
 			case line := <-lineChannel:
+				fmt.Println(line)
 				sio.handleLine(namedLogger, line)
+			case levels := <- sio.LevelMeterChannel:
+				//fmt.Println(levels)
+				sio.write(levels, sio.logger, connWriter)
 			}
 		}
 	}()
@@ -196,6 +203,15 @@ func (sio *SerialIO) close(logger *zap.SugaredLogger) {
 
 	sio.conn = nil
 	sio.connected = false
+}
+
+func (sio *SerialIO) write(s string, logger *zap.SugaredLogger, writer *bufio.Writer){
+	_, err := writer.WriteString(s)
+	if err != nil {
+		if sio.deej.Verbose() {
+			logger.Warnw("Failed to write line to serial", "error", err)
+		}
+	}
 }
 
 func (sio *SerialIO) readLine(logger *zap.SugaredLogger, reader *bufio.Reader) chan string {
