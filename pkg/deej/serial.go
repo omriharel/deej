@@ -122,10 +122,8 @@ func (sio *SerialIO) Start() error {
 			case <-sio.stopChannel:
 				sio.close(namedLogger)
 			case line := <-lineChannel:
-				fmt.Println(line)
 				sio.handleLine(namedLogger, line)
 			case levels := <- sio.LevelMeterChannel:
-				//fmt.Println(levels)
 				sio.write(levels, sio.logger, connWriter)
 			}
 		}
