@@ -3,6 +3,7 @@ module github.com/omriharel/deej
 go 1.14
 
 require (
+	github.com/akavel/rsrc v0.10.2 // indirect
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/gen2brain/beeep v0.0.0-20200420150314-13046a26d502
 	github.com/getlantern/ops v0.0.0-20200403153110-8476b16edcd6 // indirect

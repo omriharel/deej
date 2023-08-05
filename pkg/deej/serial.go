@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -34,6 +33,8 @@ type SerialIO struct {
 
 	sliderMoveConsumers []chan SliderMoveEvent
 }
+const nChannels byte = 3
+const packLen byte = 4 + nChannels*2
 
 // SliderMoveEvent represents a single slider move captured by deej
 type SliderMoveEvent struct {
@@ -198,95 +199,109 @@ func (sio *SerialIO) close(logger *zap.SugaredLogger) {
 	sio.connected = false
 }
 
-func (sio *SerialIO) readLine(logger *zap.SugaredLogger, reader *bufio.Reader) chan string {
-	ch := make(chan string)
+func (sio *SerialIO) readLine(logger *zap.SugaredLogger, reader *bufio.Reader) chan [0x0a]byte {
+	ch := make(chan [packLen]byte)
 
 	go func() {
 		for {
-			line, err := reader.ReadString('\n')
-			if err != nil {
-
-				if sio.deej.Verbose() {
-					logger.Warnw("Failed to read line from serial", "error", err, "line", line)
+			for {
+				peek, _ := reader.Peek(1)
+				
+				if peek[0] == packLen{
+					break
+				}else{
+					_, err := reader.ReadByte()
+					
+					if err != nil{
+					
+						if sio.deej.Verbose() {
+							logger.Warnw("Failed to discard Serial data from buffer", "error", err)
+						}
+					return 
+					}
 				}
-
-				// just ignore the line, the read loop will stop after this
-				return
+			}
+			// for{
+				// if reader.Buffered() >= 0x0a{
+					// fmt.Println("waiting for data");
+				// }
+			// }
+			var ibusPacket [packLen] byte 
+			for i := byte(0); i < packLen; i++{
+				
+				var err error
+				ibusPacket[i], err = reader.ReadByte()
+				
+				if err != nil{
+					
+					if sio.deej.Verbose(){
+						logger.Warnw("failed to load byte from serial port", "error", err, "packet", ibusPacket)
+					}
+					
+				}
+				
 			}
 
 			if sio.deej.Verbose() {
-				logger.Debugw("Read new line", "line", line)
+				logger.Debugw("Read new packet", "packet", ibusPacket)
 			}
 
 			// deliver the line to the channel
-			ch <- line
+			ch <- ibusPacket
 		}
 	}()
 
 	return ch
 }
 
-func (sio *SerialIO) handleLine(logger *zap.SugaredLogger, line string) {
-
-	// this function receives an unsanitized line which is guaranteed to end with LF,
-	// but most lines will end with CRLF. it may also have garbage instead of
-	// deej-formatted values, so we must check for that! just ignore bad ones
-	if !expectedLinePattern.MatchString(line) {
+func (sio *SerialIO) handleLine(logger *zap.SugaredLogger, ibusPacket [packLen]byte) {
+	
+	//check against checksum if packet is malformed 
+	var ibusChecksum uint16 = uint16(ibusPacket[packLen-2]) | uint16(ibusPacket[packLen-1]) << 8
+	var runningTotal uint16 = 0
+	
+	for i := byte(0); i < packLen-2; i++{
+		runningTotal += uint16(ibusPacket[i])
+	}
+	
+	if ibusChecksum + runningTotal != 0xffff{
 		return
 	}
-
-	// trim the suffix
-	line = strings.TrimSuffix(line, "\r\n")
-
-	// split on pipe (|), this gives a slice of numerical strings between "0" and "1023"
-	splitLine := strings.Split(line, "|")
-	numSliders := len(splitLine)
-
-	// update our slider count, if needed - this will send slider move events for all
-	if numSliders != sio.lastKnownNumSliders {
-		logger.Infow("Detected sliders", "amount", numSliders)
-		sio.lastKnownNumSliders = numSliders
-		sio.currentSliderPercentValues = make([]float32, numSliders)
-
-		// reset everything to be an impossible value to force the slider move event later
-		for idx := range sio.currentSliderPercentValues {
-			sio.currentSliderPercentValues[idx] = -1.0
-		}
+	
+	var ibusNumbers [nChannels] uint16
+	for i := 0; i < int(nChannels); i++{
+		ibusNumbers[i] = uint16(ibusPacket[2*i+2]) | uint16(ibusPacket[2*i + 3]) << 8
 	}
-
+	
+	for idx := range sio.currentSliderPercentValues {
+		sio.currentSliderPercentValues[idx] = -1.0
+	}
+	
+	sio.currentSliderPercentValues = make([]float32, nChannels)
+	
 	// for each slider:
 	moveEvents := []SliderMoveEvent{}
-	for sliderIdx, stringValue := range splitLine {
+	for i := 0 ; i < int(nChannels); i ++ {
 
-		// convert string values to integers ("1023" -> 1023)
-		number, _ := strconv.Atoi(stringValue)
-
-		// turns out the first line could come out dirty sometimes (i.e. "4558|925|41|643|220")
-		// so let's check the first number for correctness just in case
-		if sliderIdx == 0 && number > 1023 {
-			sio.logger.Debugw("Got malformed line from serial, ignoring", "line", line)
-			return
-		}
-
-		// map the value from raw to a "dirty" float between 0 and 1 (e.g. 0.15451...)
-		dirtyFloat := float32(number) / 1023.0
+		//map the value from raw to a "dirty" float between 0 and 1 (e.g. 0.15451...)
+		dirtyFloat := float32(ibusNumbers[i]) / 1023.0
 
 		// normalize it to an actual volume scalar between 0.0 and 1.0 with 2 points of precision
 		normalizedScalar := util.NormalizeScalar(dirtyFloat)
 
-		// if sliders are inverted, take the complement of 1.0
+		//if sliders are inverted, take the complement of 1.0
 		if sio.deej.config.InvertSliders {
 			normalizedScalar = 1 - normalizedScalar
 		}
 
 		// check if it changes the desired state (could just be a jumpy raw slider value)
-		if util.SignificantlyDifferent(sio.currentSliderPercentValues[sliderIdx], normalizedScalar, sio.deej.config.NoiseReductionLevel) {
+		if util.SignificantlyDifferent(sio.currentSliderPercentValues[i], normalizedScalar, sio.deej.config.NoiseReductionLevel) {
 
 			// if it does, update the saved value and create a move event
-			sio.currentSliderPercentValues[sliderIdx] = normalizedScalar
+			sio.currentSliderPercentValues[i] = normalizedScalar
 
 			moveEvents = append(moveEvents, SliderMoveEvent{
-				SliderID:     sliderIdx,
+				SliderID:     i,
 				PercentValue: normalizedScalar,
 			})
 
