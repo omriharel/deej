@@ -19,8 +19,9 @@ type CanonicalConfig struct {
 	SliderMapping *sliderMap
 
 	ConnectionInfo struct {
-		COMPort  string
-		BaudRate int
+		COMPort          string
+		BaudRate         int
+		max_slider_value int
 	}
 
 	InvertSliders bool
@@ -53,9 +54,11 @@ const (
 	configKeyCOMPort             = "com_port"
 	configKeyBaudRate            = "baud_rate"
 	configKeyNoiseReductionLevel = "noise_reduction"
+	configMaxSliderValue         = "max_slider_value"
 
-	defaultCOMPort  = "COM4"
-	defaultBaudRate = 9600
+	defaultMaxSliderValue = "1023"
+	defaultCOMPort        = "COM4"
+	defaultBaudRate       = 9600
 )
 
 // has to be defined as a non-constant because we're using path.Join
@@ -89,6 +92,7 @@ func NewConfig(logger *zap.SugaredLogger, notifier Notifier) (*CanonicalConfig, 
 	userConfig.SetDefault(configKeyInvertSliders, false)
 	userConfig.SetDefault(configKeyCOMPort, defaultCOMPort)
 	userConfig.SetDefault(configKeyBaudRate, defaultBaudRate)
+	userConfig.SetDefault(configMaxSliderValue, defaultMaxSliderValue)
 
 	internalConfig := viper.New()
 	internalConfig.SetConfigName(internalConfigName)
@@ -225,6 +229,7 @@ func (cc *CanonicalConfig) populateFromVipers() error {
 
 	// get the rest of the config fields - viper saves us a lot of effort here
 	cc.ConnectionInfo.COMPort = cc.userConfig.GetString(configKeyCOMPort)
+	cc.ConnectionInfo.max_slider_value = cc.userConfig.GetInt(configMaxSliderValue)
 
 	cc.ConnectionInfo.BaudRate = cc.userConfig.GetInt(configKeyBaudRate)
 	if cc.ConnectionInfo.BaudRate <= 0 {

@@ -18,6 +18,11 @@ slider_mapping:
 # set this to true if you want the controls inverted (i.e. top is 0%, bottom is 100%)
 invert_sliders: false
 
+# Set the max slider value in case your potentiometers do not reach the default value of 1023. 
+# This is for people that made the mistake of logarithmic potentiometers that only reach a value of 800-900. 
+# Find your max_slider_value by using a serial monitor in the arduino software or viewing debug terminal. 
+max_slider_value: 1023
+
 # settings for connecting to the arduino board
 com_port: COM4
 baud_rate: 9600
