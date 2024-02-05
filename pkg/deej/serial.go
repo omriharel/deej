@@ -16,6 +16,8 @@ import (
 	"github.com/omriharel/deej/pkg/deej/util"
 )
 
+const stopDelay = 50 * time.Millisecond
+
 // SerialIO provides a deej-aware abstraction layer to managing serial I/O
 type SerialIO struct {
 	comPort  string
@@ -118,6 +120,7 @@ func (sio *SerialIO) Start() error {
 			select {
 			case <-sio.stopChannel:
 				sio.close(namedLogger)
+				return
 			case line := <-lineChannel:
 				sio.handleLine(namedLogger, line)
 			}
@@ -148,8 +151,6 @@ func (sio *SerialIO) SubscribeToSliderMoveEvents() chan SliderMoveEvent {
 
 func (sio *SerialIO) setupOnConfigReload() {
 	configReloadedChannel := sio.deej.config.SubscribeToChanges()
-
-	const stopDelay = 50 * time.Millisecond
 
 	go func() {
 		for {
@@ -210,6 +211,27 @@ func (sio *SerialIO) readLine(logger *zap.SugaredLogger, reader *bufio.Reader) c
 					logger.Warnw("Failed to read line from serial", "error", err, "line", line)
 				}
 
+				// If device disconnects, attempt to reconnect
+				if isEof := errors.Is(err, io.EOF); isEof {
+					sio.Stop()
+					logger.Debug("Serial connection closed (EOF)")
+					<-time.After(stopDelay)
+
+					for {
+						err := sio.Start();
+
+						if err != nil {
+							logger.Debugw("Serial restart failed, retrying in 1 second...", "err", err)
+							<-time.After(1 * time.Second)
+						} else {
+							logger.Debugw("Serial connection restored")
+							break
+						}
+					}
+
+					continue
+				}
+				
 				// just ignore the line, the read loop will stop after this
 				return
 			}
