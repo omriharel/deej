@@ -129,7 +129,12 @@ func (sf *paSessionFinder) enumerateAndAddSessions(sessions *[]Session) error {
 	}
 
 	for _, info := range reply {
-		name, ok := info.Properties["application.process.binary"]
+		var name proto.PropListEntry
+		var ok bool
+		name, ok = info.Properties["application.process.binary"]
+		if !ok {
+			name, ok = info.Properties["application.name"]
+		}
 
 		if !ok {
 			sf.logger.Warnw("Failed to get sink input's process name",
