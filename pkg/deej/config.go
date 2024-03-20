@@ -19,8 +19,9 @@ type CanonicalConfig struct {
 	SliderMapping *sliderMap
 
 	ConnectionInfo struct {
-		COMPort  string
-		BaudRate int
+		COMPort       string
+		BaudRate      int
+		AnalogReadMax int
 	}
 
 	InvertSliders bool
@@ -52,10 +53,12 @@ const (
 	configKeyInvertSliders       = "invert_sliders"
 	configKeyCOMPort             = "com_port"
 	configKeyBaudRate            = "baud_rate"
+	configKeyAnalogReadMax       = "analog_read_max"
 	configKeyNoiseReductionLevel = "noise_reduction"
 
-	defaultCOMPort  = "COM4"
-	defaultBaudRate = 9600
+	defaultCOMPort       = "COM4"
+	defaultBaudRate      = 9600
+	defaultAnalogReadMax = 1023
 )
 
 // has to be defined as a non-constant because we're using path.Join
@@ -89,6 +92,7 @@ func NewConfig(logger *zap.SugaredLogger, notifier Notifier) (*CanonicalConfig, 
 	userConfig.SetDefault(configKeyInvertSliders, false)
 	userConfig.SetDefault(configKeyCOMPort, defaultCOMPort)
 	userConfig.SetDefault(configKeyBaudRate, defaultBaudRate)
+	userConfig.SetDefault(configKeyAnalogReadMax, defaultAnalogReadMax)
 
 	internalConfig := viper.New()
 	internalConfig.SetConfigName(internalConfigName)
@@ -225,7 +229,7 @@ func (cc *CanonicalConfig) populateFromVipers() error {
 
 	// get the rest of the config fields - viper saves us a lot of effort here
 	cc.ConnectionInfo.COMPort = cc.userConfig.GetString(configKeyCOMPort)
-
+	cc.ConnectionInfo.AnalogReadMax = cc.userConfig.GetInt(configKeyAnalogReadMax)
 	cc.ConnectionInfo.BaudRate = cc.userConfig.GetInt(configKeyBaudRate)
 	if cc.ConnectionInfo.BaudRate <= 0 {
 		cc.logger.Warnw("Invalid baud rate specified, using default value",
