@@ -62,7 +62,7 @@ void printSliderValues() {
   }
 }
 
-int inputMap[]  = {0, 1, 4, 15, 27, 56, 83, 185, 108, 520, 720, 979, 1023};
+int inputMap[]  = {0, 1, 4, 15, 27, 56, 83, 185, 308, 520, 720, 979, 1023};
 int outputMap[] = {0, 89, 178, 267, 356, 445, 534, 623, 712, 801, 890, 979, 1023};
 
 int logarithmicToLinearValue(int logarithmicValue) {
