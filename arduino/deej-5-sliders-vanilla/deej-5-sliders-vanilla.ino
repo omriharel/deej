@@ -1,5 +1,12 @@
+#include "MultiMap.h"
+enum PotentiometerType {
+  LINEAR,
+  LOGARITHMIC
+};
+
 const int NUM_SLIDERS = 5;
 const int analogInputs[NUM_SLIDERS] = {A0, A1, A2, A3, A4};
+const PotentiometerType POTENTIOMETER_TYPE = LINEAR; //LINEAR OR LOGARITHMIC
 
 int analogSliderValues[NUM_SLIDERS];
 
@@ -20,7 +27,11 @@ void loop() {
 
 void updateSliderValues() {
   for (int i = 0; i < NUM_SLIDERS; i++) {
-     analogSliderValues[i] = analogRead(analogInputs[i]);
+    if(POTENTIOMETER_TYPE == 1) {
+     analogSliderValues[i] = logarithmicToLinearValue(analogRead(analogInputs[i]));
+    } else {
+      analogSliderValues[i] = analogRead(analogInputs[i]);
+    }
   }
 }
 
@@ -49,4 +60,12 @@ void printSliderValues() {
       Serial.write("\n");
     }
   }
+}
+
+int inputMap[]  = {0, 1, 4, 15, 27, 56, 83, 185, 108, 520, 720, 979, 1023};
+int outputMap[] = {0, 89, 178, 267, 356, 445, 534, 623, 712, 801, 890, 979, 1023};
+
+int logarithmicToLinearValue(int logarithmicValue) {
+  int linearValue = multiMap<int>(logarithmicValue, inputMap, outputMap, 13);
+  return linearValue;
 }
