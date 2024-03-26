@@ -232,6 +232,10 @@ func (sio *SerialIO) handleLine(logger *zap.SugaredLogger, line string) {
 	// but most lines will end with CRLF. it may also have garbage instead of
 	// deej-formatted values, so we must check for that! just ignore bad ones
 	if !expectedLinePattern.MatchString(line) {
+		// TODO: add button handling
+		//if strings.HasPrefix("but|") {
+		//	handleButtonsLine(...)
+		//}
 		return
 	}
 
