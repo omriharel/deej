@@ -137,12 +137,22 @@ func (m *sessionMap) setupOnConfigReload() {
 }
 
 func (m *sessionMap) setupOnSliderMove() {
-	sliderEventsChannel := m.deej.serial.SubscribeToSliderMoveEvents()
+	sliderEventsChannelMidi := m.deej.midi.SubscribeToSliderMoveEvents()
+	sliderEventsChannelSerial := m.deej.serial.SubscribeToSliderMoveEvents()
 
 	go func() {
 		for {
 			select {
-			case event := <-sliderEventsChannel:
+			case event := <-sliderEventsChannelMidi:
+				m.handleSliderMoveEvent(event)
+			}
+		}
+	}()
+
+	go func() {
+		for {
+			select {
+			case event := <-sliderEventsChannelSerial:
 				m.handleSliderMoveEvent(event)
 			}
 		}

@@ -94,9 +94,13 @@ slider_mapping:
 # set this to true if you want the controls inverted (i.e. top is 0%, bottom is 100%)
 invert_sliders: false
 
-# settings for connecting to the arduino board
+# settings for connecting to the arduino board using Serial
 com_port: COM4
 baud_rate: 9600
+# settings for connecting to a MIDI device with sliders
+midi_dev_name: "Pico"
+# Set connection type to either "serial" or "midi"
+connection_type: serial
 
 # adjust the amount of signal noise reduction depending on your hardware quality
 # supported values are "low" (excellent hardware), "default" (regular hardware) or "high" (bad, noisy hardware)

@@ -74,6 +74,11 @@ func (sio *SerialIO) Start() error {
 		return errors.New("serial: connection already active")
 	}
 
+	if sio.deej.config.ConnectionInfo.ConnectionType != "serial" {
+		sio.logger.Debug("Not using a serial connection")
+		return nil
+	}
+
 	// set minimum read size according to platform (0 for windows, 1 for linux)
 	// this prevents a rare bug on windows where serial reads get congested,
 	// resulting in significant lag
@@ -168,7 +173,7 @@ func (sio *SerialIO) setupOnConfigReload() {
 
 				// if connection params have changed, attempt to stop and start the connection
 				if sio.deej.config.ConnectionInfo.COMPort != sio.connOptions.PortName ||
-					uint(sio.deej.config.ConnectionInfo.BaudRate) != sio.connOptions.BaudRate {
+					uint(sio.deej.config.ConnectionInfo.BaudRate) != sio.connOptions.BaudRate || sio.deej.config.ConnectionInfo.ConnectionType != "serial" {
 
 					sio.logger.Info("Detected change in connection parameters, attempting to renew connection")
 					sio.Stop()

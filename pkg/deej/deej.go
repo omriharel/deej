@@ -24,6 +24,7 @@ type Deej struct {
 	notifier Notifier
 	config   *CanonicalConfig
 	serial   *SerialIO
+	midi     *MidiIO
 	sessions *sessionMap
 
 	stopChannel chan bool
@@ -54,6 +55,14 @@ func NewDeej(logger *zap.SugaredLogger, verbose bool) (*Deej, error) {
 		stopChannel: make(chan bool),
 		verbose:     verbose,
 	}
+
+	midi, err := NewMidiIO(d, logger)
+	if err != nil {
+		logger.Errorw("Failed to create MidiIO", "error", err)
+		return nil, fmt.Errorf("create new MidiIO: %w", err)
+	}
+
+	d.midi = midi
 
 	serial, err := NewSerialIO(d, logger)
 	if err != nil {
@@ -141,6 +150,12 @@ func (d *Deej) run() {
 	// watch the config file for changes
 	go d.config.WatchConfigFileChanges()
 
+	err := d.midi.Start()
+	if err != nil {
+		d.logger.Warnw("Failed to start MIDI I/O", "error", err)
+		return
+	}
+
 	// connect to the arduino for the first time
 	go func() {
 		if err := d.serial.Start(); err != nil {
@@ -192,6 +207,7 @@ func (d *Deej) stop() error {
 
 	d.config.StopWatchingConfigFile()
 	d.serial.Stop()
+	d.midi.Stop()
 
 	// release the session map
 	if err := d.sessions.release(); err != nil {
