@@ -19,8 +19,10 @@ type CanonicalConfig struct {
 	SliderMapping *sliderMap
 
 	ConnectionInfo struct {
-		COMPort  string
-		BaudRate int
+		COMPort        string
+		BaudRate       int
+		MidiDevName    string
+		ConnectionType string
 	}
 
 	InvertSliders bool
@@ -51,6 +53,8 @@ const (
 	configKeySliderMapping       = "slider_mapping"
 	configKeyInvertSliders       = "invert_sliders"
 	configKeyCOMPort             = "com_port"
+	configKeyMidiDevName         = "midi_dev_name"
+	configKeyConnectionType      = "connection_type"
 	configKeyBaudRate            = "baud_rate"
 	configKeyNoiseReductionLevel = "noise_reduction"
 
@@ -224,6 +228,9 @@ func (cc *CanonicalConfig) populateFromVipers() error {
 	)
 
 	// get the rest of the config fields - viper saves us a lot of effort here
+	cc.ConnectionInfo.MidiDevName = cc.userConfig.GetString(configKeyMidiDevName)
+	cc.ConnectionInfo.ConnectionType = cc.userConfig.GetString(configKeyConnectionType)
+	
 	cc.ConnectionInfo.COMPort = cc.userConfig.GetString(configKeyCOMPort)
 
 	cc.ConnectionInfo.BaudRate = cc.userConfig.GetInt(configKeyBaudRate)
