@@ -33,6 +33,7 @@ type SerialIO struct {
 	currentSliderPercentValues []float32
 
 	sliderMoveConsumers []chan SliderMoveEvent
+	serialErrorChannel  chan error // Add this line
 }
 
 // SliderMoveEvent represents a single slider move captured by deej
@@ -55,12 +56,15 @@ func NewSerialIO(deej *Deej, logger *zap.SugaredLogger) (*SerialIO, error) {
 		connected:           false,
 		conn:                nil,
 		sliderMoveConsumers: []chan SliderMoveEvent{},
+		serialErrorChannel:  make(chan error, 1),
 	}
 
 	logger.Debug("Created serial i/o instance")
 
 	// respond to config changes
 	sio.setupOnConfigReload()
+
+	go sio.handleSerialErrors()
 
 	return sio, nil
 }
@@ -209,8 +213,7 @@ func (sio *SerialIO) readLine(logger *zap.SugaredLogger, reader *bufio.Reader) c
 				if sio.deej.Verbose() {
 					logger.Warnw("Failed to read line from serial", "error", err, "line", line)
 				}
-
-				// just ignore the line, the read loop will stop after this
+				sio.serialErrorChannel <- err
 				return
 			}
 
@@ -302,6 +305,20 @@ func (sio *SerialIO) handleLine(logger *zap.SugaredLogger, line string) {
 			for _, moveEvent := range moveEvents {
 				consumer <- moveEvent
 			}
+		}
+	}
+}
+
+func (sio *SerialIO) handleSerialErrors() {
+	for {
+		err := <-sio.serialErrorChannel
+		sio.logger.Warnw("Serial connection lost, attempting to restart", "error", err)
+		sio.Stop()
+		time.Sleep(2 * time.Second) // Wait before retrying
+		if err := sio.Start(); err != nil {
+			sio.logger.Errorw("Failed to restart serial connection", "error", err)
+			// Optionally, you could retry again after a delay
+			time.Sleep(5 * time.Second)
 		}
 	}
 }
