@@ -97,7 +97,6 @@ func (m *sessionMap) release() error {
 // assumes the session map is clean!
 // only call on a new session map or as part of refreshSessions which calls reset
 func (m *sessionMap) getAndAddSessions() error {
-
 	// mark that we're refreshing before anything else
 	m.lastSessionRefresh = time.Now()
 	m.unmappedSessions = nil
@@ -143,7 +142,7 @@ func (m *sessionMap) setupOnSliderMove() {
 		for {
 			select {
 			case event := <-sliderEventsChannel:
-				m.handleSliderMoveEvent(event)
+				m.handleSliderEvent(event)
 			}
 		}
 	}()
@@ -151,7 +150,6 @@ func (m *sessionMap) setupOnSliderMove() {
 
 // performance: explain why force == true at every such use to avoid unintended forced refresh spams
 func (m *sessionMap) refreshSessions(force bool) {
-
 	// make sure enough time passed since the last refresh, unless force is true in which case always clear
 	if !force && m.lastSessionRefresh.Add(minTimeBetweenSessionRefreshes).After(time.Now()) {
 		return
@@ -171,7 +169,6 @@ func (m *sessionMap) refreshSessions(force bool) {
 // special sessions (master, system, mic) and device-specific sessions always count as mapped,
 // even when absent from the config. this makes sense for every current feature that uses "unmapped sessions"
 func (m *sessionMap) sessionMapped(session Session) bool {
-
 	// count master/system/mic as mapped
 	if funk.ContainsString([]string{masterSessionName, systemSessionName, inputSessionName}, session.Key()) {
 		return true
@@ -206,8 +203,40 @@ func (m *sessionMap) sessionMapped(session Session) bool {
 	return matchFound
 }
 
-func (m *sessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
+func (m *sessionMap) getCurrentVolume(sliderIdx int) float32 {
+	targets, ok := m.deej.config.SliderMapping.get(sliderIdx)
 
+	if !ok {
+		m.logger.Warnw("SessionMap getCurrentVolume: couldn't find mapping for slider", "sliderIdx", sliderIdx)
+		return -1
+	}
+
+	for _, target := range targets {
+
+		// resolve the target name by cleaning it up and applying any special transformations.
+		// depending on the transformation applied, this can result in more than one target name
+		resolvedTargets := m.resolveTarget(target)
+
+		// for each resolved target...
+		for _, resolvedTarget := range resolvedTargets {
+
+			// check the map for matching sessions
+			sessions, ok := m.get(resolvedTarget)
+
+			// no sessions matching this target - move on
+			if !ok {
+				continue
+			}
+
+			return sessions[0].GetVolume()
+		}
+	}
+
+	m.logger.Warnw("SessionMap getCurrentVolume: couldn't find the session. returning -1", "sliderIdx", sliderIdx)
+	return -1
+}
+
+func (m *sessionMap) handleSliderEvent(event SliderEvent) {
 	// first of all, ensure our session map isn't moldy
 	if m.lastSessionRefresh.Add(maxTimeBetweenSessionRefreshes).Before(time.Now()) {
 		m.logger.Debug("Stale session map detected on slider move, refreshing")
@@ -247,9 +276,24 @@ func (m *sessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
 
 			// iterate all matching sessions and adjust the volume of each one
 			for _, session := range sessions {
+				if target == specialTargetTransformPrefix+specialTargetCurrentWindow {
+					if m.sessionMapped(session) {
+						continue
+					}
+				}
+
 				if session.GetVolume() != event.PercentValue {
 					if err := session.SetVolume(event.PercentValue); err != nil {
 						m.logger.Warnw("Failed to set target session volume", "error", err)
+						adjustmentFailed = true
+					}
+				}
+
+				if event.ToggleMute {
+					sessionMute := session.GetMute()
+
+					if err := session.SetMute(!sessionMute); err != nil {
+						m.logger.Warnw("Failed to set target session mute", "error", err)
 						adjustmentFailed = true
 					}
 				}
@@ -263,7 +307,6 @@ func (m *sessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
 	if !targetFound {
 		m.refreshSessions(false)
 	} else if adjustmentFailed {
-
 		// performance: the reason that forcing a refresh here is okay is that we'll only get here
 		// when a session's SetVolume call errored, such as in the case of a stale master session
 		// (or another, more catastrophic failure happens)
@@ -276,7 +319,6 @@ func (m *sessionMap) targetHasSpecialTransform(target string) bool {
 }
 
 func (m *sessionMap) resolveTarget(target string) []string {
-
 	// start by ignoring the case
 	target = strings.ToLower(target)
 
@@ -289,14 +331,12 @@ func (m *sessionMap) resolveTarget(target string) []string {
 }
 
 func (m *sessionMap) applyTargetTransform(specialTargetName string) []string {
-
 	// select the transformation based on its name
 	switch specialTargetName {
 
 	// get current active window
 	case specialTargetCurrentWindow:
 		currentWindowProcessNames, err := util.GetCurrentWindowProcessNames()
-
 		// silently ignore errors here, as this is on deej's "hot path" (and it could just mean the user's running linux)
 		if err != nil {
 			return nil

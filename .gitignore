@@ -12,3 +12,4 @@ releases/
 *.bin
 logs/
 preferences.yaml
+.idea/

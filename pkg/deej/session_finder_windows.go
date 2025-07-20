@@ -3,6 +3,7 @@ package deej
 import (
 	"errors"
 	"fmt"
+	"runtime"
 	"strings"
 	"syscall"
 	"time"
@@ -55,6 +56,9 @@ func newSessionFinder(logger *zap.SugaredLogger) (SessionFinder, error) {
 }
 
 func (sf *wcaSessionFinder) GetAllSessions() ([]Session, error) {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	sessions := []Session{}
 
 	// we must call this every time we're about to list devices, i think. could be wrong
@@ -148,7 +152,6 @@ func (sf *wcaSessionFinder) GetAllSessions() ([]Session, error) {
 }
 
 func (sf *wcaSessionFinder) Release() error {
-
 	// skip unregistering the mmnotificationclient, as it's not implemented in go-wca
 	if sf.mmDeviceEnumerator != nil {
 		sf.mmDeviceEnumerator.Release()
@@ -160,7 +163,6 @@ func (sf *wcaSessionFinder) Release() error {
 }
 
 func (sf *wcaSessionFinder) getDeviceEnumerator() error {
-
 	// get the IMMDeviceEnumerator (only once)
 	if sf.mmDeviceEnumerator == nil {
 		if err := wca.CoCreateInstance(
@@ -179,7 +181,6 @@ func (sf *wcaSessionFinder) getDeviceEnumerator() error {
 }
 
 func (sf *wcaSessionFinder) getDefaultAudioEndpoints() (*wca.IMMDevice, *wca.IMMDevice, error) {
-
 	// get the default audio endpoints as IMMDevice instances
 	var mmOutDevice *wca.IMMDevice
 	var mmInDevice *wca.IMMDevice
@@ -222,7 +223,6 @@ func (sf *wcaSessionFinder) registerDefaultDeviceChangeCallback() error {
 }
 
 func (sf *wcaSessionFinder) getMasterSession(mmDevice *wca.IMMDevice, key string, loggerKey string) (*masterSession, error) {
-
 	var audioEndpointVolume *wca.IAudioEndpointVolume
 
 	if err := mmDevice.Activate(wca.IID_IAudioEndpointVolume, wca.CLSCTX_ALL, nil, &audioEndpointVolume); err != nil {
@@ -241,7 +241,6 @@ func (sf *wcaSessionFinder) getMasterSession(mmDevice *wca.IMMDevice, key string
 }
 
 func (sf *wcaSessionFinder) enumerateAndAddSessions(sessions *[]Session) error {
-
 	// get list of devices
 	var deviceCollection *wca.IMMDeviceCollection
 
@@ -355,7 +354,6 @@ func (sf *wcaSessionFinder) enumerateAndAddSessions(sessions *[]Session) error {
 		newSession, err := sf.getMasterSession(endpoint,
 			endpointFriendlyName,
 			fmt.Sprintf(deviceSessionFormat, endpointDescription))
-
 		if err != nil {
 			sf.logger.Warnw("Failed to get master session for device",
 				"deviceIdx", deviceIdx,
@@ -376,7 +374,6 @@ func (sf *wcaSessionFinder) enumerateAndAddProcessSessions(
 	endpointFriendlyName string,
 	sessions *[]Session,
 ) error {
-
 	sf.logger.Debugw("Enumerating and adding process sessions for audio output device",
 		"deviceFriendlyName", endpointFriendlyName)
 
@@ -515,7 +512,6 @@ func (sf *wcaSessionFinder) defaultDeviceChangedCallback(
 	EDataFlow, eRole uint32,
 	lpcwstr uintptr,
 ) (hResult uintptr) {
-
 	// filter out calls that happen in rapid succession
 	now := time.Now()
 
@@ -536,6 +532,7 @@ func (sf *wcaSessionFinder) defaultDeviceChangedCallback(
 
 	return
 }
+
 func (sf *wcaSessionFinder) noopCallback() (hResult uintptr) {
 	return
 }

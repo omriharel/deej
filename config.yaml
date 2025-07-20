@@ -7,21 +7,28 @@
 # windows only - you can use 'system' to control the "system sounds" volume
 # important: slider indexes start at 0, regardless of which analog pins you're using!
 slider_mapping:
-  0: master
-  1: chrome.exe
-  2: spotify.exe
-  3:
-    - pathofexile_x64.exe
-    - rocketleague.exe
-  4: discord.exe
+  0:
+    - spotify.exe
+    - JellyfinMediaPlayer.exe
+    - vivaldi.exe
+  1: discord.exe
+  2: UnrealEditor-Win64-DebugGame.exe
+  3: master
+  4: deej.current
+
+# an array of slider indices that should be considered additive. These sliders' values would not replace the volume but be added to the current volume instead.
+# it's primarily used for rotary encoders
+additive_indices: [3, 4]
+use_log_volume: true
 
 # set this to true if you want the controls inverted (i.e. top is 0%, bottom is 100%)
 invert_sliders: false
 
 # settings for connecting to the arduino board
-com_port: COM4
+com_port: COM5
 baud_rate: 9600
 
 # adjust the amount of signal noise reduction depending on your hardware quality
 # supported values are "low" (excellent hardware), "default" (regular hardware) or "high" (bad, noisy hardware)
-noise_reduction: default
+# new value: "extraLow" (0.01 - for cleaning on the hardware)
+noise_reduction: extraLow

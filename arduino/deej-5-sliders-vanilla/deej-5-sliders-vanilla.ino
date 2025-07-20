@@ -1,10 +1,10 @@
-const int NUM_SLIDERS = 5;
-const int analogInputs[NUM_SLIDERS] = {A0, A1, A2, A3, A4};
+const int NUM_POTS = 5;
+const int analogInputs[NUM_POTS] = {A0, A1, A2, A3, A4};
 
-int analogSliderValues[NUM_SLIDERS];
+int analogSliderValues[NUM_POTS];
 
 void setup() { 
-  for (int i = 0; i < NUM_SLIDERS; i++) {
+  for (int i = 0; i < NUM_POTS; i++) {
     pinMode(analogInputs[i], INPUT);
   }
 
@@ -19,7 +19,7 @@ void loop() {
 }
 
 void updateSliderValues() {
-  for (int i = 0; i < NUM_SLIDERS; i++) {
+  for (int i = 0; i < NUM_POTS; i++) {
      analogSliderValues[i] = analogRead(analogInputs[i]);
   }
 }
@@ -27,10 +27,10 @@ void updateSliderValues() {
 void sendSliderValues() {
   String builtString = String("");
 
-  for (int i = 0; i < NUM_SLIDERS; i++) {
+  for (int i = 0; i < NUM_POTS; i++) {
     builtString += String((int)analogSliderValues[i]);
 
-    if (i < NUM_SLIDERS - 1) {
+    if (i < NUM_POTS - 1) {
       builtString += String("|");
     }
   }
@@ -39,11 +39,11 @@ void sendSliderValues() {
 }
 
 void printSliderValues() {
-  for (int i = 0; i < NUM_SLIDERS; i++) {
+  for (int i = 0; i < NUM_POTS; i++) {
     String printedString = String("Slider #") + String(i + 1) + String(": ") + String(analogSliderValues[i]) + String(" mV");
     Serial.write(printedString.c_str());
 
-    if (i < NUM_SLIDERS - 1) {
+    if (i < NUM_POTS - 1) {
       Serial.write(" | ");
     } else {
       Serial.write("\n");

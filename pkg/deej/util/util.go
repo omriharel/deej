@@ -54,7 +54,6 @@ func GetCurrentWindowProcessNames() ([]string, error) {
 
 // OpenExternal spawns a detached window with the provided command and argument
 func OpenExternal(logger *zap.SugaredLogger, cmd string, arg string) error {
-
 	// use cmd for windows, bash for linux
 	execCommandArgs := []string{"cmd.exe", "/C", "start", "/b", cmd, arg}
 	if Linux() {
@@ -83,10 +82,10 @@ func NormalizeScalar(v float32) float32 {
 
 // SignificantlyDifferent returns true if there's a significant enough volume difference between two given values
 func SignificantlyDifferent(old float32, new float32, noiseReductionLevel string) bool {
-
 	const (
-		noiseReductionHigh = "high"
-		noiseReductionLow  = "low"
+		noiseReductionHigh     = "high"
+		noiseReductionLow      = "low"
+		noiseReductionExtraLow = "extraLow"
 	)
 
 	// this threshold is solely responsible for dealing with hardware interference when
@@ -101,6 +100,9 @@ func SignificantlyDifferent(old float32, new float32, noiseReductionLevel string
 		break
 	case noiseReductionLow:
 		significantDifferenceThreshold = 0.015
+		break
+	case noiseReductionExtraLow:
+		significantDifferenceThreshold = 0.01
 		break
 	default:
 		significantDifferenceThreshold = 0.025
