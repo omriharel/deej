@@ -148,7 +148,7 @@ In case you prefer watching to reading, Charles from the [**Tech Always**](https
 
 With many different 3D-printed designs being added to our [community showcase](./community.md), it felt right to gather all of them in a Thingiverse collection for you to browse. If you have access to a 3D printer, feel free to use one of the designs in your build.
 
-**[Visit our community-created design collection on Thingiverse!](https://thingiverse.com/omriharel/collections/deej)**
+**[Visit our community-created design collection on Thingiverse!](https://www.thingiverse.com/omriharel/collections/19383159/things)**
 
 > You can also [submit your own](https://discord.gg/nf88NJu) design to be added to the collection. Regardless, if you do upload your design to Thingiverse, _please add a `deej` tag to it so that others can find it more easily_.
 

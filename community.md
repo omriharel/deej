@@ -2,7 +2,7 @@
 
 This is a showcase of `deej` versions built by people around the world. Many of those who featured their builds here regularly hang around in [our Discord server](https://discord.gg/nf88NJu), so you can ask them any questions you might have.
 
-We've also gathered many of the community-created 3D designs featured here in a [Thingiverse collection](https://thingiverse.com/omriharel/collections/deej) for your viewing pleasure. Feel free to use them for your own builds if you have access to a 3D printer.
+We've also gathered many of the community-created 3D designs featured here in a [Thingiverse collection](https://www.thingiverse.com/omriharel/collections/19383159/things) for your viewing pleasure. Feel free to use them for your own builds if you have access to a 3D printer.
 
 If you built yourself one of these things, I'd love to [add yours](https://discord.gg/nf88NJu)!
 
