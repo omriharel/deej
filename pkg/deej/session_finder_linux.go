@@ -130,7 +130,13 @@ func (sf *paSessionFinder) enumerateAndAddSessions(sessions *[]Session) error {
 
 	for _, info := range reply {
 		name, ok := info.Properties["application.process.binary"]
-
+		
+		// Handle apps running indirectly (like ALSA over PipeWire) that don't provide a binary name
+		if !ok {
+			name, ok = info.Properties["application.name"]
+		}
+		// ------------
+		
 		if !ok {
 			sf.logger.Warnw("Failed to get sink input's process name",
 				"sinkInputIndex", info.SinkInputIndex)

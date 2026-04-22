@@ -116,8 +116,8 @@ func SignificantlyDifferent(old float32, new float32, noiseReductionLevel string
 		return true
 	}
 
-	// values are close enough to not warrant any action
-	return false
+	// fix: (return false -> return true) although values are very close, invoke the action nevertheless
+	return true
 }
 
 // a helper to make sure volume snaps correctly to 0 and 100, where appropriate
