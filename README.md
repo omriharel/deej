@@ -73,7 +73,7 @@ deej is written in Go and [distributed](https://github.com/omriharel/deej/releas
 
 ## Slider mapping (configuration)
 
-deej uses a simple YAML-formatted configuration file named [`config.yaml`](./config.yaml), placed alongside the deej executable.
+deej uses a simple YAML-formatted configuration file named [`config.yaml`](./config.yaml), placed alongside the deej executable. Alternatively, you can set the `DEEJ_CONFIG` environment variable to specify a custom path to the configuration file (e.g. `DEEJ_CONFIG=/path/to/my-config.yaml`).
 
 The config file determines which applications (and devices) are mapped to which sliders, and which parameters to use for the connection to the Arduino board, as well as other user preferences.
 
@@ -178,7 +178,7 @@ With many different 3D-printed designs being added to our [community showcase](.
 ### Download and installation
 
 - Head over to the [releases page](https://github.com/omriharel/deej/releases) and download the [latest version](https://github.com/omriharel/deej/releases/latest)'s executable and configuration file (`deej.exe` and `config.yaml`)
-- Place them in the same directory anywhere on your machine
+- Place them in the same directory anywhere on your machine, or set the `DEEJ_CONFIG` environment variable to point to your config file's location
 - (Optional, on Windows) Create a shortcut to `deej.exe` and copy it to `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup` to have deej run on boot
 
 ### Building from source

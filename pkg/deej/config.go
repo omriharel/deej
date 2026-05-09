@@ -2,7 +2,9 @@ package deej
 
 import (
 	"fmt"
+	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -38,13 +40,9 @@ type CanonicalConfig struct {
 }
 
 const (
-	userConfigFilepath     = "config.yaml"
 	internalConfigFilepath = "preferences.yaml"
 
-	userConfigName     = "config"
 	internalConfigName = "preferences"
-
-	userConfigPath = "."
 
 	configType = "yaml"
 
@@ -54,9 +52,20 @@ const (
 	configKeyBaudRate            = "baud_rate"
 	configKeyNoiseReductionLevel = "noise_reduction"
 
-	defaultCOMPort  = "COM4"
-	defaultBaudRate = 9600
+	defaultCOMPort         = "COM4"
+	defaultBaudRate        = 9600
+	defaultUserConfigPath  = "config.yaml"
+	configEnvVar           = "DEEJ_CONFIG"
 )
+
+var userConfigFilepath = resolveUserConfigPath()
+
+func resolveUserConfigPath() string {
+	if envPath := os.Getenv(configEnvVar); envPath != "" {
+		return envPath
+	}
+	return defaultUserConfigPath
+}
 
 // has to be defined as a non-constant because we're using path.Join
 var internalConfigPath = path.Join(".", logDirectory)
@@ -81,9 +90,9 @@ func NewConfig(logger *zap.SugaredLogger, notifier Notifier) (*CanonicalConfig, 
 
 	// distinguish between the user-provided config (config.yaml) and the internal config (logs/preferences.yaml)
 	userConfig := viper.New()
-	userConfig.SetConfigName(userConfigName)
+	userConfig.SetConfigName(strings.TrimSuffix(filepath.Base(userConfigFilepath), filepath.Ext(userConfigFilepath)))
 	userConfig.SetConfigType(configType)
-	userConfig.AddConfigPath(userConfigPath)
+	userConfig.AddConfigPath(filepath.Dir(userConfigFilepath))
 
 	userConfig.SetDefault(configKeySliderMapping, map[string][]string{})
 	userConfig.SetDefault(configKeyInvertSliders, false)
@@ -111,7 +120,7 @@ func (cc *CanonicalConfig) Load() error {
 	if !util.FileExists(userConfigFilepath) {
 		cc.logger.Warnw("Config file not found", "path", userConfigFilepath)
 		cc.notifier.Notify("Can't find configuration!",
-			fmt.Sprintf("%s must be in the same directory as deej. Please re-launch", userConfigFilepath))
+			fmt.Sprintf("Config file not found at %s. Set the %s environment variable or place config.yaml in the same directory as deej.", userConfigFilepath, configEnvVar))
 
 		return fmt.Errorf("config file doesn't exist: %s", userConfigFilepath)
 	}
