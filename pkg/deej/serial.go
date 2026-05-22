@@ -104,6 +104,10 @@ func (sio *SerialIO) Start() error {
 		return fmt.Errorf("open serial connection: %w", err)
 	}
 
+	//Adds a small wait time for the 2024 driver to initialize
+	sio.logger.Debug("Connection opened, waiting for hardware to settle...")
+	time.Sleep(2 * time.Second)
+
 	namedLogger := sio.logger.Named(strings.ToLower(sio.connOptions.PortName))
 
 	namedLogger.Infow("Connected", "conn", sio.conn)
