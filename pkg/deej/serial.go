@@ -83,11 +83,12 @@ func (sio *SerialIO) Start() error {
 	}
 
 	sio.connOptions = serial.OpenOptions{
-		PortName:        sio.deej.config.ConnectionInfo.COMPort,
-		BaudRate:        uint(sio.deej.config.ConnectionInfo.BaudRate),
-		DataBits:        8,
-		StopBits:        1,
-		MinimumReadSize: uint(minimumReadSize),
+		PortName:              sio.deej.config.ConnectionInfo.COMPort,
+		BaudRate:              uint(sio.deej.config.ConnectionInfo.BaudRate),
+		DataBits:              8,
+		StopBits:              1,
+		MinimumReadSize:       uint(minimumReadSize),
+		InterCharacterTimeout: 100, // prevents blocking reads from hanging the serial thread during desyncs
 	}
 
 	sio.logger.Debugw("Attempting serial connection",
@@ -103,6 +104,10 @@ func (sio *SerialIO) Start() error {
 		sio.logger.Warnw("Failed to open serial connection", "error", err)
 		return fmt.Errorf("open serial connection: %w", err)
 	}
+
+	//Adds a small wait time for the 2024 driver to initialize
+	sio.logger.Debug("Connection opened, waiting for hardware to settle...")
+	time.Sleep(2 * time.Second)
 
 	namedLogger := sio.logger.Named(strings.ToLower(sio.connOptions.PortName))
 
