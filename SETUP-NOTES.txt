@@ -449,6 +449,13 @@ If deej.current stops working:
   - check deej logs for niri IPC errors
   - verify the mapping in ~/.config/deej/config.yaml
 
+XWayland/Proton games need special handling because niri may report the
+xwayland-satellite PID and a steam_app_* app_id instead of the game process.
+Deej now also matches the normalized window title against the audio client's
+application.name. Example: "Watch_Dogs 2" normalizes to "watchdogs2" and
+matches the Wine session whose application.name is "WatchDogs2", even though
+application.process.binary is "wine64-preloader".
+
 
 ===============================================================================
 10. USEFUL DEBUG COMMANDS

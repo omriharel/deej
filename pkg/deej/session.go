@@ -27,6 +27,14 @@ type staleAwareSession interface {
 	IsStale() bool
 }
 
+// sessionAliasProvider is implemented by sessions that can be addressed by
+// more than one name. Linux audio clients sometimes report a generic binary
+// name (e.g. wine64-preloader) while the useful name is the application name
+// (e.g. WatchDogs2).
+type sessionAliasProvider interface {
+	Aliases() []string
+}
+
 const (
 
 	// ideally these would share a common ground in baseSession

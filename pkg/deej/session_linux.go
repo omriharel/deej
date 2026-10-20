@@ -19,6 +19,7 @@ type paSession struct {
 	baseSession
 
 	processName string
+	appName     string
 
 	client *proto.Client
 
@@ -47,6 +48,7 @@ func newPASession(
 	sinkInputIndex uint32,
 	sinkInputChannels byte,
 	processName string,
+	appName string,
 ) *paSession {
 
 	s := &paSession{
@@ -56,6 +58,7 @@ func newPASession(
 	}
 
 	s.processName = processName
+	s.appName = appName
 	s.name = processName
 	s.humanReadableDesc = processName
 
@@ -139,6 +142,10 @@ func (s *paSession) SetVolume(v float32) error {
 
 func (s *paSession) IsStale() bool {
 	return s.stale.Load()
+}
+
+func (s *paSession) Aliases() []string {
+	return []string{s.processName, s.appName}
 }
 
 func (s *paSession) Release() {

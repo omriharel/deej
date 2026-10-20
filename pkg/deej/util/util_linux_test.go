@@ -39,7 +39,7 @@ func TestGetCurrentWindowProcessNamesFromNiri(t *testing.T) {
 		}
 		requestReceived <- strings.TrimSpace(line)
 
-		response := fmt.Sprintf(`{"Ok":{"FocusedWindow":{"app_id":"test-app","pid":%d,"title":"test window"}}}`, os.Getpid())
+		response := fmt.Sprintf(`{"Ok":{"FocusedWindow":{"app_id":"test-app","pid":%d,"title":"Watch_Dogs 2"}}}`, os.Getpid())
 		conn.Write([]byte(response + "\n"))
 	}()
 
@@ -70,12 +70,19 @@ func TestGetCurrentWindowProcessNamesFromNiri(t *testing.T) {
 	}
 
 	foundAppID := false
+	foundNormalizedTitle := false
 	for _, name := range names {
 		if name == "test-app" {
 			foundAppID = true
 		}
+		if name == "watchdogs2" {
+			foundNormalizedTitle = true
+		}
 	}
 	if !foundAppID {
 		t.Errorf("expected app_id in process names, got %v", names)
+	}
+	if !foundNormalizedTitle {
+		t.Errorf("expected normalized title in process names, got %v", names)
 	}
 }

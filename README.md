@@ -192,7 +192,7 @@ Like other Go packages, you can also use the `go get` tool: `go get -u github.co
 This fork includes a few Linux-specific improvements for a headless desktop setup:
 
 - **Automatic serial detection and reconnect.** Set `com_port: auto` to discover a USB serial board (CH340, CP210x, FTDI, Arduino) even when its `/dev/ttyUSB*` name changes. Optional `usb_vid`/`usb_pid` settings can select a specific board. If the board is unplugged, deej keeps retrying instead of exiting.
-- **`deej.current` under niri.** The active window is read from niri's IPC socket (`$NIRI_SOCKET`), so one slider can follow whichever app is focused.
+- **`deej.current` under niri.** The active window is read from niri's IPC socket (`$NIRI_SOCKET`), so one slider can follow whichever app is focused. Process names, `app_id`, and normalized window titles are matched, which also covers XWayland/Proton games where niri reports `xwayland-satellite` as the focused PID.
 - **`master` follows the default output.** Switching between speakers and headphones, or changing the default sink, takes effect on the next slider movement.
 - **Better native PipeWire/Flatpak support.** When a sink input omits `application.process.binary`, deej falls back to `application.name` (adapted from [PR #172](https://github.com/omriharel/deej/pull/172)).
 - **Headless build.** On niri or another setup without a system tray, build with the `headless` tag. It doesn't require GTK, AppIndicator or WebKit:

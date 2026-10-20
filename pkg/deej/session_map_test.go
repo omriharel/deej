@@ -13,6 +13,7 @@ type fakeSession struct {
 
 	volume   float32
 	stale    bool
+	aliases  []string
 	setCalls int
 }
 
@@ -30,6 +31,10 @@ func (s *fakeSession) IsStale() bool {
 	return s.stale
 }
 
+func (s *fakeSession) Aliases() []string {
+	return s.aliases
+}
+
 func (s *fakeSession) Release() {}
 
 type fakeSessionFinder struct {
@@ -42,6 +47,34 @@ func (f *fakeSessionFinder) GetAllSessions() ([]Session, error) {
 
 func (f *fakeSessionFinder) Release() error {
 	return nil
+}
+
+func TestSessionMapFindsSessionByNormalizedAlias(t *testing.T) {
+	session := &fakeSession{
+		baseSession: baseSession{name: "wine64-preloader"},
+		aliases:     []string{"WatchDogs2"},
+	}
+
+	m := &sessionMap{
+		m:    map[string][]Session{},
+		lock: &sync.Mutex{},
+	}
+
+	m.add(session)
+
+	matches, ok := m.get("Watch_Dogs 2")
+	if !ok {
+		t.Fatal("expected to find session by normalized title")
+	}
+
+	if len(matches) != 1 || matches[0] != session {
+		t.Fatalf("unexpected alias matches: %#v", matches)
+	}
+
+	exactMatches, ok := m.get("wine64-preloader")
+	if !ok || len(exactMatches) != 1 || exactMatches[0] != session {
+		t.Fatalf("unexpected exact matches: %#v", exactMatches)
+	}
 }
 
 func TestHandleSliderMoveEventRetriesStaleSession(t *testing.T) {

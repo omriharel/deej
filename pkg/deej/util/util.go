@@ -7,7 +7,9 @@ import (
 	"os/exec"
 	"os/signal"
 	"runtime"
+	"strings"
 	"syscall"
+	"unicode"
 
 	"go.uber.org/zap"
 )
@@ -45,10 +47,26 @@ func SetupCloseHandler() chan os.Signal {
 	return c
 }
 
+// NormalizeName lowercases a name and removes everything except letters and
+// digits. It lets deej match window titles, desktop app names, and audio client
+// names that differ only in spacing or punctuation (for example, "Watch_Dogs 2"
+// and "WatchDogs2").
+func NormalizeName(value string) string {
+	var builder strings.Builder
+
+	for _, char := range strings.ToLower(value) {
+		if unicode.IsLetter(char) || unicode.IsDigit(char) {
+			builder.WriteRune(char)
+		}
+	}
+
+	return builder.String()
+}
+
 // GetCurrentWindowProcessNames returns plausible process names (including
 // extension, if applicable) for the current foreground window. On Windows this
 // includes child processes belonging to the window; on Linux under niri it
-// returns the focused app's executable and app_id.
+// returns the focused app's executable, app_id, and window title.
 func GetCurrentWindowProcessNames() ([]string, error) {
 	return getCurrentWindowProcessNames()
 }

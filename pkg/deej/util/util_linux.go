@@ -29,9 +29,10 @@ type niriReply struct {
 
 // getCurrentWindowProcessNames queries niri's IPC for the focused window and
 // returns every plausible process name for it: the process executable, the
-// executable's basename, and the window's app_id. This covers native Wayland
-// apps as well as XWayland apps (where niri may report xwayland-satellite as
-// the PID).
+// executable's basename, the window's app_id, and the window title. This covers
+// native Wayland apps as well as XWayland apps (where niri may report
+// xwayland-satellite as the PID, so the title is often the only link to the
+// game's audio stream).
 func getCurrentWindowProcessNames() ([]string, error) {
 	window, err := getNiriFocusedWindow()
 	if err != nil {
@@ -58,6 +59,15 @@ func getCurrentWindowProcessNames() ([]string, error) {
 
 	if window.AppID != "" {
 		names = append(names, window.AppID)
+	}
+
+	if window.Title != "" {
+		names = append(names, window.Title)
+
+		normalizedTitle := NormalizeName(window.Title)
+		if normalizedTitle != "" {
+			names = append(names, normalizedTitle)
+		}
 	}
 
 	return uniqueNonEmpty(names), nil

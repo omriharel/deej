@@ -16,8 +16,9 @@ type sessionMap struct {
 	deej   *Deej
 	logger *zap.SugaredLogger
 
-	m    map[string][]Session
-	lock sync.Locker
+	m       map[string][]Session
+	aliases map[string][]Session
+	lock    sync.Locker
 
 	sessionFinder SessionFinder
 
@@ -64,6 +65,7 @@ func newSessionMap(deej *Deej, logger *zap.SugaredLogger, sessionFinder SessionF
 		deej:          deej,
 		logger:        logger,
 		m:             make(map[string][]Session),
+		aliases:       make(map[string][]Session),
 		lock:          &sync.Mutex{},
 		sessionFinder: sessionFinder,
 	}
@@ -196,7 +198,7 @@ func (m *sessionMap) sessionMapped(session Session) bool {
 			// safe to assume this has a single element because we made sure there's no special transform
 			target = m.resolveTarget(target)[0]
 
-			if target == session.Key() {
+			if m.sessionMatchesKey(session, target) {
 				matchFound = true
 				return
 			}
@@ -204,6 +206,30 @@ func (m *sessionMap) sessionMapped(session Session) bool {
 	})
 
 	return matchFound
+}
+
+func (m *sessionMap) sessionMatchesKey(session Session, key string) bool {
+	if key == session.Key() {
+		return true
+	}
+
+	aliasProvider, ok := session.(sessionAliasProvider)
+	if !ok {
+		return false
+	}
+
+	normalizedKey := util.NormalizeName(key)
+	if normalizedKey == "" {
+		return false
+	}
+
+	for _, alias := range aliasProvider.Aliases() {
+		if util.NormalizeName(alias) == normalizedKey {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (m *sessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
@@ -373,14 +399,54 @@ func (m *sessionMap) add(value Session) {
 	} else {
 		m.m[key] = append(existing, value)
 	}
+
+	aliasProvider, ok := value.(sessionAliasProvider)
+	if !ok {
+		return
+	}
+
+	if m.aliases == nil {
+		m.aliases = make(map[string][]Session)
+	}
+
+	normalizedKey := util.NormalizeName(key)
+	seenAliases := make(map[string]struct{})
+
+	for _, alias := range aliasProvider.Aliases() {
+		alias = util.NormalizeName(alias)
+		if alias == "" || alias == normalizedKey {
+			continue
+		}
+
+		if _, exists := seenAliases[alias]; exists {
+			continue
+		}
+		seenAliases[alias] = struct{}{}
+
+		m.aliases[alias] = append(m.aliases[alias], value)
+	}
 }
 
 func (m *sessionMap) get(key string) ([]Session, bool) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	value, ok := m.m[key]
-	return value, ok
+	sessions := []Session{}
+
+	if exactMatches, ok := m.m[key]; ok {
+		sessions = append(sessions, exactMatches...)
+	}
+
+	normalizedKey := util.NormalizeName(key)
+	if normalizedKey != "" {
+		sessions = append(sessions, m.aliases[normalizedKey]...)
+	}
+
+	if len(sessions) == 0 {
+		return nil, false
+	}
+
+	return sessions, true
 }
 
 func (m *sessionMap) clear() {
@@ -396,6 +462,8 @@ func (m *sessionMap) clear() {
 
 		delete(m.m, key)
 	}
+
+	m.aliases = make(map[string][]Session)
 
 	m.logger.Debug("Session map cleared")
 }
