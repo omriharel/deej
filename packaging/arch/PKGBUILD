@@ -1,6 +1,6 @@
 # Maintainer: Magrid0
 pkgname=deej-git
-pkgver=0.9.10.r22.g6925ed8
+pkgver=0.9.10.r23.g79f4a88
 pkgrel=1
 pkgdesc="Open-source hardware volume mixer (Linux fork with auto serial detection and niri support)"
 arch=('x86_64' 'aarch64')

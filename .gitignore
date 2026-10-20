@@ -18,3 +18,4 @@ packaging/arch/src/
 packaging/arch/pkg/
 packaging/arch/*.pkg.tar.*
 packaging/arch/*.src.tar.*
+packaging/arch/deej-git/
