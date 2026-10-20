@@ -1,6 +1,6 @@
 pkgbase = deej-git
 	pkgdesc = Open-source hardware volume mixer (Linux fork with auto serial detection and niri support)
-	pkgver = 0.9.10.r24.g2a86e64
+	pkgver = 0.9.10.r28.g8d21852
 	pkgrel = 1
 	url = https://github.com/Magrid0/deej
 	install = deej.install
