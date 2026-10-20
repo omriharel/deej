@@ -146,10 +146,14 @@ publishing:
   makepkg --printsrcinfo > .SRCINFO
 
 Notes:
-  - The PKGBUILD currently has an uncommitted pkgver bump to
-    0.9.10.r24.g2a86e64. Check "git diff" before committing.
-  - packaging/arch/.SRCINFO is currently stale at r23.g79f4a88. Regenerate it
-    if you publish or share the package.
+  - PKGBUILD and .SRCINFO are committed at pkgver 0.9.10.r24.g2a86e64.
+  - Because this is a -git package, pkgver() recalculates the version from the
+    branch head every time makepkg runs. The committed pkgver is only a
+    starting value, so it may become r25, r26, etc. after new commits.
+  - makepkg may leave an updated pkgver in PKGBUILD after a build. That is
+    normal for a -git package; commit it or leave it local.
+  - Regenerate .SRCINFO whenever PKGBUILD metadata changes:
+      makepkg --printsrcinfo > .SRCINFO
   - makepkg creates packaging/arch/src, pkg, deej-git/, and *.pkg.tar.zst.
     These are ignored by .gitignore.
 
@@ -489,9 +493,9 @@ Check state:
 Push the branch:
   git push origin linux-autodetect-current-window
 
-Current uncommitted item:
-  packaging/arch/PKGBUILD has pkgver bumped to 0.9.10.r24.g2a86e64.
-  Commit it if you want the package metadata to match the built package.
+Package metadata:
+  packaging/arch/PKGBUILD and packaging/arch/.SRCINFO are committed at
+  pkgver 0.9.10.r24.g2a86e64.
 
 The installed package was built from commit 2a86e64 on the remote branch.
 If you move this folder, the installed package and systemd service are NOT
