@@ -19,6 +19,14 @@ type Session interface {
 	Release()
 }
 
+// staleAwareSession is implemented by sessions that can detect when their
+// underlying audio object no longer exists (for example, after an output
+// switch replaces a sink input). The session map uses this to refresh and
+// retry the same volume adjustment instead of dropping it.
+type staleAwareSession interface {
+	IsStale() bool
+}
+
 const (
 
 	// ideally these would share a common ground in baseSession

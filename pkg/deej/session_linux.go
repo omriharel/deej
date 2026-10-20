@@ -3,6 +3,7 @@ package deej
 import (
 	"errors"
 	"fmt"
+	"sync/atomic"
 
 	"go.uber.org/zap"
 
@@ -23,6 +24,11 @@ type paSession struct {
 
 	sinkInputIndex    uint32
 	sinkInputChannels byte
+
+	// set when the sink input no longer exists, e.g. after the default output
+	// changes. the session map refreshes and retries the adjustment when this
+	// is observed.
+	stale atomic.Bool
 }
 
 type masterSession struct {
@@ -100,8 +106,12 @@ func (s *paSession) GetVolume() float32 {
 	reply := proto.GetSinkInputInfoReply{}
 
 	if err := s.client.Request(&request, &reply); err != nil {
-		s.logger.Warnw("Failed to get session volume", "error", err)
+		s.stale.Store(true)
+		s.logger.Debugw("Failed to get session volume, marking session stale", "error", err)
+		return 0
 	}
+
+	s.stale.Store(false)
 
 	level := parseChannelVolumes(reply.ChannelVolumes)
 
@@ -116,13 +126,19 @@ func (s *paSession) SetVolume(v float32) error {
 	}
 
 	if err := s.client.Request(&request, nil); err != nil {
-		s.logger.Warnw("Failed to set session volume", "error", err)
+		s.stale.Store(true)
+		s.logger.Debugw("Failed to set session volume, marking session stale", "error", err)
 		return fmt.Errorf("adjust session volume: %w", err)
 	}
 
+	s.stale.Store(false)
 	s.logger.Debugw("Adjusting session volume", "to", fmt.Sprintf("%.2f", v))
 
 	return nil
+}
+
+func (s *paSession) IsStale() bool {
+	return s.stale.Load()
 }
 
 func (s *paSession) Release() {
@@ -265,6 +281,10 @@ func createChannelVolumes(channels byte, volume float32) []uint32 {
 }
 
 func parseChannelVolumes(volumes []uint32) float32 {
+	if len(volumes) == 0 {
+		return 0
+	}
+
 	var level uint32
 
 	for _, volume := range volumes {

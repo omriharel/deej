@@ -222,8 +222,45 @@ func (m *sessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
 		return
 	}
 
-	targetFound := false
-	adjustmentFailed := false
+	targetFound, adjustmentFailed, adjustmentError := m.adjustTargetVolume(targets, event.PercentValue)
+
+	// if we still haven't found a target, maybe look for the target again.
+	// processes could've opened since the last time this slider moved.
+	// if they haven't, the cooldown will take care to not spam it up
+	if !targetFound {
+		m.refreshSessions(false)
+
+		// apply the same slider value to sessions that just appeared
+		_, retryFailed, retryError := m.adjustTargetVolume(targets, event.PercentValue)
+		if retryFailed {
+			m.logger.Warnw("Failed to set target session volume after refresh", "error", retryError)
+		}
+
+		return
+	}
+
+	if !adjustmentFailed {
+		return
+	}
+
+	// the session may have disappeared or been replaced (for example, Firefox's
+	// sink input changes index when the default output changes). refresh now and
+	// retry the same adjustment so the slider movement isn't lost. this is safe
+	// to force because it only happens after a failed adjustment.
+	m.logger.Debugw("Volume adjustment failed, refreshing sessions and retrying", "error", adjustmentError)
+	m.refreshSessions(true)
+
+	if retryFound, retryFailed, retryError := m.adjustTargetVolume(targets, event.PercentValue); !retryFound {
+		m.logger.Debug("Target session disappeared after refresh")
+	} else if retryFailed {
+		m.logger.Warnw("Failed to set target session volume after refresh", "error", retryError)
+	}
+}
+
+// adjustTargetVolume applies the requested volume to every session matching the
+// given targets. It reports whether any target was found and, if an adjustment
+// failed, the last error encountered.
+func (m *sessionMap) adjustTargetVolume(targets []string, volume float32) (targetFound bool, adjustmentFailed bool, lastError error) {
 
 	// for each possible target for this slider...
 	for _, target := range targets {
@@ -247,28 +284,28 @@ func (m *sessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
 
 			// iterate all matching sessions and adjust the volume of each one
 			for _, session := range sessions {
-				if session.GetVolume() != event.PercentValue {
-					if err := session.SetVolume(event.PercentValue); err != nil {
-						m.logger.Warnw("Failed to set target session volume", "error", err)
+				currentVolume := session.GetVolume()
+
+				if stale, ok := session.(staleAwareSession); ok && stale.IsStale() {
+					adjustmentFailed = true
+					lastError = fmt.Errorf("session %q is stale", session.Key())
+					continue
+				}
+
+				if currentVolume != volume {
+					if err := session.SetVolume(volume); err != nil {
+						m.logger.Debugw("Failed to set target session volume",
+							"error", err,
+							"target", resolvedTarget)
 						adjustmentFailed = true
+						lastError = err
 					}
 				}
 			}
 		}
 	}
 
-	// if we still haven't found a target or the volume adjustment failed, maybe look for the target again.
-	// processes could've opened since the last time this slider moved.
-	// if they haven't, the cooldown will take care to not spam it up
-	if !targetFound {
-		m.refreshSessions(false)
-	} else if adjustmentFailed {
-
-		// performance: the reason that forcing a refresh here is okay is that we'll only get here
-		// when a session's SetVolume call errored, such as in the case of a stale master session
-		// (or another, more catastrophic failure happens)
-		m.refreshSessions(true)
-	}
+	return targetFound, adjustmentFailed, lastError
 }
 
 func (m *sessionMap) targetHasSpecialTransform(target string) bool {
