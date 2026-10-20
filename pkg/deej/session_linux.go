@@ -136,6 +136,10 @@ func (s *paSession) String() string {
 func (s *masterSession) GetVolume() float32 {
 	var level float32
 
+	// master follows the current default device, which can change when the
+	// user plugs in headphones or switches outputs
+	s.refreshDefault()
+
 	if s.isOutput {
 		request := proto.GetSinkInfo{
 			SinkIndex: s.streamIndex,
@@ -168,6 +172,8 @@ func (s *masterSession) GetVolume() float32 {
 func (s *masterSession) SetVolume(v float32) error {
 	var request proto.RequestArgs
 
+	s.refreshDefault()
+
 	volumes := createChannelVolumes(s.streamChannels, v)
 
 	if s.isOutput {
@@ -193,6 +199,51 @@ func (s *masterSession) SetVolume(v float32) error {
 	s.logger.Debugw("Adjusting session volume", "to", fmt.Sprintf("%.2f", v))
 
 	return nil
+}
+
+func (s *masterSession) refreshDefault() {
+	if s.isOutput {
+		request := proto.GetSinkInfo{
+			SinkIndex: proto.Undefined,
+		}
+		reply := proto.GetSinkInfoReply{}
+
+		if err := s.client.Request(&request, &reply); err != nil {
+			s.logger.Warnw("Failed to get default sink info", "error", err)
+			return
+		}
+
+		if s.streamIndex != reply.SinkIndex {
+			s.logger.Debugw("Default sink changed",
+				"oldIndex", s.streamIndex,
+				"newIndex", reply.SinkIndex,
+				"channels", reply.Channels)
+		}
+
+		s.streamIndex = reply.SinkIndex
+		s.streamChannels = reply.Channels
+		return
+	}
+
+	request := proto.GetSourceInfo{
+		SourceIndex: proto.Undefined,
+	}
+	reply := proto.GetSourceInfoReply{}
+
+	if err := s.client.Request(&request, &reply); err != nil {
+		s.logger.Warnw("Failed to get default source info", "error", err)
+		return
+	}
+
+	if s.streamIndex != reply.SourceIndex {
+		s.logger.Debugw("Default source changed",
+			"oldIndex", s.streamIndex,
+			"newIndex", reply.SourceIndex,
+			"channels", reply.Channels)
+	}
+
+	s.streamIndex = reply.SourceIndex
+	s.streamChannels = reply.Channels
 }
 
 func (s *masterSession) Release() {

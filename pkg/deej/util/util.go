@@ -39,15 +39,16 @@ func Linux() bool {
 // SetupCloseHandler creates a 'listener' on a new goroutine which will notify the
 // program if it receives an interrupt from the OS
 func SetupCloseHandler() chan os.Signal {
-	c := make(chan os.Signal)
+	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
 	return c
 }
 
-// GetCurrentWindowProcessNames returns the process names (including extension, if applicable)
-// of the current foreground window. This includes child processes belonging to the window.
-// This is currently only implemented for Windows
+// GetCurrentWindowProcessNames returns plausible process names (including
+// extension, if applicable) for the current foreground window. On Windows this
+// includes child processes belonging to the window; on Linux under niri it
+// returns the focused app's executable and app_id.
 func GetCurrentWindowProcessNames() ([]string, error) {
 	return getCurrentWindowProcessNames()
 }

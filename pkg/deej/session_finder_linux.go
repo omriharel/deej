@@ -131,6 +131,14 @@ func (sf *paSessionFinder) enumerateAndAddSessions(sessions *[]Session) error {
 	for _, info := range reply {
 		name, ok := info.Properties["application.process.binary"]
 
+		// Some native PipeWire clients (notably Flatpak apps like Spotify)
+		// don't set application.process.binary, only application.name.
+		// Fall back to the name so those sessions aren't silently dropped.
+		// (Adapted from omriharel/deej PR #172.)
+		if !ok {
+			name, ok = info.Properties["application.name"]
+		}
+
 		if !ok {
 			sf.logger.Warnw("Failed to get sink input's process name",
 				"sinkInputIndex", info.SinkInputIndex)

@@ -46,7 +46,7 @@ deej is written in Go and [distributed](https://github.com/omriharel/deej/releas
   - Bind the master channel
   - Bind "system sounds" (on Windows)
   - Bind specific audio devices by name (on Windows)
-  - Bind currently active app (on Windows)
+  - Bind currently active app (on Windows, and on Linux under niri)
   - Bind all other unassigned apps
 - Control your microphone's input level
 - Lightweight desktop client, consuming around 10MB of memory
@@ -106,7 +106,7 @@ noise_reduction: default
 - `master` is a special option to control the master volume of the system _(uses the default playback device)_
 - `mic` is a special option to control your microphone's input level _(uses the default recording device)_
 - `deej.unmapped` is a special option to control all apps that aren't bound to any slider ("everything else")
-- On Windows, `deej.current` is a special option to control whichever app is currently in focus
+- On Windows, and on Linux under the [niri](https://github.com/YaLTeR/niri) compositor, `deej.current` is a special option to control whichever app is currently in focus
 - On Windows, you can specify a device's full name, i.e. `Speakers (Realtek High Definition Audio)`, to bind that device's level to a slider. This doesn't conflict with the default `master` and `mic` options, and works for both input and output devices.
   - Be sure to use the full device name, as seen in the menu that comes up when left-clicking the speaker icon in the tray menu
 - `system` is a special option on Windows to control the "System sounds" volume in the Windows mixer
@@ -186,6 +186,20 @@ With many different 3D-printed designs being added to our [community showcase](.
 If you'd rather not download a compiled executable, or want to extend deej or modify it to your needs, feel free to clone the repository and build it yourself. All you need is a Go 1.14 (or above) environment on your machine. If you go this route, make sure to check out the [developer scripts](./pkg/deej/scripts).
 
 Like other Go packages, you can also use the `go get` tool: `go get -u github.com/omriharel/deej`. Please note that the package code now resides in the `pkg/deej` directory, and needs to be imported from there if used inside another project.
+
+#### Linux notes (this fork)
+
+This fork includes a few Linux-specific improvements for a headless desktop setup:
+
+- **Automatic serial detection and reconnect.** Set `com_port: auto` to discover a USB serial board (CH340, CP210x, FTDI, Arduino) even when its `/dev/ttyUSB*` name changes. Optional `usb_vid`/`usb_pid` settings can select a specific board. If the board is unplugged, deej keeps retrying instead of exiting.
+- **`deej.current` under niri.** The active window is read from niri's IPC socket (`$NIRI_SOCKET`), so one slider can follow whichever app is focused.
+- **`master` follows the default output.** Switching between speakers and headphones, or changing the default sink, takes effect on the next slider movement.
+- **Better native PipeWire/Flatpak support.** When a sink input omits `application.process.binary`, deej falls back to `application.name` (adapted from [PR #172](https://github.com/omriharel/deej/pull/172)).
+- **Headless build.** On niri or another setup without a system tray, build with the `headless` tag. It doesn't require GTK, AppIndicator or WebKit:
+
+  ```sh
+  go build -tags headless -o deej ./pkg/deej/cmd
+  ```
 
 If you need any help with this, please [join our Discord server](https://discord.gg/nf88NJu).
 

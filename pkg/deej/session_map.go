@@ -34,7 +34,7 @@ const (
 	// this prefix identifies those targets to ensure they don't contradict with another similarly-named process
 	specialTargetTransformPrefix = "deej."
 
-	// targets the currently active window (Windows-only, experimental)
+	// targets the currently active window (Windows, and Linux under niri)
 	specialTargetCurrentWindow = "current"
 
 	// targets all currently unmapped sessions (experimental)
@@ -297,7 +297,8 @@ func (m *sessionMap) applyTargetTransform(specialTargetName string) []string {
 	case specialTargetCurrentWindow:
 		currentWindowProcessNames, err := util.GetCurrentWindowProcessNames()
 
-		// silently ignore errors here, as this is on deej's "hot path" (and it could just mean the user's running linux)
+		// silently ignore errors here, as this is on deej's "hot path" (and
+		// the active window may be unavailable, or niri may not be running)
 		if err != nil {
 			return nil
 		}
