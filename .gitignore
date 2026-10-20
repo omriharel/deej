@@ -13,3 +13,8 @@ releases/
 *.bin
 logs/
 preferences.yaml
+
+packaging/arch/src/
+packaging/arch/pkg/
+packaging/arch/*.pkg.tar.*
+packaging/arch/*.src.tar.*

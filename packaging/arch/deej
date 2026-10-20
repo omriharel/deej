@@ -1,0 +1,24 @@
+#!/bin/sh
+set -eu
+
+umask 077
+
+if [ -n "${XDG_CONFIG_HOME:-}" ]; then
+    config_home="${XDG_CONFIG_HOME}"
+elif [ -n "${HOME:-}" ]; then
+    config_home="${HOME}/.config"
+else
+    echo "deej: neither XDG_CONFIG_HOME nor HOME is set" >&2
+    exit 1
+fi
+
+config_dir="${config_home}/deej"
+
+install -d -m 700 "${config_dir}"
+
+if [ ! -f "${config_dir}/config.yaml" ]; then
+    install -m 600 /usr/share/deej/config.yaml "${config_dir}/config.yaml"
+fi
+
+cd "${config_dir}"
+exec /usr/lib/deej/deej "$@"

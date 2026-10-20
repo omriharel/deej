@@ -1,0 +1,20 @@
+pkgbase = deej-git
+	pkgdesc = Open-source hardware volume mixer (Linux fork with auto serial detection and niri support)
+	pkgver = 0.9.10.r22.g6925ed8
+	pkgrel = 1
+	url = https://github.com/Magrid0/deej
+	install = deej.install
+	arch = x86_64
+	arch = aarch64
+	license = MIT
+	makedepends = git
+	makedepends = go
+	depends = systemd
+	optdepends = pipewire-pulse: PulseAudio-compatible server (recommended)
+	optdepends = pulseaudio: alternative PulseAudio server
+	provides = deej
+	conflicts = deej
+	source = deej-git::git+https://github.com/Magrid0/deej.git#branch=linux-autodetect-current-window
+	sha256sums = SKIP
+
+pkgname = deej-git
