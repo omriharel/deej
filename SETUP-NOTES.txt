@@ -501,6 +501,25 @@ The installed package was built from commit 2a86e64 on the remote branch.
 If you move this folder, the installed package and systemd service are NOT
 affected because they use /usr paths. Only rebuild commands need the new path.
 
+If makepkg fails after moving the repository with an error like:
+
+  error: unable to normalize alternate object path:
+  /home/magrid/Projects/programming/deej/packaging/arch/deej-git/objects
+  fatal: '.../deej-git' does not appear to be a git repository
+
+the old makepkg working clone still contains absolute paths from the old
+location. Remove the disposable build directories and retry:
+
+  cd /home/magrid/Projects/Programming/deej/packaging/arch
+  rm -rf src pkg
+  makepkg -si
+
+The bare source clone packaging/arch/deej-git can stay; makepkg recreates the
+working copy with the correct path. If it still fails, remove that too:
+
+  rm -rf deej-git
+  makepkg -si
+
 
 ===============================================================================
 12. ROLLBACK
