@@ -2,12 +2,11 @@ package deej
 
 import (
 	"bufio"
-	"errors"
-	"fmt"
 	"io"
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jacobsa/go-serial/serial"
@@ -18,17 +17,21 @@ import (
 
 // SerialIO provides a deej-aware abstraction layer to managing serial I/O
 type SerialIO struct {
-	comPort  string
-	baudRate uint
-
 	deej   *Deej
 	logger *zap.SugaredLogger
 
-	stopChannel chan bool
-	connected   bool
-	connOptions serial.OpenOptions
-	conn        io.ReadWriteCloser
+	mu       sync.Mutex
+	conn     io.ReadWriteCloser
+	running  bool
+	stopping bool
+	wake     chan struct{}
 
+	// remembered so config reloads only reconnect when connection settings
+	// actually changed
+	currentConfigPort string
+	currentBaudRate   int
+
+	stateMu                    sync.Mutex
 	lastKnownNumSliders        int
 	currentSliderPercentValues []float32
 
@@ -51,9 +54,7 @@ func NewSerialIO(deej *Deej, logger *zap.SugaredLogger) (*SerialIO, error) {
 	sio := &SerialIO{
 		deej:                deej,
 		logger:              logger,
-		stopChannel:         make(chan bool),
-		connected:           false,
-		conn:                nil,
+		wake:                make(chan struct{}),
 		sliderMoveConsumers: []chan SliderMoveEvent{},
 	}
 
@@ -65,75 +66,218 @@ func NewSerialIO(deej *Deej, logger *zap.SugaredLogger) (*SerialIO, error) {
 	return sio, nil
 }
 
-// Start attempts to connect to our arduino chip
+// Start launches the serial supervisor. It keeps trying to discover and open
+// the board, and reconnects automatically if the device disappears.
 func (sio *SerialIO) Start() error {
-
-	// don't allow multiple concurrent connections
-	if sio.connected {
-		sio.logger.Warn("Already connected, can't start another without closing first")
-		return errors.New("serial: connection already active")
+	sio.mu.Lock()
+	if sio.running {
+		sio.mu.Unlock()
+		return nil
 	}
 
-	// set minimum read size according to platform (0 for windows, 1 for linux)
-	// this prevents a rare bug on windows where serial reads get congested,
-	// resulting in significant lag
-	minimumReadSize := 0
-	if util.Linux() {
-		minimumReadSize = 1
+	if sio.stopping {
+		sio.stopping = false
+		sio.wake = make(chan struct{})
 	}
 
-	sio.connOptions = serial.OpenOptions{
-		PortName:        sio.deej.config.ConnectionInfo.COMPort,
-		BaudRate:        uint(sio.deej.config.ConnectionInfo.BaudRate),
-		DataBits:        8,
-		StopBits:        1,
-		MinimumReadSize: uint(minimumReadSize),
-	}
+	sio.running = true
+	sio.mu.Unlock()
 
-	sio.logger.Debugw("Attempting serial connection",
-		"comPort", sio.connOptions.PortName,
-		"baudRate", sio.connOptions.BaudRate,
-		"minReadSize", minimumReadSize)
-
-	var err error
-	sio.conn, err = serial.Open(sio.connOptions)
-	if err != nil {
-
-		// might need a user notification here, TBD
-		sio.logger.Warnw("Failed to open serial connection", "error", err)
-		return fmt.Errorf("open serial connection: %w", err)
-	}
-
-	namedLogger := sio.logger.Named(strings.ToLower(sio.connOptions.PortName))
-
-	namedLogger.Infow("Connected", "conn", sio.conn)
-	sio.connected = true
-
-	// read lines or await a stop
-	go func() {
-		connReader := bufio.NewReader(sio.conn)
-		lineChannel := sio.readLine(namedLogger, connReader)
-
-		for {
-			select {
-			case <-sio.stopChannel:
-				sio.close(namedLogger)
-			case line := <-lineChannel:
-				sio.handleLine(namedLogger, line)
-			}
-		}
-	}()
+	go sio.run()
 
 	return nil
 }
 
+func (sio *SerialIO) run() {
+	defer func() {
+		sio.mu.Lock()
+		sio.running = false
+		sio.mu.Unlock()
+	}()
+
+	backoff := time.Second
+	const maxBackoff = 10 * time.Second
+
+	for {
+		if sio.isStopping() {
+			return
+		}
+
+		connectionInfo := sio.deej.config.ConnectionInfo
+		port, err := resolveSerialPort(connectionInfo.COMPort, connectionInfo.USBVID, connectionInfo.USBPID)
+		if err != nil {
+			sio.logger.Warnw("Failed to resolve serial port", "error", err)
+			if !sio.wait(backoff) {
+				return
+			}
+			backoff = nextBackoff(backoff, maxBackoff)
+			continue
+		}
+
+		// set minimum read size according to platform (0 for windows, 1 for linux)
+		// this prevents a rare bug on windows where serial reads get congested,
+		// resulting in significant lag
+		minimumReadSize := 0
+		if util.Linux() {
+			minimumReadSize = 1
+		}
+
+		connOptions := serial.OpenOptions{
+			PortName:        port,
+			BaudRate:        uint(connectionInfo.BaudRate),
+			DataBits:        8,
+			StopBits:        1,
+			MinimumReadSize: uint(minimumReadSize),
+		}
+
+		sio.logger.Debugw("Attempting serial connection",
+			"comPort", connOptions.PortName,
+			"baudRate", connOptions.BaudRate,
+			"minReadSize", minimumReadSize)
+
+		conn, err := serial.Open(connOptions)
+		if err != nil {
+			sio.logger.Warnw("Failed to open serial connection", "comPort", port, "error", err)
+			if !sio.wait(backoff) {
+				return
+			}
+			backoff = nextBackoff(backoff, maxBackoff)
+			continue
+		}
+
+		if sio.isStopping() {
+			conn.Close()
+			return
+		}
+
+		sio.setConnected(conn, connectionInfo.COMPort, connectionInfo.BaudRate)
+		sio.logger.Infow("Connected", "comPort", port)
+		backoff = time.Second
+
+		sio.readLoop(port, conn)
+
+		sio.clearConnected()
+		if sio.isStopping() {
+			return
+		}
+
+		sio.logger.Warnw("Serial connection lost, will retry", "comPort", port)
+		if !sio.wait(backoff) {
+			return
+		}
+		backoff = nextBackoff(backoff, maxBackoff)
+	}
+}
+
+func (sio *SerialIO) readLoop(port string, conn io.ReadWriteCloser) {
+	logger := sio.logger.Named(strings.ToLower(port))
+	connReader := bufio.NewReader(conn)
+
+	for {
+		line, err := connReader.ReadString('\n')
+		if err != nil {
+			if sio.deej.Verbose() {
+				logger.Warnw("Failed to read line from serial", "error", err, "line", line)
+			}
+			return
+		}
+
+		if sio.deej.Verbose() {
+			logger.Debugw("Read new line", "line", line)
+		}
+
+		sio.handleLine(logger, line)
+	}
+}
+
+func (sio *SerialIO) setConnected(conn io.ReadWriteCloser, configPort string, baudRate int) {
+	sio.mu.Lock()
+	sio.conn = conn
+	sio.currentConfigPort = configPort
+	sio.currentBaudRate = baudRate
+	sio.mu.Unlock()
+
+	sio.resetSliderState()
+}
+
+func (sio *SerialIO) clearConnected() {
+	sio.mu.Lock()
+	conn := sio.conn
+	sio.conn = nil
+	sio.mu.Unlock()
+
+	if conn != nil {
+		conn.Close()
+	}
+}
+
+func (sio *SerialIO) isStopping() bool {
+	sio.mu.Lock()
+	defer sio.mu.Unlock()
+
+	return sio.stopping
+}
+
+func (sio *SerialIO) wait(d time.Duration) bool {
+	sio.mu.Lock()
+	wake := sio.wake
+	stopping := sio.stopping
+	sio.mu.Unlock()
+
+	if stopping || wake == nil {
+		return false
+	}
+
+	select {
+	case <-time.After(d):
+		return true
+	case <-wake:
+		return false
+	}
+}
+
+func nextBackoff(current, max time.Duration) time.Duration {
+	current *= 2
+	if current > max {
+		current = max
+	}
+
+	return current
+}
+
 // Stop signals us to shut down our serial connection, if one is active
 func (sio *SerialIO) Stop() {
-	if sio.connected {
-		sio.logger.Debug("Shutting down serial connection")
-		sio.stopChannel <- true
-	} else {
-		sio.logger.Debug("Not currently connected, nothing to stop")
+	sio.mu.Lock()
+	defer sio.mu.Unlock()
+
+	if sio.stopping {
+		return
+	}
+
+	sio.logger.Debug("Shutting down serial connection")
+	sio.stopping = true
+
+	if sio.conn != nil {
+		sio.conn.Close()
+		sio.conn = nil
+	}
+
+	if sio.wake != nil {
+		close(sio.wake)
+		sio.wake = nil
+	}
+}
+
+// Reload closes the current connection so the supervisor re-discovers and
+// reopens the board. It is used when connection settings change.
+func (sio *SerialIO) Reload() {
+	sio.mu.Lock()
+	conn := sio.conn
+	sio.conn = nil
+	sio.mu.Unlock()
+
+	if conn != nil {
+		conn.Close()
 	}
 }
 
@@ -152,82 +296,42 @@ func (sio *SerialIO) setupOnConfigReload() {
 	const stopDelay = 50 * time.Millisecond
 
 	go func() {
-		for {
-			select {
-			case <-configReloadedChannel:
+		for range configReloadedChannel {
+			// Make any config reload unset our slider number to ensure process
+			// volumes are re-set: the next read line will emit events for all
+			// sliders. Delay this until the session map has re-acquired sessions.
+			go func() {
+				<-time.After(stopDelay)
+				sio.resetSliderState()
+			}()
 
-				// make any config reload unset our slider number to ensure process volumes are being re-set
-				// (the next read line will emit SliderMoveEvent instances for all sliders)\
-				// this needs to happen after a small delay, because the session map will also re-acquire sessions
-				// whenever the config file is reloaded, and we don't want it to receive these move events while the map
-				// is still cleared. this is kind of ugly, but shouldn't cause any issues
-				go func() {
-					<-time.After(stopDelay)
-					sio.lastKnownNumSliders = 0
-				}()
-
-				// if connection params have changed, attempt to stop and start the connection
-				if sio.deej.config.ConnectionInfo.COMPort != sio.connOptions.PortName ||
-					uint(sio.deej.config.ConnectionInfo.BaudRate) != sio.connOptions.BaudRate {
-
-					sio.logger.Info("Detected change in connection parameters, attempting to renew connection")
-					sio.Stop()
-
-					// let the connection close
-					<-time.After(stopDelay)
-
-					if err := sio.Start(); err != nil {
-						sio.logger.Warnw("Failed to renew connection after parameter change", "error", err)
-					} else {
-						sio.logger.Debug("Renewed connection successfully")
-					}
-				}
+			if sio.connectionSettingsChanged() {
+				sio.logger.Info("Detected change in connection parameters, reconnecting")
+				sio.Reload()
 			}
 		}
 	}()
 }
 
-func (sio *SerialIO) close(logger *zap.SugaredLogger) {
-	if err := sio.conn.Close(); err != nil {
-		logger.Warnw("Failed to close serial connection", "error", err)
-	} else {
-		logger.Debug("Serial connection closed")
-	}
+func (sio *SerialIO) connectionSettingsChanged() bool {
+	sio.mu.Lock()
+	defer sio.mu.Unlock()
 
-	sio.conn = nil
-	sio.connected = false
+	connectionInfo := sio.deej.config.ConnectionInfo
+
+	return connectionInfo.COMPort != sio.currentConfigPort ||
+		connectionInfo.BaudRate != sio.currentBaudRate
 }
 
-func (sio *SerialIO) readLine(logger *zap.SugaredLogger, reader *bufio.Reader) chan string {
-	ch := make(chan string)
+func (sio *SerialIO) resetSliderState() {
+	sio.stateMu.Lock()
+	defer sio.stateMu.Unlock()
 
-	go func() {
-		for {
-			line, err := reader.ReadString('\n')
-			if err != nil {
-
-				if sio.deej.Verbose() {
-					logger.Warnw("Failed to read line from serial", "error", err, "line", line)
-				}
-
-				// just ignore the line, the read loop will stop after this
-				return
-			}
-
-			if sio.deej.Verbose() {
-				logger.Debugw("Read new line", "line", line)
-			}
-
-			// deliver the line to the channel
-			ch <- line
-		}
-	}()
-
-	return ch
+	sio.lastKnownNumSliders = 0
+	sio.currentSliderPercentValues = nil
 }
 
 func (sio *SerialIO) handleLine(logger *zap.SugaredLogger, line string) {
-
 	// this function receives an unsanitized line which is guaranteed to end with LF,
 	// but most lines will end with CRLF. it may also have garbage instead of
 	// deej-formatted values, so we must check for that! just ignore bad ones
@@ -242,8 +346,22 @@ func (sio *SerialIO) handleLine(logger *zap.SugaredLogger, line string) {
 	splitLine := strings.Split(line, "|")
 	numSliders := len(splitLine)
 
+	// A corrupted line with a missing value would shift every following
+	// slider onto the wrong target. Ignore lines that don't contain at least
+	// every slider referenced by the config.
+	expectedSliders := sio.deej.config.SliderMapping.length()
+	if expectedSliders > 0 && numSliders < expectedSliders {
+		sio.logger.Debugw("Ignoring malformed line with too few sliders",
+			"line", line,
+			"sliders", numSliders,
+			"expectedAtLeast", expectedSliders)
+		return
+	}
+
+	sio.stateMu.Lock()
+
 	// update our slider count, if needed - this will send slider move events for all
-	if numSliders != sio.lastKnownNumSliders {
+	if numSliders != sio.lastKnownNumSliders || len(sio.currentSliderPercentValues) != numSliders {
 		logger.Infow("Detected sliders", "amount", numSliders)
 		sio.lastKnownNumSliders = numSliders
 		sio.currentSliderPercentValues = make([]float32, numSliders)
@@ -257,13 +375,13 @@ func (sio *SerialIO) handleLine(logger *zap.SugaredLogger, line string) {
 	// for each slider:
 	moveEvents := []SliderMoveEvent{}
 	for sliderIdx, stringValue := range splitLine {
-
 		// convert string values to integers ("1023" -> 1023)
 		number, _ := strconv.Atoi(stringValue)
 
 		// turns out the first line could come out dirty sometimes (i.e. "4558|925|41|643|220")
 		// so let's check the first number for correctness just in case
 		if sliderIdx == 0 && number > 1023 {
+			sio.stateMu.Unlock()
 			sio.logger.Debugw("Got malformed line from serial, ignoring", "line", line)
 			return
 		}
@@ -281,7 +399,6 @@ func (sio *SerialIO) handleLine(logger *zap.SugaredLogger, line string) {
 
 		// check if it changes the desired state (could just be a jumpy raw slider value)
 		if util.SignificantlyDifferent(sio.currentSliderPercentValues[sliderIdx], normalizedScalar, sio.deej.config.NoiseReductionLevel) {
-
 			// if it does, update the saved value and create a move event
 			sio.currentSliderPercentValues[sliderIdx] = normalizedScalar
 
@@ -295,6 +412,8 @@ func (sio *SerialIO) handleLine(logger *zap.SugaredLogger, line string) {
 			}
 		}
 	}
+
+	sio.stateMu.Unlock()
 
 	// deliver move events if there are any, towards all potential consumers
 	if len(moveEvents) > 0 {

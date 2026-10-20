@@ -61,6 +61,24 @@ func (m *sliderMap) iterate(f func(int, []string)) {
 	}
 }
 
+// length returns the number of sliders implied by the mapping, i.e. the
+// highest slider index plus one. It is used to reject corrupted serial lines
+// that are missing a value, which would otherwise shift every subsequent
+// slider onto the wrong target.
+func (m *sliderMap) length() int {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	maxIndex := 0
+	for index := range m.m {
+		if index+1 > maxIndex {
+			maxIndex = index + 1
+		}
+	}
+
+	return maxIndex
+}
+
 func (m *sliderMap) get(key int) ([]string, bool) {
 	m.lock.Lock()
 	defer m.lock.Unlock()

@@ -129,17 +129,45 @@ func (sf *paSessionFinder) enumerateAndAddSessions(sessions *[]Session) error {
 	}
 
 	for _, info := range reply {
-		name, ok := info.Properties["application.process.binary"]
+		binaryName, hasBinaryName := info.Properties["application.process.binary"]
+		appName, hasAppName := info.Properties["application.name"]
 
-		if !ok {
+		binaryNameString := ""
+		if hasBinaryName {
+			binaryNameString = binaryName.String()
+		}
+
+		appNameString := ""
+		if hasAppName {
+			appNameString = appName.String()
+		}
+
+		// Some native PipeWire clients (notably Flatpak apps like Spotify)
+		// don't set application.process.binary, only application.name.
+		// Fall back to the name so those sessions aren't silently dropped.
+		// (Adapted from omriharel/deej PR #172.)
+		processName := binaryNameString
+		if processName == "" {
+			processName = appNameString
+		}
+
+		if processName == "" {
 			sf.logger.Warnw("Failed to get sink input's process name",
 				"sinkInputIndex", info.SinkInputIndex)
 
 			continue
 		}
 
-		// create the deej session object
-		newSession := newPASession(sf.sessionLogger, sf.client, info.SinkInputIndex, info.Channels, name.String())
+		// create the deej session object. Keep the application name as an
+		// alias: Wine/Proton games often expose "wine64-preloader" as the
+		// binary while the useful name is the window/application name.
+		newSession := newPASession(
+			sf.sessionLogger,
+			sf.client,
+			info.SinkInputIndex,
+			info.Channels,
+			processName,
+			appNameString)
 
 		// add it to our slice
 		*sessions = append(*sessions, newSession)

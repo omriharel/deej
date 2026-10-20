@@ -1,3 +1,6 @@
+//go:build !headless
+// +build !headless
+
 package deej
 
 import (

@@ -1,0 +1,575 @@
+DEEJ LINUX FORK - SETUP, BUILD, AND TROUBLESHOOTING NOTES
+Last updated: 2026-10-20
+Repository: /home/magrid/Projects/Programming/deej
+Branch: linux-autodetect-current-window
+Remote: origin = https://github.com/Magrid0/deej.git
+Upstream: https://github.com/omriharel/deej.git
+
+This file is a memory aid for rebuilding, reinstalling, and debugging this
+setup. It is not part of the deej package.
+
+
+===============================================================================
+1. QUICK FACTS
+===============================================================================
+
+Installed package:
+  deej-git 0.9.10.r24.g2a86e64-1
+
+Installed files:
+  /usr/bin/deej                         launcher script
+  /usr/lib/deej/deej                    actual binary
+  /usr/lib/systemd/user/deej.service    systemd USER service
+  /usr/share/deej/config.yaml           default config template
+  /usr/share/licenses/deej-git/LICENSE
+
+User config:
+  ~/.config/deej/config.yaml
+
+Service:
+  systemd user service, enabled and running as user magrid.
+
+Board:
+  Arduino Nano clone, ATmega328P, 16 MHz, CH340 USB serial.
+  No firmware changes were made. Do not reflash unless you actually need to.
+
+Audio:
+  PipeWire 1.6.9 + WirePlumber 0.5.18.
+  Default output is normally Pebble V3.
+  Corsair VOID ELITE USB adapter is renamed to "KZ Castor Pro" by WirePlumber.
+  The KZ Castor IEMs are connected through that Corsair adapter.
+
+
+===============================================================================
+2. SLIDER MAPPING
+===============================================================================
+
+The active config is ~/.config/deej/config.yaml.
+
+  0 -> master
+  1 -> firefox
+  2 -> deej.current
+  3 -> discord
+  4 -> spotify
+
+Slider indexes are ZERO-BASED. The five physical sliders are 0 through 4.
+
+"deej.current" uses niri IPC and follows the currently focused niri window.
+It only works while niri is running.
+
+"master" follows the current PipeWire default sink.
+"mic" would follow the current default source, if used.
+
+
+===============================================================================
+3. WHAT WAS ADDED TO THE FORK
+===============================================================================
+
+Important commits:
+  6925ed8  Add Linux auto serial detection and niri current-window control
+  79f4a88  Add Arch Linux package and systemd user service
+  2a86e64  Update package version and ignore makepkg cache
+
+Code areas:
+  pkg/deej/serial.go
+      Serial supervisor, reconnect loop, line parsing.
+
+  pkg/deej/serial_port_linux.go
+      sysfs USB discovery, optional usb_vid/usb_pid filtering, and stable
+      /dev/serial/by-id paths.
+
+  pkg/deej/util/util_linux.go
+      niri IPC "FocusedWindow" support for deej.current.
+
+  pkg/deej/session_linux.go
+      master/mic follow the current default sink/source instead of a fixed index.
+
+  pkg/deej/session_finder_linux.go
+      PipeWire/Pulse client matching, including application.name fallback for
+      Flatpak/native clients.
+
+  pkg/deej/tray_headless.go
+      Headless build support. The package is built with -tags headless.
+
+Packaging:
+  packaging/arch/PKGBUILD
+  packaging/arch/deej
+  packaging/arch/deej.service
+  packaging/arch/deej.install
+  packaging/arch/README.md
+
+The package is named deej-git and provides/conflicts with "deej".
+
+
+===============================================================================
+4. REBUILD AND REINSTALL THE PACKAGE
+===============================================================================
+
+IMPORTANT:
+The PKGBUILD does NOT build from this local directory. It clones:
+  https://github.com/Magrid0/deej.git
+  branch linux-autodetect-current-window
+
+Therefore:
+  - Commit and push code changes before running makepkg, otherwise the
+    package will contain the old remote code.
+  - The mic-loopback fix is NOT in the deej source. It lives in user config
+    files described in section 6. Recompiling deej does not change it.
+
+Prerequisites:
+  base-devel, git, go, systemd, pipewire-pulse (or pulseaudio).
+
+Normal rebuild + install:
+
+  cd /home/magrid/Projects/Programming/deej
+  git status
+  git add -A
+  git commit -m "Describe your change"
+  git push origin linux-autodetect-current-window
+
+  cd /home/magrid/Projects/Programming/deej/packaging/arch
+  makepkg -si
+
+"makepkg -si" builds the package and asks for sudo to install it.
+Do NOT run makepkg itself as root.
+
+After installing:
+
+  systemctl --user daemon-reload
+  systemctl --user enable --now deej.service
+  systemctl --user restart deej.service
+
+If the package version or source changed, regenerate .SRCINFO before
+publishing:
+
+  cd /home/magrid/Projects/Programming/deej/packaging/arch
+  makepkg --printsrcinfo > .SRCINFO
+
+Notes:
+  - PKGBUILD and .SRCINFO are committed at pkgver 0.9.10.r24.g2a86e64.
+  - Because this is a -git package, pkgver() recalculates the version from the
+    branch head every time makepkg runs. The committed pkgver is only a
+    starting value, so it may become r25, r26, etc. after new commits.
+  - makepkg may leave an updated pkgver in PKGBUILD after a build. That is
+    normal for a -git package; commit it or leave it local.
+  - Regenerate .SRCINFO whenever PKGBUILD metadata changes:
+      makepkg --printsrcinfo > .SRCINFO
+  - makepkg creates packaging/arch/src, pkg, deej-git/, and *.pkg.tar.zst.
+    These are ignored by .gitignore.
+
+Quick local test build (without making a package):
+
+  cd /home/magrid/Projects/Programming/deej
+
+  CGO_ENABLED=0 go build \
+    -buildvcs=false \
+    -tags headless \
+    -trimpath \
+    -ldflags "-s -w -X main.gitCommit=$(git rev-parse --short HEAD) -X main.versionTag=$(git describe --tags --always) -X main.buildType=local" \
+    -o deej-dev \
+    ./pkg/deej/cmd
+
+To test it, stop the service first so two instances do not fight:
+
+  systemctl --user stop deej.service
+  cd ~/.config/deej
+  DEEJ_NO_TRAY_ICON=1 /home/magrid/Projects/Programming/deej/deej-dev
+
+Then restart the service:
+
+  systemctl --user start deej.service
+
+Do not rely on a local build for long-term use: the next pacman package
+install will overwrite /usr/lib/deej/deej.
+
+Tests and checks:
+
+  cd /home/magrid/Projects/Programming/deej
+  go test -tags headless ./...
+  go vet -tags headless ./...
+  go test -tags headless -race ./...
+
+The -tags headless is important on Linux. The normal systray build may pull in
+desktop/tray dependencies that are not wanted for the service.
+
+
+===============================================================================
+5. RUNNING AND MANAGING DEEJ
+===============================================================================
+
+It is a USER service, not a system service:
+
+  systemctl --user status deej.service
+  systemctl --user restart deej.service
+  systemctl --user stop deej.service
+  systemctl --user enable --now deej.service
+  journalctl --user -u deej.service -f
+  journalctl --user -u deej.service --since "10 min ago"
+
+The launcher /usr/bin/deej:
+  - creates ~/.config/deej if needed
+  - copies /usr/share/deej/config.yaml to ~/.config/deej/config.yaml if the
+    user config does not exist
+  - changes into ~/.config/deej
+  - executes /usr/lib/deej/deej
+
+Because the binary uses config.yaml from its current working directory, the
+launcher's cd is what makes ~/.config/deej/config.yaml the active config.
+
+Package upgrades do not overwrite ~/.config/deej/config.yaml.
+Removing the package does not remove ~/.config/deej either.
+
+Uninstall:
+
+  sudo pacman -Rns deej-git
+
+Full manual cleanup after uninstall (only if you want it):
+
+  rm -rf ~/.config/deej
+
+
+===============================================================================
+6. KZ CASTOR / CORSAIR MIC LOOPBACK FIX
+===============================================================================
+
+Symptom:
+  When system volume (especially deej master) changed, the microphone became
+  audible in the KZ Castor IEMs. Sometimes it disappeared at lower volume.
+
+Root cause:
+  The Corsair VOID ELITE adapter exposes two controls with similar names:
+
+    numid=7  Headset Playback Volume, index 0
+             This is the MIC SIDETONE / loopback.
+             Range 0-4096, 0 to +16 dB.
+
+    numid=9  Headset Playback Volume, index 1
+             This is the actual HEADPHONE volume.
+             Range 0-55, -50 to +5 dB.
+
+  PipeWire's ALSA mixer path picked index 0 as the KZ sink volume.
+  So changing system volume was changing the mic sidetone. At 100% it set
+  numid=7 to 4096 (+16 dB), which made the mic loud. At lower values it set 0,
+  which is why the loopback sometimes seemed to go away.
+
+Fix 1 - WirePlumber rule:
+
+  File:
+    ~/.config/wireplumber/wireplumber.conf.d/52-corsair-no-sidetone.conf
+
+  Contents:
+    monitor.alsa.rules = [
+      {
+        matches = [
+          {
+            device.name = "alsa_card.usb-Cosair_Corsair_VOID_ELITE_Surround_USB_Adapter_00000000-00"
+          }
+        ]
+        actions = {
+          update-props = {
+            api.alsa.soft-mixer = true
+          }
+        }
+      }
+    ]
+
+  What it does:
+    PipeWire uses software volume for this card and stops writing to the
+    card's ALSA mixer controls. Therefore changing volume can no longer touch
+    the sidetone.
+
+  Apply after editing:
+    systemctl --user restart wireplumber
+
+  Verify:
+    pw-dump | grep -A2 api.alsa.soft-mixer
+    # should show "api.alsa.soft-mixer": true
+
+  If the USB device name ever changes, update device.name. Get the current
+  name with:
+    pactl list short sinks
+    wpctl status
+    pw-dump | grep -i corsair
+
+Fix 2 - startup script:
+
+  File:
+    ~/.config/alsarestore.sh
+
+  It finds the Corsair card by USB ID 1b1c:0a53, then runs:
+    amixer -c <card> cset numid=7 0     # mute mic sidetone
+    amixer -c <card> cset numid=5 off   # disable Auto Gain Control
+
+  It sleeps 2 seconds first to let ALSA/PipeWire settle.
+  It does NOT restore the entire ALSA state anymore.
+
+  Original version saved as:
+    ~/.config/alsarestore.sh.bak
+
+  The old full-state file is still at:
+    ~/.config/micloopoff.state
+
+  Niri starts the script at login from:
+    ~/.config/niri/config.kdl
+    line: spawn-at-startup "/home/magrid/.config/alsarestore.sh"
+
+  To run it manually now:
+    ~/.config/alsarestore.sh
+
+  There is no systemd service for it. Niri is the autostart mechanism.
+
+Verify the fix:
+
+  # The sidetone must be 0:
+  amixer -c 4 cget numid=7
+
+  # The real headphone volume is normally 42,42 (-8 dB):
+  amixer -c 4 cget numid=9
+
+  # Check the sink volume and default sink:
+  pactl get-default-sink
+  pactl get-sink-volume alsa_output.usb-Cosair_Corsair_VOID_ELITE_Surround_USB_Adapter_00000000-00.analog-stereo
+
+  # Change the KZ sink volume and re-check numid=7. It should stay 0:
+  pactl set-sink-volume alsa_output.usb-Cosair_Corsair_VOID_ELITE_Surround_USB_Adapter_00000000-00.analog-stereo 50%
+  amixer -c 4 cget numid=7
+
+  # Check whether the KZ sink is software-controlled:
+  pactl list sinks | grep -A20 "KZ Castor Pro"
+
+  With api.alsa.soft-mixer=true, the KZ sink should not use the hardware
+  volume flag (HW_VOLUME_CTRL). Volume changes are applied by PipeWire in
+  software.
+
+Hardware headphone gain (optional):
+  numid=9 is now fixed while PipeWire uses software volume.
+
+    42/55 = -8 dB   (current default; loudness is safe)
+    50/55 =  0 dB   (good compromise if you need more maximum volume)
+    55/55 = +5 dB   (maximum; can be too loud / hiss / clip)
+
+  Set it with:
+    amixer -c 4 cset numid=9 50,50
+
+  The script does not set numid=9. A manual change may revert after reboot
+  because udev restores /var/lib/alsa/asound.state. If you want to keep a
+  different value, add it to alsarestore.sh or save the ALSA state properly.
+
+If the loopback returns:
+  1. Check that the WirePlumber rule file still exists and has the correct
+     device.name.
+  2. systemctl --user restart wireplumber
+  3. Run ~/.config/alsarestore.sh
+  4. Check amixer -c 4 cget numid=7 -> values=0
+  5. Check pw-dump | grep -A2 api.alsa.soft-mixer -> true
+  6. If the card number changed, the script finds it by USB ID; verify with:
+       for f in /proc/asound/card*/usbid; do echo "$f: $(cat "$f")"; done
+
+
+===============================================================================
+7. OUTPUT SWITCHING NOTES
+===============================================================================
+
+Verified after the sidetone fix:
+  - Switching Pebble V3 -> KZ Castor -> Pebble V3 works.
+  - Changing KZ volume 37%, 50%, 100% leaves numid=7 at 0.
+  - Default sink stays Pebble across a WirePlumber restart.
+  - KZ uses software volume, so system/deej volume now affects headphone
+    loudness instead of the mic sidetone.
+
+Useful checks:
+  pactl get-default-sink
+  pactl get-default-source
+  pactl list short sinks
+  wpctl status
+  wpctl inspect <id>
+
+Deej's master target follows the current default sink. It refreshes the
+default sink whenever it reads or sets master volume, so switching outputs
+does not require restarting deej.
+
+If an output switch recreates an app's sink input, deej marks the old session
+as stale, refreshes the session map immediately, and retries the same volume
+adjustment. This prevents the first slider movement after a switch from being
+silently lost.
+
+If output switching misbehaves again, record:
+  - exact sequence (what you switched from/to)
+  - whether the default sink jumps back
+  - whether KZ volume changes loudness or only sidetone
+  - pactl get-default-sink and amixer -c 4 cget numid=7 output
+
+
+===============================================================================
+8. SERIAL / ARDUINO NOTES
+===============================================================================
+
+Config currently uses:
+  com_port: auto
+  baud_rate: 9600
+
+Auto mode discovers the board even if /dev/ttyUSB0 becomes /dev/ttyUSB1.
+It prefers stable /dev/serial/by-id paths and reconnects when the board is
+unplugged/replugged or the serial connection drops.
+
+Optional filtering in ~/.config/deej/config.yaml:
+
+  usb_vid: "1a86"
+  usb_pid: "7523"
+
+The current board is a CH340: 1a86:7523.
+
+Current stable path:
+  /dev/serial/by-id/usb-1a86_USB_Serial-if00-port0 -> ../../ttyUSB0
+
+Useful checks:
+  ls -l /dev/serial/by-id/
+  lsusb
+  journalctl --user -u deej.service -f
+
+If auto-detection picks the wrong device, set usb_vid/usb_pid explicitly.
+If the board disappears, deej logs "Serial connection lost, will retry" and
+keeps running instead of exiting.
+
+
+===============================================================================
+9. NIRI CURRENT-WINDOW NOTES
+===============================================================================
+
+deej.current uses niri IPC. It requires:
+  - niri running
+  - the deej process to have access to the niri socket
+  - slider index 2 mapped to deej.current
+
+The implementation is in:
+  pkg/deej/util/util_linux.go
+
+If deej.current stops working:
+  - confirm niri is running
+  - check deej logs for niri IPC errors
+  - verify the mapping in ~/.config/deej/config.yaml
+
+XWayland/Proton games need special handling because niri may report the
+xwayland-satellite PID and a steam_app_* app_id instead of the game process.
+Deej now also matches the normalized window title against the audio client's
+application.name. Example: "Watch_Dogs 2" normalizes to "watchdogs2" and
+matches the Wine session whose application.name is "WatchDogs2", even though
+application.process.binary is "wine64-preloader".
+
+
+===============================================================================
+10. USEFUL DEBUG COMMANDS
+===============================================================================
+
+Deej:
+  systemctl --user status deej.service
+  journalctl --user -u deej.service -f
+  journalctl --user -u deej.service --since "30 min ago"
+
+Audio:
+  pactl info
+  pactl get-default-sink
+  pactl get-default-source
+  pactl list short sinks
+  pactl list short sources
+  wpctl status
+  wpctl inspect <id>
+  pw-dump | grep -A2 api.alsa.soft-mixer
+
+ALSA / Corsair:
+  amixer -c 4 contents
+  amixer -c 4 cget numid=3    # mic capture switch
+  amixer -c 4 cget numid=4    # mic capture volume
+  amixer -c 4 cget numid=5    # Auto Gain Control
+  amixer -c 4 cget numid=6    # Headset Playback Switch, index 0
+  amixer -c 4 cget numid=7    # mic sidetone (must be 0)
+  amixer -c 4 cget numid=8    # Headset Playback Switch, index 1
+  amixer -c 4 cget numid=9    # real headphone volume
+  cat /proc/asound/card4/usbmixer
+
+Note: card number 4 is current, but it can change. Use the USB ID to find it:
+  for f in /proc/asound/card*/usbid; do echo "$f: $(cat "$f")"; done
+  # Corsair adapter should be 1b1c:0a53
+
+
+===============================================================================
+11. GIT / COMMIT / PUSH NOTES
+===============================================================================
+
+Check state:
+  cd /home/magrid/Projects/Programming/deej
+  git status
+  git log --oneline -6
+  git remote -v
+
+Push the branch:
+  git push origin linux-autodetect-current-window
+
+Package metadata:
+  packaging/arch/PKGBUILD and packaging/arch/.SRCINFO are committed at
+  pkgver 0.9.10.r24.g2a86e64.
+
+The installed package was built from commit 2a86e64 on the remote branch.
+If you move this folder, the installed package and systemd service are NOT
+affected because they use /usr paths. Only rebuild commands need the new path.
+
+If makepkg fails after moving the repository with an error like:
+
+  error: unable to normalize alternate object path:
+  /home/magrid/Projects/programming/deej/packaging/arch/deej-git/objects
+  fatal: '.../deej-git' does not appear to be a git repository
+
+the old makepkg working clone still contains absolute paths from the old
+location. Remove the disposable build directories and retry:
+
+  cd /home/magrid/Projects/Programming/deej/packaging/arch
+  rm -rf src pkg
+  makepkg -si
+
+The bare source clone packaging/arch/deej-git can stay; makepkg recreates the
+working copy with the correct path. If it still fails, remove that too:
+
+  rm -rf deej-git
+  makepkg -si
+
+
+===============================================================================
+12. ROLLBACK
+===============================================================================
+
+Mic-loopback fix rollback:
+  1. Remove ~/.config/wireplumber/wireplumber.conf.d/52-corsair-no-sidetone.conf
+  2. systemctl --user restart wireplumber
+  3. Restore the old startup script:
+       cp ~/.config/alsarestore.sh.bak ~/.config/alsarestore.sh
+       chmod 755 ~/.config/alsarestore.sh
+  4. Run the old script or reboot/login.
+
+Note: the old script restores the full ALSA state from
+~/.config/micloopoff.state, which may affect other cards/volumes. That is why
+it was replaced with the targeted sidetone-only script.
+
+Package rollback:
+  sudo pacman -Rns deej-git
+
+Then reinstall an older package with:
+  sudo pacman -U /path/to/old/deej-git-...pkg.tar.zst
+
+
+===============================================================================
+13. THINGS TO REMEMBER
+===============================================================================
+
+- The KZ Castor "volume" problem was the mic sidetone control (numid=7), not
+  a PipeWire loopback module.
+- The real headphone volume is numid=9.
+- The WirePlumber soft-mixer rule is the primary loopback fix.
+- alsarestore.sh is only the startup safety net; niri starts it.
+- Deej does not need recompiling or restarting for the audio fix.
+- Recompiling deej only matters when changing Go code.
+- The package builds from GitHub, so push before makepkg.
+- Do not run makepkg as root.
+- Do not set numid=7 high. Keep it at 0.
+- Do not expect package upgrades to overwrite ~/.config/deej.
+- Default output is normally Pebble V3; KZ Castor is the Corsair USB adapter.
+- No Arduino firmware changes were made.

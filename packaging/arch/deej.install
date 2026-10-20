@@ -1,0 +1,23 @@
+post_install() {
+    cat <<'EOF'
+deej-git installed.
+
+The service runs as a systemd user service. On first start it creates
+~/.config/deej/config.yaml from /usr/share/deej/config.yaml.
+
+Enable and start it for your user with:
+    systemctl --user daemon-reload
+    systemctl --user enable --now deej.service
+
+Follow its logs with:
+    journalctl --user -u deej.service -f
+EOF
+}
+
+post_upgrade() {
+    post_install
+}
+
+post_remove() {
+    echo "deej-git removed. Your configuration remains in ~/.config/deej."
+}

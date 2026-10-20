@@ -1,0 +1,46 @@
+# Maintainer: Magrid0
+pkgname=deej-git
+pkgver=0.9.10.r30.g93091e6
+pkgrel=1
+pkgdesc="Open-source hardware volume mixer (Linux fork with auto serial detection and niri support)"
+arch=('x86_64' 'aarch64')
+url="https://github.com/Magrid0/deej"
+license=('MIT')
+depends=('systemd')
+makedepends=('git' 'go')
+optdepends=(
+    'pipewire-pulse: PulseAudio-compatible server (recommended)'
+    'pulseaudio: alternative PulseAudio server'
+)
+provides=('deej')
+conflicts=('deej')
+install=deej.install
+source=("$pkgname::git+https://github.com/Magrid0/deej.git#branch=linux-autodetect-current-window")
+sha256sums=('SKIP')
+
+pkgver() {
+    cd "$srcdir/$pkgname"
+    git describe --long --tags --always | sed 's/^v//; s/\([^-]*-g\)/r\1/; s/-/./g'
+}
+
+build() {
+    cd "$srcdir/$pkgname"
+
+    export CGO_ENABLED=0
+
+    go build \
+        -buildvcs=false \
+        -tags headless \
+        -trimpath \
+        -ldflags "-s -w -X main.gitCommit=$(git rev-parse --short HEAD) -X main.versionTag=$(git describe --tags --always) -X main.buildType=arch" \
+        -o deej \
+        ./pkg/deej/cmd
+}
+
+package() {
+    install -Dm755 "$srcdir/$pkgname/deej" "$pkgdir/usr/lib/deej/deej"
+    install -Dm755 "$srcdir/$pkgname/packaging/arch/deej" "$pkgdir/usr/bin/deej"
+    install -Dm644 "$srcdir/$pkgname/packaging/arch/deej.service" "$pkgdir/usr/lib/systemd/user/deej.service"
+    install -Dm644 "$srcdir/$pkgname/config.yaml" "$pkgdir/usr/share/deej/config.yaml"
+    install -Dm644 "$srcdir/$pkgname/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

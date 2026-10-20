@@ -3,6 +3,7 @@ package deej
 import (
 	"fmt"
 	"path"
+	"runtime"
 	"strings"
 	"time"
 
@@ -21,6 +22,10 @@ type CanonicalConfig struct {
 	ConnectionInfo struct {
 		COMPort  string
 		BaudRate int
+
+		// optional USB identifiers used when COMPort is "auto"
+		USBVID string
+		USBPID string
 	}
 
 	InvertSliders bool
@@ -52,11 +57,22 @@ const (
 	configKeyInvertSliders       = "invert_sliders"
 	configKeyCOMPort             = "com_port"
 	configKeyBaudRate            = "baud_rate"
+	configKeyUSBVID              = "usb_vid"
+	configKeyUSBPID              = "usb_pid"
 	configKeyNoiseReductionLevel = "noise_reduction"
 
-	defaultCOMPort  = "COM4"
 	defaultBaudRate = 9600
 )
+
+// defaultCOMPort uses automatic detection on Linux, where USB serial device
+// names are not stable. Other platforms keep the historical default.
+func defaultCOMPort() string {
+	if runtime.GOOS == "linux" {
+		return autoCOMPort
+	}
+
+	return "COM4"
+}
 
 // has to be defined as a non-constant because we're using path.Join
 var internalConfigPath = path.Join(".", logDirectory)
@@ -87,8 +103,10 @@ func NewConfig(logger *zap.SugaredLogger, notifier Notifier) (*CanonicalConfig, 
 
 	userConfig.SetDefault(configKeySliderMapping, map[string][]string{})
 	userConfig.SetDefault(configKeyInvertSliders, false)
-	userConfig.SetDefault(configKeyCOMPort, defaultCOMPort)
+	userConfig.SetDefault(configKeyCOMPort, defaultCOMPort())
 	userConfig.SetDefault(configKeyBaudRate, defaultBaudRate)
+	userConfig.SetDefault(configKeyUSBVID, "")
+	userConfig.SetDefault(configKeyUSBPID, "")
 
 	internalConfig := viper.New()
 	internalConfig.SetConfigName(internalConfigName)
@@ -225,6 +243,8 @@ func (cc *CanonicalConfig) populateFromVipers() error {
 
 	// get the rest of the config fields - viper saves us a lot of effort here
 	cc.ConnectionInfo.COMPort = cc.userConfig.GetString(configKeyCOMPort)
+	cc.ConnectionInfo.USBVID = strings.TrimSpace(cc.userConfig.GetString(configKeyUSBVID))
+	cc.ConnectionInfo.USBPID = strings.TrimSpace(cc.userConfig.GetString(configKeyUSBPID))
 
 	cc.ConnectionInfo.BaudRate = cc.userConfig.GetInt(configKeyBaudRate)
 	if cc.ConnectionInfo.BaudRate <= 0 {

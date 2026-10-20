@@ -1,0 +1,18 @@
+[Unit]
+Description=deej hardware volume mixer
+Documentation=https://github.com/Magrid0/deej
+After=graphical-session.target pipewire.service wireplumber.service
+PartOf=graphical-session.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Environment=DEEJ_NO_TRAY_ICON=1
+ExecStart=/usr/bin/deej
+Restart=always
+RestartSec=3
+TimeoutStopSec=5
+NoNewPrivileges=true
+
+[Install]
+WantedBy=default.target
