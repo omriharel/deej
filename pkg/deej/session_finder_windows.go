@@ -3,6 +3,7 @@ package deej
 import (
 	"errors"
 	"fmt"
+	"runtime"
 	"strings"
 	"syscall"
 	"time"
@@ -56,6 +57,13 @@ func newSessionFinder(logger *zap.SugaredLogger) (SessionFinder, error) {
 
 func (sf *wcaSessionFinder) GetAllSessions() ([]Session, error) {
 	sessions := []Session{}
+
+	// COM init is per OS thread: keep CoInitializeEx, the COM calls below and the
+	// deferred CoUninitialize on one thread. Without this, newer Go versions move
+	// the goroutine between threads and CoCreateInstance fails with
+	// "CoInitialize has not been called".
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
 
 	// we must call this every time we're about to list devices, i think. could be wrong
 	if err := ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED); err != nil {
