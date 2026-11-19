@@ -19,6 +19,7 @@ slider_mapping:
 invert_sliders: false
 
 # settings for connecting to the arduino board
+# windows only - boards with a CH340 chip can use 'winusb' instead of a COM port, see docs/winusb.md
 com_port: COM4
 baud_rate: 9600
 

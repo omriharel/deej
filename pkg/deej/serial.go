@@ -33,6 +33,10 @@ type SerialIO struct {
 	currentSliderPercentValues []float32
 
 	sliderMoveConsumers []chan SliderMoveEvent
+
+	// WinUSB mode only (see serial_winusb.go)
+	usbStop chan struct{}
+	usbDone chan struct{}
 }
 
 // SliderMoveEvent represents a single slider move captured by deej
@@ -72,6 +76,11 @@ func (sio *SerialIO) Start() error {
 	if sio.connected {
 		sio.logger.Warn("Already connected, can't start another without closing first")
 		return errors.New("serial: connection already active")
+	}
+
+	// `com_port: winusb` bypasses the CH340 vendor driver entirely
+	if isWinUSBPort(sio.deej.config.ConnectionInfo.COMPort) {
+		return sio.startWinUSB()
 	}
 
 	// set minimum read size according to platform (0 for windows, 1 for linux)
@@ -129,7 +138,10 @@ func (sio *SerialIO) Start() error {
 
 // Stop signals us to shut down our serial connection, if one is active
 func (sio *SerialIO) Stop() {
-	if sio.connected {
+	if sio.connected && sio.usbStop != nil {
+		sio.logger.Debug("Shutting down WinUSB connection")
+		sio.stopWinUSB()
+	} else if sio.connected {
 		sio.logger.Debug("Shutting down serial connection")
 		sio.stopChannel <- true
 	} else {
